@@ -553,10 +553,10 @@ function renderTimeline(t,its){
   if(stays.length)stays.forEach(function(s){h+='<span class="c">'+esc(s.title)+(s.checkin&&s.checkout?' · '+fmtMD(s.checkin)+'~'+fmtMD(s.checkout):'')+'</span>';});else h+='<span class="mut">아직 확정 전이에요</span>';
   h+='</div>';
   function ev(it){
-    if(it.pseudo)return '<div class="ev" data-key="'+esc(it.id)+'"><div class="ev-t">'+esc(it.time||'시간 미정')+'</div><div class="ev-n">'+esc(it.title)+'</div><div class="ev-m"><span class="tag">숙소</span></div></div>';
+    if(it.pseudo)return '<div class="ev" data-key="'+esc(it.id)+'"><div class="ev-t">'+esc(it.time||'시간 미정')+'</div><div class="ev-n">'+esc(it.title)+'</div><div class="ev-m"><span class="tag">숙소</span><a href="'+esc(mapUrl(it.place))+'" target="_blank" rel="noopener noreferrer" class="ib sm" aria-label="지도 열기">'+LINK_SVG+'</a></div></div>';
     var sc=secOf(it.section);
     var m='<span class="tag">'+esc(sc.key==='transport'&&it.mode?modeName(it.mode):sc.name)+'</span>'+(it.area?'<span class="ar2">'+esc(areaLabel(it.area))+'</span>':'');
-    if(safeUrl(it.link))m+='<a href="'+esc(safeUrl(it.link))+'" target="_blank" rel="noopener noreferrer" class="ib sm" aria-label="링크 열기">'+LINK_SVG+'</a>';
+    var evl=(sc.key!=='transport'&&safeUrl(it.link))||mapUrl(routePlace(it));m+='<a href="'+esc(evl)+'" target="_blank" rel="noopener noreferrer" class="ib sm" aria-label="지도 열기">'+LINK_SVG+'</a>';
     var tt=it.time?timeStr(it):(it.slot?slotName(it.slot):'');
     return '<div class="ev" data-id="'+esc(it.id)+'" data-key="'+esc(it.id)+'">'+(sc.key!=='transport'&&canWrite?'<button class="rm" data-act="unconf" aria-label="일정에서 빼기" title="일정에서 빼기">'+X_SVG+'</button><span class="dh" role="button" tabindex="0" aria-label="순서 바꾸기 (끌어서 이동)">'+DRAG_SVG+'</span>':'')+(tt?'<div class="ev-t">'+esc(tt)+(it.time&&it.slot?' · '+esc(slotName(it.slot)):'')+'</div>':'')+'<div class="ev-n">'+esc(it.title)+'</div><div class="ev-m">'+m+'</div></div>';
   }
@@ -564,8 +564,8 @@ function renderTimeline(t,its){
   for(var d=1;d<=n;d++){
     if(sel!=='all'&&String(d)!==sel)continue;
     var dd=sortDay(sched.filter(function(i){return effDay(i,t)===d;}));
-    h+='<div class="tl-day" data-d="'+d+'"><div class="tl-dh"><span>'+esc(dayLabel(t,d))+(d===tdn?' · 오늘':'')+'</span>'+(dd.length>1?'<button class="lb" data-act="route" data-d="'+d+'">'+(routeOpen[d]?'동선 닫기':'동선')+'</button>':'')+'</div>';
-    if(routeOpen[d]&&dd.length>1){
+    h+='<div class="tl-day" data-d="'+d+'"><div class="tl-dh"><span>'+esc(dayLabel(t,d))+(d===tdn?' · 오늘':'')+'</span>'+'</div>';
+    if(false){
       var names=dd.map(function(i){return i.pseudo?i.place:i.title;});
       h+='<ol class="route">';
       dd.forEach(function(i,k){var lk=(!i.pseudo&&i.section!=='transport'&&safeUrl(i.link))||mapUrl(routePlace(i));
