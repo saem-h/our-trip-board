@@ -217,7 +217,7 @@ h1{font-family:var(--font-en);font-weight:400;font-size:30px;margin:0;letter-spa
 .areaf{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 0 8px}.areaf button{flex:none;border:0;background:none;padding:2px 2px;font-size:12px;font-weight:500;color:var(--muted)}.areaf button[aria-pressed=true]{color:var(--ink);font-weight:700;text-decoration:underline;text-underline-offset:4px}
 .areas{display:flex;flex-direction:column;gap:6px;margin:-4px 0 4px}.ag{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.agl{width:38px;font-size:12px;font-weight:700;color:var(--muted)}
 .ar2{font-size:12px;font-weight:600;color:var(--muted)}.route small{color:var(--muted)}
-.route-a{display:flex;align-items:center;gap:8px;flex:none}.route-leg{font-size:12px;font-weight:600;color:var(--ink);text-underline-offset:3px;white-space:nowrap}
+.route-leg{font-size:12px;font-weight:600;color:var(--ink);text-underline-offset:3px;white-space:nowrap}
 .pre{flex:none;font-size:11px;font-weight:500;color:var(--muted)}
 .loc{font-style:normal;font-size:12px;font-weight:500;color:var(--muted);margin-left:8px;white-space:nowrap}
 .grp{padding:6px 14px;font-size:12px;font-weight:700;color:var(--muted);background:var(--soft);border-top:1px solid var(--line)}.rows .grp:first-child{border-top:0}
@@ -393,10 +393,18 @@ function trip(){return trips.filter(function(t){return t.id===tripId;})[0];}
 function toast(m){toastEl.textContent=m;toastEl.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(function(){toastEl.style.display='none';},2600);}
 function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
 function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
-function safeUrl(u){u=String(u||'').trim();if(!u)return '';try{var x=new URL(/^https?:\/\//i.test(u)?u:'https://'+u);return x.href;}catch(e){return '';}}
+function pickUrl(u){var m=String(u||'').match(/https?:\/\/[^\s<>"']+/i);return m?m[0]:String(u||'').trim();}
+var AREA_GUESS=['함덕','협재','송당','중문','우도','애월','한림','한경','대정','안덕','남원','표선','성산','구좌','조천','서귀포','제주시'];
+function parseShare(txt){
+  var url=(String(txt||'').match(/https?:\/\/[^\s<>"']+/i)||[])[0];if(!url)return null;
+  var ls=String(txt).split(/\r?\n/).map(function(x){return x.trim();}).filter(function(x){return x&&x.indexOf(url)<0&&!/^\[.*\]$/.test(x);});
+  var addr=ls.filter(function(x,k){return k>0&&/(시|군|구|읍|면|동|리|로|길)(\s|$)/.test(x);})[0]||'',area='';
+  if(/제주/.test(addr))area=AREA_GUESS.filter(function(a){return addr.indexOf(a)>-1;})[0]||'';
+  return {url:url,name:ls[0]||'',area:area};
+}
+function safeUrl(u){u=pickUrl(u);if(!u)return '';try{var x=new URL(/^https?:\/\//i.test(u)?u:'https://'+u);return x.href;}catch(e){return '';}}
 function host(u){try{return new URL(u).hostname.replace(/^www\./,'');}catch(e){return u;}}
-function routePlace(i,role){if(i.pseudo)return i.place;if(i.section==='transport')return (role==='from'?i.to:i.from)||i.title;return i.title+(i.area?' '+i.area:'');}
-function kakaoRoute(a,b){return 'https://map.kakao.com/?sName='+encodeURIComponent(a)+'&eName='+encodeURIComponent(b);}
+function routePlace(i){if(i.pseudo)return i.place;if(i.section==='transport')return (i.dir==='back'?i.from:i.to)||i.title;return i.title+(i.area?' '+i.area:'');}
 function mapUrl(q){return 'https://map.naver.com/p/search/'+encodeURIComponent(q);}
 function todayStr(){var n=new Date();return n.getFullYear()+'-'+('0'+(n.getMonth()+1)).slice(-2)+'-'+('0'+n.getDate()).slice(-2);}
 function todayDayOf(t){if(!t||!t.startDate||!t.endDate)return 0;var td=todayStr();if(td<t.startDate||td>t.endDate)return 0;return diffDays(t.startDate,td)+1;}
@@ -560,10 +568,9 @@ function renderTimeline(t,its){
     if(routeOpen[d]&&dd.length>1){
       var names=dd.map(function(i){return i.pseudo?i.place:i.title;});
       h+='<ol class="route">';
-      dd.forEach(function(i,k){var lk=!i.pseudo&&safeUrl(i.link),nx=dd[k+1];
-        var go=nx?'<a class="route-leg" href="'+esc(kakaoRoute(routePlace(i,'from'),routePlace(nx,'to')))+'" target="_blank" rel="noopener noreferrer">다음까지 길찾기</a>':'';
-        h+='<li><span>'+esc(names[k])+(!i.pseudo&&i.area?' <small>'+esc(areaLabel(i.area))+'</small>':'')+'</span><span class="route-a">'+go+(lk?'<a href="'+esc(lk)+'" target="_blank" rel="noopener noreferrer" class="ib sm" aria-label="지도 열기">'+LINK_SVG+'</a>':'')+'</span></li>';});
-      h+='</ol><div class="route-go">구간별 길찾기는 카카오맵으로 열려요</div>';
+      dd.forEach(function(i,k){var lk=(!i.pseudo&&i.section!=='transport'&&safeUrl(i.link))||mapUrl(routePlace(i));
+        h+='<li><span>'+esc(names[k])+(!i.pseudo&&i.area?' <small>'+esc(areaLabel(i.area))+'</small>':'')+'</span><a class="route-leg" href="'+esc(lk)+'" target="_blank" rel="noopener noreferrer">네이버 지도</a></li>';});
+      h+='</ol><div class="route-go">네이버 지도에서 장소가 열리면 \'도착\'을 눌러 지금 위치에서 길찾기 하세요</div>';
     }
     if(dd.length){h+='<div class="tl-list">';dd.forEach(function(i){h+=ev(i);});h+='</div>';}
     else h+='<div class="tl-list"><div class="tl-empty">아직 비어 있어요. 후보에서 일정에 넣거나 여기로 끌어 놓으세요.</div></div>';
@@ -774,7 +781,7 @@ function openTripForm(isNew){
 /* ---------- writes ---------- */
 var saveItem=guarded(function(btn){
   var s=secOf(btn.dataset.sec),id=btn.dataset.id,data;
-  function v(i){var e=document.getElementById(i);return e?e.value.trim():'';}
+  function v(i){var e=document.getElementById(i);return e?(i==='f-link'?pickUrl(e.value):e.value.trim()):'';}
   if(s.key==='transport'){
     var from=v('f-from'),to=v('f-to'),name=v('f-name');
     var route=(from&&to)?from+' → '+to:(from||to||'');
@@ -978,6 +985,18 @@ document.addEventListener('click',function(e){
   }
 });
 document.addEventListener('input',function(e){if(e.target&&e.target.id==='pk-time')pickTime=e.target.value;});
+document.addEventListener('paste',function(e){
+  var tg=e.target;if(!tg||(tg.id!=='f-link'&&tg.id!=='f-title'))return;
+  var txt=(e.clipboardData||window.clipboardData).getData('text'),sh=parseShare(txt);
+  if(!sh||(tg.id==='f-title'&&txt.trim()===sh.url))return;
+  e.preventDefault();
+  var lk=document.getElementById('f-link'),ti=document.getElementById('f-title'),ar=document.getElementById('f-area');
+  if(lk)lk.value=sh.url;
+  if(ti&&sh.name&&(tg.id==='f-title'||!ti.value.trim()))ti.value=sh.name;
+  if(ar&&sh.area&&!ar.value.trim())ar.value=sh.area;
+  if(lk)toast('지도 링크를 넣었어요');
+});
+document.addEventListener('change',function(e){var tg=e.target;if(tg&&tg.id==='f-link'&&/\s/.test(tg.value.trim()))tg.value=pickUrl(tg.value);});
 document.addEventListener('change',function(e){if(e.target&&e.target.id==='pk-time'){pickTime=e.target.value;return;}
   var el=e.target;if(el.dataset&&el.dataset.act==='day'){var it=itemFrom(el);if(it)setDay(it,el.value);}
   else if(el.dataset&&el.dataset.act==='slot'){var it2=itemFrom(el);if(it2)setSlot(it2,el.value);}
