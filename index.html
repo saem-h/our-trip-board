@@ -304,7 +304,7 @@ button:not(.dh):active,[role=button]:not(.dh):active,[role=tab]:active,[role=che
 var API='https://script.google.com/macros/s/AKfycbz9akxo4uM82E2tD6Z4LHLfZFNue4ePi6pX1amnaqsFgrwX1uKWQeQwFoU6cjU0NO4gxA/exec';
 var OLD='u_dlVYupvgl0cBxjHyPC6CYQ';
 var PEOPLE=[{id:'u_sami',name:'새미'},{id:'u_juseong',name:'주성'}];
-var store={trips:{},items:{},members:{}},listeners={},inflight=0,last='',first={},UID=null,PW='';
+var store={trips:{},items:{},members:{}},listeners={},errs={},inflight=0,last='',first={},UID=null,PW='';
 function g(k){try{return localStorage.getItem(k);}catch(e){return null;}}
 function s(k,v){try{localStorage.setItem(k,v);}catch(e){}}
 function rid(){var c='abcdefghijklmnopqrstuvwxyz0123456789',o='';for(var i=0;i<20;i++)o+=c[Math.floor(Math.random()*c.length)];return o;}
@@ -317,7 +317,7 @@ function post(ops){
   return fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({pw:PW,ops:ops})})
     .then(function(r){return r.json();})
     .then(function(j){inflight--;if(!j.ok){if(j.error==='pw'){s('tb_pw','');}throw new Error(j.error||'fail');}})
-    .catch(function(e){inflight--;pull(true);throw e;});
+    .catch(function(e){inflight--;last='';pull(true);throw e;});
 }
 function pull(force){
   if(inflight&&!force)return Promise.resolve();
@@ -328,7 +328,7 @@ function pull(force){
       var n=j.data[c]||{};
       if(JSON.stringify(n)!==JSON.stringify(store[c])||!first[c]){store[c]=n;first[c]=1;emit(c);}
     });
-  }).catch(function(){});
+  }).catch(function(){if(!first.trips)['trips','items'].forEach(function(c){(errs[c]||[]).forEach(function(f){try{f();}catch(e){}});});});
 }
 function docRef(col,id){
   return {id:id,
@@ -338,7 +338,7 @@ function docRef(col,id){
 }
 var db={
   collection:function(col){return {
-    onSnapshot:function(ok){(listeners[col]=listeners[col]||[]).push(ok);if(first[col])ok(snap(col));},
+    onSnapshot:function(ok,err){(listeners[col]=listeners[col]||[]).push(ok);if(err)(errs[col]=errs[col]||[]).push(err);if(first[col])ok(snap(col));},
     add:function(d){var id=rid();return docRef(col,id).set(d).then(function(){return {id:id};});},
     doc:function(id){return docRef(col,id||rid());}
   };},
@@ -619,7 +619,7 @@ function render(){
   if(!ready&&!offline){
     h+='<div class="hello"><h2>불러오는 중</h2><p>여행 목록을 가져오고 있어요.</p></div>';
   }else if(!t){
-    h+='<div class="hello"><h2>첫 여행을 만들어 보세요</h2><p>여행 이름과 날짜를 정하면 교통, 숙소, 맛집, 체험을 같이 모을 수 있어요.</p><p><button class="btn pri" data-act="newtrip"'+(canWrite?'':' disabled')+'>+ 새 여행 만들기</button></p></div>';
+    if(!offline)h+='<div class="hello"><h2>첫 여행을 만들어 보세요</h2><p>여행 이름과 날짜를 정하면 교통, 숙소, 맛집, 체험을 같이 모을 수 있어요.</p><p><button class="btn pri" data-act="newtrip"'+(canWrite?'':' disabled')+'>+ 새 여행 만들기</button></p></div>';
   }else{
     var its=tripItems();
     if(ready&&seenFor!==tripId){seenFor=tripId;var sv=parseInt(lsGet('seen_'+tripId),10);seenAt=sv||Date.now();lsSet('seen_'+tripId,String(Date.now()));}
@@ -1017,7 +1017,7 @@ async function init(){
   function maybe(){if(gotT&&gotI&&!ready){ready=true;}}
   db.collection('trips').onSnapshot(function(s){
     trips=s.docs.map(function(d){var o=Object.assign({},d.data());o.id=d.id;return o;}).sort(function(a,b){return (a.createdAt||0)-(b.createdAt||0);});
-    gotT=true;maybe();pickTrip();render();
+    gotT=true;offline=false;maybe();pickTrip();render();
   },function(){offline=true;ready=true;render();});
   db.collection('members').onSnapshot(function(s){
     var m={};s.docs.forEach(function(d){m[d.id]=Object.assign({},d.data());});members=m;render();
@@ -1025,7 +1025,7 @@ async function init(){
   },function(){});
   db.collection('items').onSnapshot(function(s){
     items=s.docs.map(function(d){var o=Object.assign({},d.data());o.id=d.id;return o;});
-    gotI=true;maybe();render();loadProfiles();
+    gotI=true;offline=false;maybe();render();loadProfiles();
   },function(){offline=true;ready=true;render();});
 }
 init();
