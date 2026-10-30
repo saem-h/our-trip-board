@@ -96,7 +96,7 @@ h1{font-family:var(--font-en);font-weight:400;font-size:30px;margin:0;letter-spa
 .seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
 .layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:24px;margin-top:16px;align-items:start}
 .addbar{margin-bottom:10px}.addbar .lst-h{margin-bottom:8px}.catpick{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}.cp{flex:none;border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;padding:5px 11px;font-size:12px;font-weight:600}.cp[aria-checked=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}.tg{font-style:normal;font-size:11px;font-weight:600;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:0 6px;margin-right:6px}
-.pick{padding:4px 10px 12px 56px;display:flex;flex-direction:column;gap:6px}.pk-l{font-size:11px;font-weight:700;color:var(--muted)}.pk-c{display:flex;flex-wrap:wrap;gap:6px}.pick .cp[aria-pressed=true]{background:var(--accent);color:var(--accent-ink);border-color:var(--ink)}.pk-a{display:flex;gap:6px;margin-top:2px}
+.pick{padding:4px 10px 12px 56px;display:flex;flex-direction:column;gap:6px}.pk-l{font-size:11px;font-weight:700;color:var(--muted)}.pk-c{display:flex;flex-wrap:wrap;gap:6px}.pick .cp[aria-pressed=true],.areas .cp[aria-pressed=true]{background:var(--accent);color:var(--accent-ink);border-color:var(--ink)}.pk-a{display:flex;gap:6px;margin-top:2px}
 .addbar{display:flex;justify-content:flex-end;margin:0 0 6px}.add-b{background:none;border:0;padding:4px 2px;min-height:28px;font-size:13px;font-weight:600;color:var(--ink);text-decoration:underline;text-underline-offset:3px}
 .ib{flex:none;width:32px;height:32px;min-height:32px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:50%;padding:0;text-decoration:none}
 .ib svg{width:16px;height:16px}
@@ -183,9 +183,13 @@ h1{font-family:var(--font-en);font-weight:400;font-size:30px;margin:0;letter-spa
 #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:999px;font-size:14px;z-index:60;display:none;max-width:90vw}
 .hello{padding:48px 0;color:var(--muted)}
 /* fade in on first load */
-#app.fi>*{animation:tbfade 600ms cubic-bezier(.22,.61,.36,1) both}
+#app.fi>*:not(header.top){animation:tbfade 600ms cubic-bezier(.22,.61,.36,1) both}
 @keyframes tbfade{from{opacity:0}to{opacity:1}}
 @media (prefers-reduced-motion:reduce){#app.fi>*{animation:none}}
+/* main title scale in */
+h1.scin{transform-origin:center;will-change:transform,opacity;animation:tbscale 770ms cubic-bezier(.34,1.56,.64,1) var(--d,0ms) both}
+@keyframes tbscale{from{transform:scale(.35);opacity:0}to{transform:scale(1);opacity:1}}
+@media (prefers-reduced-motion:reduce){h1.scin{animation:none}}
 /* loading dots */
 .ld{display:inline-flex;align-items:center;gap:7px;padding:16px 18px;margin:0 0 18px;background:#161616;border:1px solid var(--line);border-radius:20px 20px 20px 6px}
 .ld i{display:block;width:9px;height:9px;border-radius:50%;background:var(--accent);opacity:.35;will-change:transform,opacity;animation:tbdot 1200ms ease-in-out calc(var(--i,0)*160ms) infinite}
@@ -410,7 +414,7 @@ var SECTIONS=[
 ];
 var db=null,user=null,uid=null,canWrite=true;
 var groupedNow=false,dragActive=false,renderPending=false,members={},nameAsked=false,areaFilter='',seenAt=0,seenFor=null,viewInit=false,tlMode=null,routeOpen={},pickTime='',pickId=null,pickDay=0,pickSlot='',addSec='food',trips=[],items=[],tripId=null,view='board',activeSec=(function(){try{var v=localStorage.getItem('sec');return (v&&v!=='all')?v:'food';}catch(e){return 'food';}})(),openId=null,infoOpen=true,profs={},armed=null,ready=false,offline=false,quickVals={};
-var fadedIn=false,API_URL=window.TB_API||'',app=document.getElementById('app'),modal=document.getElementById('modal'),toastEl=document.getElementById('toast');
+var scaleT=null,fadedIn=false,API_URL=window.TB_API||'',app=document.getElementById('app'),modal=document.getElementById('modal'),toastEl=document.getElementById('toast');
 
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function secOf(k){return SECTIONS.filter(function(s){return s.key===k;})[0]||SECTIONS[2];}
@@ -420,13 +424,26 @@ function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
 function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
 function pickUrl(u){var m=String(u||'').match(/https?:\/\/[^\s<>"']+/i);return m?m[0]:String(u||'').trim();}
 var AREA_GUESS=['함덕','협재','송당','중문','우도','애월','한림','한경','대정','안덕','남원','표선','성산','구좌','조천','서귀포','제주시'];
+var JEJU_EUP={'한림읍':'한림','애월읍':'애월','구좌읍':'구좌','조천읍':'조천','한경면':'한경','대정읍':'대정','안덕면':'안덕','남원읍':'남원','표선면':'표선','성산읍':'성산','우도면':'우도'};
 function parseShare(txt){
   var url=(String(txt||'').match(/https?:\/\/[^\s<>"']+/i)||[])[0];if(!url)return null;
-  var ls=String(txt).split(/\r?\n/).map(function(x){return x.trim();}).filter(function(x){return x&&x.indexOf(url)<0&&!/^\[.*\]$/.test(x);});
-  var addr=ls.filter(function(x,k){return k>0&&/(시|군|구|읍|면|동|리|로|길)(\s|$)/.test(x);})[0]||'',area='';
-  var cand=regionG()===AREA_G?(/제주/.test(addr)?AREA_GUESS:[]):[].concat.apply([],areaGroups().map(function(g){return g.slice(1);})).sort(function(x,y){return y.length-x.length;});
-  area=cand.filter(function(a){return addr.indexOf(a)>-1;})[0]||'';
-  return {url:url,name:ls[0]||'',area:area};
+  var body=String(txt).split(url).join('\n').replace(/\[[^\]\n]*\]/g,'\n');
+  var ls=body.split(/\r?\n|\s+·\s+/).map(function(x){return x.trim();}).filter(Boolean);
+  var AD=/(서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충청|충남|전북|전라|전남|경북|경상|경남|제주)\S*\s+\S+(시|군|구|읍|면)(\s|$)/;
+  var name='',addr='';
+  if(ls.length===1){var m=ls[0].match(AD);if(m){name=ls[0].slice(0,m.index).trim();addr=ls[0].slice(m.index);}else name=ls[0];}
+  else{name=ls[0];addr=ls.slice(1).filter(function(x){return AD.test(x)||/(시|군|구|읍|면|동|리|로|길)(\s|$)/.test(x);})[0]||'';}
+  var area='';
+  if(regionG()===AREA_G){
+    Object.keys(JEJU_EUP).forEach(function(k){if(!area&&addr.indexOf(k)>-1)area=JEJU_EUP[k];});
+    if(!area&&addr.indexOf('중문')>-1)area='중문';
+    if(!area&&/서귀포/.test(addr))area='서귀포';
+    if(!area&&/제주시/.test(addr))area='제주시';
+  }else{
+    var cand=[].concat.apply([],areaGroups().map(function(g){return g.slice(1);})).sort(function(x,y){return y.length-x.length;});
+    area=cand.filter(function(a){return addr.indexOf(a)>-1;})[0]||'';
+  }
+  return {url:url,name:name,area:area};
 }
 function safeUrl(u){u=pickUrl(u);if(!u)return '';try{var x=new URL(/^https?:\/\//i.test(u)?u:'https://'+u);return x.href;}catch(e){return '';}}
 function host(u){try{return new URL(u).hostname.replace(/^www\./,'');}catch(e){return u;}}
@@ -506,7 +523,7 @@ var REGIONS=[
   [/구례|곡성/,[['구례','화엄사','산수유마을','지리산'],['곡성','기차마을','섬진강']]],
   [/완도|해남|진도|강진/,[['완도','청산도','보길도','완도타워'],['해남','땅끝마을','대흥사'],['진도','진도대교','세방낙조'],['강진','다산초당','가우도']]],
   [/경기|수원|파주/,[['수원','행궁동','화성','통닭거리'],['파주','헤이리','출판도시','임진각']]],
-  [/후쿠오카|福岡/,[['시내','하카타','텐진','나카스','오호리공원','모모치'],['근교','다자이후','이토시마','야나가와','유후인','벳푸']]],
+  [/후쿠오카|福岡/,[['시내','하카타','텐진','나카스','오호리공원','모모치'],['근교','다자이후','이토시마','야나가와','히타','유후인','벳푸']]],
   [/오사카|大阪/,[['키타','우메다','신오사카'],['미나미','난바','신사이바시','도톤보리','신세카이'],['기타','오사카성','USJ'],['근교','교토','나라','고베']]],
   [/교토|京都/,[['중심','교토역','가와라마치','기온','니시키시장'],['동쪽','기요미즈데라','난젠지','은각사'],['서쪽','아라시야마','금각사'],['남쪽','후시미이나리','우지']]],
   [/도쿄|東京/,[['서쪽','신주쿠','시부야','하라주쿠','시모키타자와','기치조지'],['중심','긴자','도쿄역','롯폰기','오다이바'],['동쪽','아사쿠사','우에노','아키하바라'],['근교','요코하마','가마쿠라','하코네']]]
@@ -631,9 +648,6 @@ function renderTimeline(t,its){
   h+='<div class="seg2"><button data-act="tlm" data-v="all" aria-pressed="'+(sel==='all')+'">전체</button>';
   for(var k=1;k<=nDays;k++)h+='<button data-act="tlm" data-v="'+k+'" aria-pressed="'+(sel===String(k))+'">'+esc(dayLabel(t,k))+(k===tdn?' <i class="tdot"></i>':'')+'</button>';
   h+='</div>';
-  h+='<div class="tl-stay"><span class="lab">숙소</span>';
-  if(stays.length)stays.forEach(function(s){h+='<span class="c">'+esc(s.title)+(s.checkin&&s.checkout?' · '+fmtMD(s.checkin)+'~'+fmtMD(s.checkout):'')+'</span>';});else h+='<span class="mut">아직 확정 전이에요</span>';
-  h+='</div>';
   function ev(it){
     if(it.pseudo)return '<div class="ev" data-key="'+esc(it.id)+'"><div class="ev-t">'+esc(it.time||'시간 미정')+'</div><div class="ev-n">'+esc(it.title)+'</div><div class="ev-m"><span class="tag">숙소</span><a href="'+esc(mapUrl(it.place))+'" target="_blank" rel="noopener noreferrer" class="ib sm" aria-label="지도 열기">'+LINK_SVG+'</a></div></div>';
     var sc=secOf(it.section);
@@ -704,9 +718,12 @@ function render(){
   document.querySelectorAll('[data-quick]').forEach(function(i){quickVals[i.dataset.quick]=i.value;});
   if(act&&act.matches&&act.matches('[data-quick]'))keep={sec:act.dataset.quick,pos:act.selectionStart};
   var t=trip();
-  var h='<header class="top"><h1>our trip board</h1><div class="tabs" role="tablist">';
-  trips.forEach(function(x){h+='<button class="tab'+(tOn('t:'+x.id)?' tabpop':'')+'"'+tOn('t:'+x.id,1)+' role="tab" data-act="tab" data-id="'+esc(x.id)+'" aria-selected="'+(x.id===tripId)+'">'+esc(x.name)+'</button>';});
-  h+='<button class="tab ghost" data-act="newtrip"'+(canWrite?'':' disabled')+'>+ 새 여행</button></div></header>';
+  if(scaleT==null)scaleT=Date.now();var sEl=Date.now()-scaleT;
+  var h='<header class="top"><h1'+(sEl<800?' class="scin" style="--d:-'+sEl+'ms"':'')+'>our trip board</h1><div class="tabs" role="tablist">';
+  var nArc=trips.filter(isArchived).length;
+  trips.filter(function(x){return isArchived(x)===showArc;}).forEach(function(x){h+='<button class="tab'+(tOn('t:'+x.id)?' tabpop':'')+'"'+tOn('t:'+x.id,1)+' role="tab" data-act="tab" data-id="'+esc(x.id)+'" aria-selected="'+(x.id===tripId)+'">'+esc(x.name)+'</button>';});
+  if(showArc)h+='<button class="tab ghost" data-act="arcview">← 진행 중 여행</button></div></header>';
+  else h+='<button class="tab ghost" data-act="newtrip"'+(canWrite?'':' disabled')+'>+ 새 여행</button>'+(nArc?'<button class="tab ghost" data-act="arcview">지난 여행 '+nArc+'</button>':'')+'</div></header>';
   if(!canWrite)h+='<div class="note">지금은 보기 전용이에요. 같이 편집하려면 공유 설정에서 상대방을 편집 가능(기여자 이상)으로 초대해 주세요.</div>';
   if(offline)h+='<div class="note">저장소에 연결하지 못했어요. 새로고침하거나 로그인 상태를 확인해 주세요.</div>';
   if(!ready&&!offline){
@@ -744,7 +761,7 @@ var saveName=guarded(function(){
   return db.doc('members/'+uid).set({name:v,updatedAt:Date.now()});
 });
 function closeModal(){modal.className='';modal.innerHTML='';}
-var MODES=[['plane','비행기'],['train','기차'],['car','자가용'],['rent','렌터카'],['bus','버스'],['ship','배'],['etc','기타']];
+var MODES=[['plane','비행기'],['train','기차'],['car','자가용'],['rent','렌트카'],['bus','버스'],['ship','배'],['etc','기타']];
 var MODE_HINT={
   plane:{lab:'편명',ph:'예) KE1234',from:'예) 김포공항',to:'예) 제주공항'},
   train:{lab:'열차명',ph:'예) KTX 123',from:'예) 서울역',to:'예) 부산역'},
@@ -754,7 +771,7 @@ var MODE_HINT={
   ship:{lab:'선박·노선',ph:'예) 선박 이름',from:'예) 출발 항구',to:'예) 도착 항구'},
   etc:{lab:'이름',ph:'예) 이동 수단 이름',from:'예) 출발지',to:'예) 도착지'}
 };
-var DIRS=[['out','갈 때'],['local','여행지에서'],['back','올 때']];
+var DIRS=[['out','갈 때'],['local','여행지로'],['back','올 때']];
 function modeName(k){var m=MODES.filter(function(x){return x[0]===k;})[0];return m?m[1]:'';}
 function dirName(k){var m=DIRS.filter(function(x){return x[0]===k;})[0];return m?m[1]:'';}
 function timeStr(it){return it.time?(it.time+(it.arrive?' → '+it.arrive:'')):'시간 미정';}
@@ -814,14 +831,15 @@ function stayWhen(it){
   return w;
 }
 function openItemForm(opts){
-  var sec0=opts.item?opts.item.section:opts.section;
+  var sec0=opts.section||(opts.item&&opts.item.section);
   if(sec0==='transport'){openTransportForm(opts.item||null);return;}
   if(sec0==='stay'){openStayForm(opts.item||null);return;}
   var t=trip(),it=opts.item||null,pre=opts.pre||{},sec=sec0||'food',s=secOf(sec),isMust=sec==='must';
-  var LAB={spot:['이름','예) 가볼 만한 곳 이름'],food:['상호명','예) 가게 이름'],cafe:['상호명','예) 카페 이름'],play:['이름','예) 전시, 체험 이름'],shop:['상호명','예) 편집샵, 시장 이름'],must:['할 일','예) 렌터카 예약, 환전']};
-  function val(k){return it?(it[k]||''):(pre[k]||'');}
+  var LAB={spot:['이름','예) 가볼 만한 곳 이름'],food:['상호명','예) 가게 이름'],cafe:['상호명','예) 카페 이름'],play:['이름','예) 전시, 체험 이름'],shop:['상호명','예) 편집샵, 시장 이름'],must:['할 일','예) 렌트카 예약, 환전']};
+  function val(k){if(k in pre)return pre[k]||'';return it?(it[k]||''):'';}
   var h='<div class="card"><h3>'+(it?'항목 수정':'등록하기')+'</h3>';
-  if(!it){
+  if(!it||!secOf(it.section).fixed){
+    if(it)h+='<div class="lab2">카테고리</div>';
     h+='<div class="modes" id="f-cats">';
     SECTIONS.forEach(function(x){if(x.fixed)return;h+='<button type="button" class="mchip" data-c="'+x.key+'" aria-pressed="'+(x.key===sec)+'">'+esc(x.name)+'</button>';});
     h+='</div>';
@@ -832,17 +850,18 @@ function openItemForm(opts){
     h+='<label>위치<input id="f-area" maxlength="30" placeholder="예) 애월, 성산, 서귀포" value="'+esc(val('area'))+'"></label>';
     var AG=areaGroups();if(AG.length){h+='<div class="areas">';AG.forEach(function(g){h+='<div class="ag"><span class="agl">'+g[0]+'</span>';g.slice(1).forEach(function(a){h+='<button type="button" class="cp" data-area="'+esc(a)+'">'+esc(a)+'</button>';});h+='</div>';});h+='</div>';}
   }
-  if(!isMust)h+='<label>지도 주소 (링크)<input id="f-link" inputmode="url" maxlength="300" placeholder="네이버·카카오 지도 공유 링크 붙여넣기" value="'+esc(val('link'))+'"></label>';
+  if(!isMust)h+='<label>지도 주소 (링크)<input id="f-link" inputmode="url" maxlength="300" placeholder="지도 공유 링크 붙여넣기" value="'+esc(val('link'))+'"></label>';
   h+='<label>메모<textarea id="f-memo" maxlength="400" placeholder="영업시간, 가격, 예약 여부, 가고 싶은 이유">'+esc(val('memo'))+'</textarea></label>';
   if(it&&s.sched)h+='<div class="row"><label>일차<select id="f-day">'+dayOptions(t,it.day||0)+'</select></label><label>시간<input id="f-time" type="time" value="'+esc(it.time||'')+'"></label></div>';
   h+='<div class="foot"><button class="btn" data-act="close">취소</button><div class="r"><button class="btn pri" data-act="saveitem" data-sec="'+sec+'" data-id="'+(it?esc(it.id):'')+'">저장</button></div></div></div>';
   modal.innerHTML=h;modal.className='on';
-  modal.querySelectorAll('[data-area]').forEach(function(b){b.addEventListener('click',function(){var f=document.getElementById('f-area');if(f){f.value=b.dataset.area;f.focus();}});});
+  modal.querySelectorAll('[data-area]').forEach(function(b){b.addEventListener('click',function(){var f=document.getElementById('f-area');if(f){f.value=b.dataset.area;syncArea();}});});
+  var fa=document.getElementById('f-area');if(fa){fa.addEventListener('input',syncArea);syncArea();}
   var fcl=document.getElementById('f-closed');if(fcl)fcl.addEventListener('click',function(e){var b=e.target.closest('[data-dow]');if(b)b.setAttribute('aria-pressed',String(b.getAttribute('aria-pressed')!=='true'));});
   var fc=document.getElementById('f-cats');
   if(fc)fc.addEventListener('click',function(e){var b=e.target.closest('.mchip');if(!b)return;
     function g(i){var x=document.getElementById(i);return x?x.value:'';}
-    openItemForm({section:b.dataset.c,pre:{title:g('f-title'),desc:g('f-desc'),area:g('f-area'),link:g('f-link'),memo:g('f-memo'),closed:readClosed()}});});
+    openItemForm({item:it,section:b.dataset.c,pre:{title:g('f-title'),desc:g('f-desc'),area:g('f-area'),link:g('f-link'),memo:g('f-memo'),closed:readClosed()}});});
   setTimeout(function(){var f=document.getElementById('f-title');if(f)f.focus();},30);
 }
 function openTripForm(isNew){
@@ -853,7 +872,7 @@ function openTripForm(isNew){
   h+='<label>일정 일수 (날짜를 고르면 자동으로 계산돼요)<select id="t-days">';
   for(var d=1;d<=14;d++)h+='<option value="'+d+'"'+(((t&&t.days)||2)===d?' selected':'')+'>'+d+'일</option>';
   h+='</select></label>';
-  h+='<div class="foot">'+(isNew?'<button class="btn" data-act="close">취소</button>':'<button class="btn warn" data-act="deltrip" id="b-deltrip">여행 삭제</button>')+'<div class="r">'+(isNew?'':'<button class="btn" data-act="close">닫기</button>')+'<button class="btn pri" data-act="savetrip" data-new="'+(isNew?1:0)+'">저장</button></div></div></div>';
+  h+='<div class="foot">'+(isNew?'<button class="btn" data-act="close">취소</button>':'<button class="btn warn" data-act="deltrip" id="b-deltrip">여행 삭제</button><button class="btn" data-act="arctrip">'+(t&&isArchived(t)?'보관 해제':'지난 여행으로')+'</button>')+'<div class="r">'+(isNew?'':'<button class="btn" data-act="close">닫기</button>')+'<button class="btn pri" data-act="savetrip" data-new="'+(isNew?1:0)+'">저장</button></div></div></div>';
   modal.innerHTML=h;modal.className='on';
   var st=document.getElementById('t-start'),en=document.getElementById('t-end'),dy=document.getElementById('t-days');
   function sync(){if(st.value&&en.value){var n=diffDays(st.value,en.value)+1;if(n>=1&&n<=14){dy.value=String(n);dy.disabled=true;return;}}dy.disabled=false;}
@@ -864,6 +883,7 @@ function openTripForm(isNew){
 
 /* ---------- writes ---------- */
 function readClosed(){var o=[];document.querySelectorAll('#f-closed [data-dow]').forEach(function(b){if(b.getAttribute('aria-pressed')==='true')o.push(+b.dataset.dow);});return o;}
+function syncArea(){var f=document.getElementById('f-area'),v=f?f.value.trim():'';modal.querySelectorAll('[data-area]').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.area===v));});}
 var saveItem=guarded(function(btn){
   var s=secOf(btn.dataset.sec),id=btn.dataset.id,data;
   function v(i){var e=document.getElementById(i);return e?(i==='f-link'?pickUrl(e.value):e.value.trim()):'';}
@@ -888,7 +908,7 @@ var saveItem=guarded(function(btn){
     if(s.sched&&document.getElementById('f-day')){data.day=parseInt(v('f-day'),10)||0;data.time=v('f-time');}
   }
   closeModal();
-  if(id)return db.doc('items/'+id).update(data);
+  if(id){var was=items.filter(function(x){return x.id===id;})[0];if(was&&was.section!==s.key&&!s.fixed)data.section=s.key;return db.doc('items/'+id).update(data);}
   data.tripId=tripId;data.section=s.key;data.status=s.fixed?'confirmed':'idea';data.done=false;data.likes={};data.createdBy=uid;data.createdAt=Date.now();
   return db.collection('items').add(data);
 });
@@ -922,6 +942,7 @@ var saveTrip=guarded(function(btn){
   }
   return db.doc('trips/'+tripId).update(data);
 });
+var arcTrip=guarded(function(){var t=trip();if(!t)return;var v=!isArchived(t);closeModal();showArc=v;toast(v?'지난 여행으로 옮겼어요.':'진행 중 여행으로 옮겼어요.');return db.doc('trips/'+t.id).update({archived:v});});
 var delTrip=guarded(function(){
   var b=document.getElementById('b-deltrip');
   if(!delTrip.armed){delTrip.armed=true;b.textContent='정말 삭제 (항목도 모두 삭제)';setTimeout(function(){delTrip.armed=false;var x=document.getElementById('b-deltrip');if(x)x.textContent='여행 삭제';},3500);return;}
@@ -1037,6 +1058,8 @@ function burst(x,y,el){
 document.addEventListener('click',function(e){
   var el=e.target.closest('[data-act]');if(!el)return;
   var a=el.dataset.act,it;
+  if(a==='arcview'){var nv=!showArc,lst=trips.filter(function(x){return isArchived(x)===nv;});if(nv)lastLive=tripId;showArc=nv;if(lst.length){var pk=(!nv&&lst.filter(function(x){return x.id===lastLive;})[0])||(nv?lst[lst.length-1]:lst[0]);tripId=pk.id;lsSet('tripId',tripId);}openId=null;render();return;}
+  if(a==='arctrip'){arcTrip();return;}
   if(a==='tab'){tabPop={k:'t:'+el.dataset.id,t:Date.now()};tripId=el.dataset.id;lsSet('tripId',tripId);armed=null;render();}
   else if(a==='view'){tabPop={k:'v:'+el.dataset.v,t:Date.now()};var sg=document.querySelector('.seg'),y0=sg?sg.getBoundingClientRect().top:null;view=el.dataset.v;render();var sg2=document.querySelector('.seg');if(sg2&&y0!==null){var dy=sg2.getBoundingClientRect().top-y0;if(dy)window.scrollBy(0,dy);}}
   else if(a==='areaf'){areaFilter=el.dataset.v;render();}
@@ -1079,7 +1102,7 @@ document.addEventListener('paste',function(e){
   var lk=document.getElementById('f-link'),ti=document.getElementById('f-title'),ar=document.getElementById('f-area');
   if(lk)lk.value=sh.url;
   if(ti&&sh.name&&(tg.id==='f-title'||!ti.value.trim()))ti.value=sh.name;
-  if(ar&&sh.area&&!ar.value.trim())ar.value=sh.area;
+  if(ar&&sh.area&&!ar.value.trim()){ar.value=sh.area;syncArea();}
   if(lk)toast('지도 링크를 넣었어요');
 });
 document.addEventListener('change',function(e){var tg=e.target;if(tg&&tg.id==='f-link'&&/\s/.test(tg.value.trim()))tg.value=pickUrl(tg.value);});
@@ -1117,11 +1140,16 @@ function autoClosed(){
     if(j&&j.ok&&Array.isArray(j.closed)&&items.some(function(x){return x.id===it.id;}))return db.doc('items/'+it.id).update({closed:j.closed,closedSrc:'naver'});
   }).catch(function(){}).then(function(){acBusy=false;setTimeout(autoClosed,300);});
 }
+function isArchived(t){return t.archived===true||(t.archived!==false&&!!t.endDate&&t.endDate<todayStr());}
+var showArc=false,lastLive=null;
 function pickTrip(){
   if(!trips.length){tripId=null;return;}
-  if(trips.some(function(t){return t.id===tripId;}))return;
-  var saved=lsGet('tripId');
-  tripId=trips.some(function(t){return t.id===saved;})?saved:trips[0].id;
+  var cur=trips.filter(function(t){return t.id===tripId;})[0];
+  if(cur){showArc=isArchived(cur);return;}
+  var saved=lsGet('tripId'),live=trips.filter(function(t){return !isArchived(t);});
+  var st=trips.filter(function(t){return t.id===saved&&!isArchived(t);})[0];
+  var pick=st||live[0]||trips[trips.length-1];
+  tripId=pick.id;showArc=isArchived(pick);
 }
 async function init(){
   render();
