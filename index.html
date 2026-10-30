@@ -154,6 +154,7 @@ h1{font-family:var(--font-en);font-weight:400;font-size:30px;margin:0;letter-spa
 .mapc-leg{display:flex;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:11px;flex:1;min-width:0}
 .mapc-leg i{display:inline-block;width:9px;height:9px;border-radius:50%;border:1.5px solid #0A0A0A;margin-right:3px;vertical-align:-1px}
 .mapc-h .lb{flex:none}
+.mapc-h{flex-wrap:wrap;row-gap:4px}.mapc-h b{margin-right:auto}.mapc-leg{order:3;flex-basis:100%}.mapc-leg:empty{display:none}
 .tl-mapw{position:relative}
 .tl-map{height:210px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--soft)}
 @media (min-width:900px){.tl-map{height:240px}}
@@ -181,6 +182,18 @@ h1{font-family:var(--font-en);font-weight:400;font-size:30px;margin:0;letter-spa
 .mk.ap{opacity:.55;border-style:dashed}
 .mbub .mb-w{color:#B54708}
 .mbub .mb-fix{display:block;width:100%;margin-top:6px;min-height:0;padding:4px;background:none;border:0;color:#6C6C6C;font-family:inherit;font-size:11px;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+.mapc-h .gc{color:#B54708;font-weight:700}
+.gf-it{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:8px 0}.gf-it b{display:block;font-size:15px}.gf-it small{display:block;color:var(--muted);font-size:12px;margin-top:2px}.gf-it a{display:inline-block;margin-top:6px;font-size:12px;color:var(--ink);text-underline-offset:3px}
+.gf-map{height:170px;border-radius:12px;overflow:hidden;border:1px solid var(--line);margin-bottom:8px;background:var(--soft)}
+.mk.gfo{background:#fff}
+.gf-n{display:inline-block;width:18px;height:18px;border-radius:50%;border:1.5px solid #0A0A0A;background:#fff;color:#0A0A0A;font-size:10px;font-weight:800;line-height:15px;text-align:center;margin-right:6px;vertical-align:1px}
+.gf-i:first-child .gf-n{background:var(--accent)}
+.gf-i.flash2{animation:tbflash 1.2s ease}
+.mapc-h .ct[aria-pressed=false]{color:var(--muted)}
+.geo-f{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;color:var(--muted);margin:-4px 0 6px}
+.geo-f .ok{color:var(--ink)}.geo-f .warn{color:#B54708}
+.geo-ok{font-size:12px;border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin:0 0 8px}
+.gf-i.hit{border-color:var(--ink)}.gf-i em{font-style:normal;font-size:10px;font-weight:800;background:var(--accent);color:#0A0A0A;border-radius:999px;padding:1px 6px;margin-left:4px;vertical-align:1px}
 .gf-s{display:flex;gap:6px;margin:10px 0}.gf-s input{flex:1;min-width:0}
 .gf-r{display:flex;flex-direction:column;gap:6px;max-height:50vh;overflow-y:auto}
 .gf-i{display:block;text-align:left;width:100%;border:1px solid var(--line);background:var(--field);color:var(--ink);border-radius:10px;padding:9px 11px;cursor:pointer;font-family:inherit}
@@ -664,7 +677,7 @@ function renderSection(key,its,t){
   list.sort(function(x,y){var cx=isConf(x)&&!secOf(x.section).check?1:0,cy=isConf(y)&&!secOf(y.section).check?1:0;var mx=x.section==='must'?1:0,my=y.section==='must'?1:0;return mx-my||((x.done?1:0)-(y.done?1:0))||(areaRank(x)-areaRank(y))||String(x.area||'').localeCompare(String(y.area||''))||cy-cx||(x.createdAt||0)-(y.createdAt||0);});
   if(window.TB_KAKAO&&key!=='must'&&list.length){
     var bp=[];
-    list.forEach(function(i){var cf=isConf(i)&&!secOf(i.section).check,ed=cf?effDay(i,t):0;bp.push({i:i,t:'',c:cf?'s':'c',j:1,sub:(all?secOf(i.section).name+' · ':'')+(cf?(ed?dayLabel(t,ed)+' 확정':'확정'):'후보')+(i.area?' · '+areaLabel(i.area):'')});});
+    var co=candOn('c');list.forEach(function(i){var cf=isConf(i)&&!secOf(i.section).check,ed=cf?effDay(i,t):0;if(!cf&&!co)return;bp.push({i:i,t:'',c:cf?'s':'c',j:1,sub:(all?secOf(i.section).name+' · ':'')+(cf?(ed?dayLabel(t,ed)+' 확정':'확정'):'후보')+(i.area?' · '+areaLabel(i.area):'')});});
     its.filter(function(i){return i.section==='stay';}).forEach(function(i){bp.push({i:{pseudo:true,place:i.title,title:i.title,sid:i.id,addr:i.addr,geo:i.geo},t:'숙',c:'h',sub:'숙소'});});
     mapDays.push({d:'c',line:false,pins:bp});
     h+=mapBlock('c','c','<span><i style="background:#fff"></i>후보</span><span><i style="background:var(--accent)"></i>확정</span><span><i style="background:#0A0A0A"></i>숙소</span>');
@@ -690,8 +703,9 @@ var mapDays=[],kakaoState=0,kakaoWait=[],mapObjs={};
 var DAYC=['#C8FF2E','#7FD4FF','#FFB86B','#E2A8FF','#FF8FA3','#9BF0C8','#FFE066'];
 var BIG_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>';
 function mapFolded(k){return lsGet('mapfold:'+k)==='1';}
+function candOn(k){var v=lsGet('mapcand:'+k);return v==null?k==='c':v==='1';}
 function mapBlock(id,fk,leg){
-  var f=mapFolded(fk),h='<div class="mapc" data-d="'+id+'"><div class="mapc-h"><b>지도</b><span class="mapc-leg">'+(f?'':leg)+'</span><button class="lb" data-act="mapfold" data-k="'+fk+'">'+(f?'펼치기':'접기')+'</button></div>';
+  var nq=0,f=mapFolded(fk),h='<div class="mapc" data-d="'+id+'"><div class="mapc-h"><b>지도</b><span class="mapc-leg">'+(f?'':leg)+'</span>'+(!f?'<button class="lb ct" data-act="mapcand" data-k="'+fk+'" aria-pressed="'+candOn(fk)+'">후보 '+(candOn(fk)?'켜짐':'꺼짐')+'</button>':'')+(canWrite&&!f&&(nq=needGeo().length)?'<button class="lb gc" data-act="geocheck">위치 확인 '+nq+'곳</button>':'')+'<button class="lb" data-act="mapfold" data-k="'+fk+'">'+(f?'펼치기':'접기')+'</button></div>';
   if(!f)h+='<div class="tl-mapw" data-d="'+id+'"><div class="tl-map" data-d="'+id+'"></div><button type="button" class="tl-big" data-act="mapbig" data-d="'+id+'" aria-label="크게 보기">'+BIG_SVG+'</button></div><div class="tl-mapn" data-d="'+id+'"></div>';
   return h+'</div>';
 }
@@ -714,12 +728,19 @@ function memo(k,fn,cb){
 function kw(q,opt,cb){new kakao.maps.services.Places().keywordSearch(q,function(r,st){cb(st===kakao.maps.services.Status.OK&&r.length?{x:+r[0].x,y:+r[0].y,a:r[0].road_address_name||r[0].address_name||''}:0);},opt||{});}
 function geoAnchor(cb){var a=anchorName();if(!a)return cb(null);memo('geoa:'+a,function(done){kw(a,null,done);},cb);}
 /* 여행지 근처(약 50km)에서만 찾기: 같은 이름의 서울 가게로 잘못 찍히지 않게 */
+function jejuBounds(an){return an?{bounds:new kakao.maps.LatLngBounds(new kakao.maps.LatLng(an.y-.45,an.x-.6),new kakao.maps.LatLng(an.y+.45,an.x+.6))}:{};}
+function areaHit(x,area){var ad=(x.road_address_name||'')+' '+(x.address_name||'');return !!area&&ad.indexOf(area)>-1;}
+function rankRes(r,area){if(!area)return r;return r.filter(function(x){return areaHit(x,area);}).concat(r.filter(function(x){return !areaHit(x,area);}));}
+function kwAll(q,opt,cb){new kakao.maps.services.Places().keywordSearch(q,function(r,st){cb(st===kakao.maps.services.Status.OK?r:[]);},opt||{});}
+/* 여행지 근처(약 50km)에서만 찾고, 등록한 위치(구좌, 제주시…)와 주소가 맞는 곳을 먼저 골라요 */
 function geoFind(q,area,cb){
   geoAnchor(function(an){
     var ak=an?(an.y.toFixed(1)+','+an.x.toFixed(1)):'-';
-    memo('geo2:'+ak+':'+q,function(done){
-      var opt=null;if(an)opt={bounds:new kakao.maps.LatLngBounds(new kakao.maps.LatLng(an.y-.45,an.x-.6),new kakao.maps.LatLng(an.y+.45,an.x+.6))};
-      kw(q,opt,function(v){if(v||!area)return done(v);kw(area+' '+q,opt,done);});
+    memo('geo3:'+ak+':'+area+':'+q,function(done){
+      var opt=jejuBounds(an);
+      function pick(r){var x=rankRes(r,area)[0];return x?{x:+x.x,y:+x.y,a:x.road_address_name||x.address_name||''}:0;}
+      kwAll(q,opt,function(r){if(r.length&&(!area||areaHit(r[0],area)||r.some(function(x){return areaHit(x,area);})))return done(pick(r));
+        if(!area)return done(0);kwAll(area+' '+q,opt,function(r2){done(pick(r2.length?r2:r));});});
     },cb);
   });
 }
@@ -752,7 +773,7 @@ function paint(box,note,md,pts){
   var w=box.parentNode,ok=[];md.pins.forEach(function(pn,k){if(pts[k])ok.push({pn:pn,p:new kakao.maps.LatLng(pts[k].y,pts[k].x),a:pts[k].a,src:pts[k].src});});
   var miss=md.pins.filter(function(pn,k){return !pts[k];}).map(function(pn){return pn.i.pseudo?pn.i.place:pn.i.title;});
   var approx=ok.filter(function(o){return o.src==='name';}).length;
-  if(note)note.textContent=(miss.length?'위치를 못 찾은 곳: '+miss.join(', ')+'. ':'')+(approx?'흐린 핀 '+approx+'개는 이름으로 찾은 위치라 틀릴 수 있어요. 핀을 눌러 위치를 고쳐 주세요.':'');
+  if(note)note.textContent=(miss.length?'못 찾은 곳: '+miss.join(', ')+(approx?' · ':''):'')+(approx?'흐린 핀은 위치 확인이 필요해요':'');
   var an=geoMem['geoa:'+anchorName()],c0=ok.length?ok[0].p:an?new kakao.maps.LatLng(an.y,an.x):new kakao.maps.LatLng(33.38,126.55);
   var map=new kakao.maps.Map(box,{center:c0,level:ok.length?9:10}),bd=new kakao.maps.LatLngBounds(),bub=null;
   map.addControl(new kakao.maps.ZoomControl(),kakao.maps.ControlPosition.RIGHT);
@@ -768,30 +789,59 @@ function paint(box,note,md,pts){
     el.innerHTML='<div class="mk'+(pn.c?' '+pn.c:'')+(o.src==='name'?' ap':'')+'"'+(pn.col?' style="background:'+pn.col+'"':'')+'>'+esc(pn.t)+'</div><div class="mkl">'+esc(nm)+'</div>';
     el.addEventListener('click',function(e){e.stopPropagation();closeBub();
       var b=document.createElement('div');b.className='mbub';
-      b.innerHTML='<b>'+esc(nm)+'</b>'+(pn.sub?'<small>'+esc(pn.sub)+'</small>':'')+(o.a?'<small>'+esc(o.a)+'</small>':'')+(o.src==='name'?'<small class="mb-w">이름으로 찾은 위치라 틀릴 수 있어요</small>':'')+'<div class="mb-a">'+(pn.j&&i.id?'<button data-m="j">목록에서 보기</button>':'')+'<button class="pri" data-m="n">네이버 지도</button></div>'+(canWrite&&(i.sid||i.id)?'<button class="mb-fix" data-m="f">위치 고치기</button>':'');
+      b.innerHTML='<b>'+esc(nm)+'</b>'+(pn.sub?'<small>'+esc(pn.sub)+'</small>':'')+(o.a?'<small>'+esc(o.a)+'</small>':'')+(o.src==='name'?'<small class="mb-w">이름으로 찾은 위치라 틀릴 수 있어요</small>':'')+'<div class="mb-a">'+(pn.j&&i.id&&document.querySelector('article.it[data-id="'+i.id+'"]')?'<button data-m="j">목록에서 보기</button>':'')+'<button class="pri" data-m="n">네이버 지도</button></div>'+(canWrite&&(i.sid||i.id)?'<button class="mb-fix" data-m="f">위치 고치기</button>':'');
       b.addEventListener('click',function(ev){ev.stopPropagation();var m=ev.target.dataset&&ev.target.dataset.m;if(m==='n')window.open(evLink(i),'_blank','noopener');else if(m==='j'){closeBub();jumpTo(i.id);}else if(m==='f'){closeBub();openGeoFix(i.sid||i.id);}});
-      bub=new kakao.maps.CustomOverlay({map:map,position:o.p,content:b,xAnchor:0,yAnchor:0,zIndex:50});});
+      bub=new kakao.maps.CustomOverlay({map:map,position:o.p,content:b,xAnchor:0,yAnchor:0,zIndex:50});try{var pr=map.getProjection(),pt=pr.pointFromCoords(o.p);pt.y-=box.offsetHeight*.28;map.panTo(pr.coordsFromPoint(pt));}catch(e){map.panTo(o.p);}});
     new kakao.maps.CustomOverlay({map:map,position:o.p,content:el,xAnchor:0,yAnchor:0,zIndex:pn.c==='h'?20:pn.c?8:12});});
   var mo={map:map,bd:bd,n:ok.length,c:c0,note:note?note.textContent:''};mapObjs[box.dataset.d]=mo;fitMap(mo);syncLbl();
 }
-function openGeoFix(id){
+var gfQ=[],gfI=0,gfRes=[];
+function needGeo(){var t=trip();return tripItems().filter(function(i){var sc=secOf(i.section);return sc&&i.section!=='must'&&i.section!=='transport'&&!(i.geo&&i.geo.x)&&!i.addr&&!(t&&false);}).map(function(i){return i.id;});}
+function startGeoCheck(){gfQ=needGeo();gfI=0;if(!gfQ.length){toast('모든 장소 위치가 확인됐어요');return;}openGeoFix(gfQ[0],true);}
+function openGeoFix(id,inQ){
+  if(!inQ){gfQ=[];gfI=0;}
   var it=items.filter(function(x){return x.id===id;})[0];if(!it)return;
-  modal.innerHTML='<div class="card"><h3>위치 고치기</h3><p class="mut">'+esc(it.title)+'의 정확한 위치를 골라 주세요. 네이버 지도에 나온 주소와 같은 걸 고르면 돼요.</p><div class="gf-s"><input id="f-gq" maxlength="80" value="'+esc(it.title+(it.area?' ':''))+'"><button class="btn sm" data-act="gfsearch" data-id="'+esc(id)+'">찾기</button></div><div id="gf-r" class="gf-r"></div><div class="foot"><button class="btn" data-act="close">닫기</button></div></div>';
+  var lk=safeUrl(it.link),q=gfQ.length;
+  modal.innerHTML='<div class="card"><h3>'+(q?'위치 확인 <small class="mut">'+(gfI+1)+' / '+q+'</small>':'위치 고치기')+'</h3>'
+    +'<div class="gf-it"><b>'+esc(it.title)+'</b><small>'+esc([secOf(it.section).name,it.area?areaLabel(it.area):'',it.memo||''].filter(Boolean).join(' · '))+'</small>'+(lk?'<a href="'+esc(lk)+'" target="_blank" rel="noopener noreferrer">네이버에서 주소 보기</a>':'')+'</div>'
+    +'<p class="mut">아래에서 맞는 곳을 눌러 주세요.'+(it.area?' '+esc(it.area)+' 주소인 곳을 위에 모아 뒀어요.':'')+'</p>'
+    +'<div class="gf-s"><input id="f-gq" maxlength="80" value="'+esc(it.title)+'"><button class="btn sm" data-act="gfsearch" data-id="'+esc(id)+'">다시 찾기</button></div><div id="gf-map" class="gf-map"></div><div id="gf-r" class="gf-r"></div>'
+    +'<div class="foot"><button class="btn" data-act="close">'+(q?'그만하기':'닫기')+'</button>'+(q?'<div class="r"><button class="btn" data-act="gfskip">건너뛰기</button></div>':'')+'</div></div>';
   modal.className='on';geoSearch(id);
 }
-var gfRes=[];
-function geoSearch(id){
-  var q=(document.getElementById('f-gq')||{}).value||'',box=document.getElementById('gf-r');if(!box||!q.trim())return;
+function gfNext(){gfI++;if(gfI<gfQ.length)openGeoFix(gfQ[gfI],true);else{closeModal();gfQ=[];toast('위치 확인 끝!');}}
+function geoSearch(id,q0,a0){
+  var it=items.filter(function(x){return x.id===id;})[0]||{},area=a0!=null?a0:(it.area||'');
+  var q=q0!=null?q0:((document.getElementById('f-gq')||{}).value||''),box=document.getElementById('gf-r');if(!box||!q.trim())return;
   box.innerHTML='<p class="mut">찾는 중…</p>';
   kakaoReady(function(){geoAnchor(function(an){
-    var ps=new kakao.maps.services.Places();
-    function show(r){gfRes=r||[];if(!gfRes.length){box.innerHTML='<p class="mut">결과가 없어요. 이름을 줄이거나 동네 이름을 붙여 보세요.</p>';return;}
-      box.innerHTML=gfRes.slice(0,10).map(function(x,k){return '<button class="gf-i" data-act="gfpick" data-id="'+esc(id)+'" data-k="'+k+'"><b>'+esc(x.place_name)+'</b><small>'+esc(x.road_address_name||x.address_name)+'</small></button>';}).join('');}
-    var opt=an?{bounds:new kakao.maps.LatLngBounds(new kakao.maps.LatLng(an.y-.45,an.x-.6),new kakao.maps.LatLng(an.y+.45,an.x+.6))}:{};
-    ps.keywordSearch(q,function(r,st){if(st===kakao.maps.services.Status.OK&&r.length)return show(r);ps.keywordSearch(q,function(r2,st2){show(st2===kakao.maps.services.Status.OK?r2:[]);});},opt);
+    function show(r){gfRes=rankRes(r||[],area).slice(0,8);if(!gfRes.length){box.innerHTML='<p class="mut">결과가 없어요. 이름을 줄이거나 동네 이름을 붙여 보세요.</p>';return;}
+      box.innerHTML=gfRes.map(function(x,k){var hit=areaHit(x,area);return '<button class="gf-i'+(hit?' hit':'')+'" data-act="gfpick" data-id="'+esc(id)+'" data-k="'+k+'"><b><span class="gf-n">'+(k+1)+'</span>'+esc(x.place_name)+(hit&&k===0?' <em>추천</em>':'')+'</b><small>'+esc(x.road_address_name||x.address_name)+'</small></button>';}).join('');gfMap();}
+    var opt=jejuBounds(an);
+    kwAll(q,opt,function(r){if(r.length||!an)return show(r);kwAll(q,null,show);});
   });});
 }
-var pickGeo=guarded(function(id,k){var x=gfRes[k];if(!x)return;closeModal();toast('위치를 고쳤어요');return db.doc('items/'+id).update({geo:{x:+x.x,y:+x.y},addr:x.road_address_name||x.address_name||''});});
+function gfMap(){
+  var el=document.getElementById('gf-map');if(!el||!gfRes.length){if(el)el.style.display='none';return;}
+  el.style.display='';el.innerHTML='';
+  var bd=new kakao.maps.LatLngBounds(),map=new kakao.maps.Map(el,{center:new kakao.maps.LatLng(+gfRes[0].y,+gfRes[0].x),level:9});
+  map.addControl(new kakao.maps.ZoomControl(),kakao.maps.ControlPosition.RIGHT);
+  gfRes.forEach(function(x,k){var p=new kakao.maps.LatLng(+x.y,+x.x);bd.extend(p);var d=document.createElement('div');d.className='mkw';
+    d.innerHTML='<div class="mk'+(k?' gfo':'')+'">'+(k+1)+'</div>';
+    d.addEventListener('click',function(){var b=document.querySelector('.gf-i[data-k="'+k+'"]');if(b){b.scrollIntoView({block:'nearest',behavior:'smooth'});b.classList.remove('flash2');void b.offsetWidth;b.classList.add('flash2');}});
+    new kakao.maps.CustomOverlay({map:map,position:p,content:d,xAnchor:0,yAnchor:0,zIndex:20-k});});
+  if(gfRes.length>1)map.setBounds(bd,30,30,30,30);else map.setLevel(5);
+}
+function geoFormStatus(){var st=document.getElementById('f-geo-st');if(!st)return;var ad=(document.getElementById('f-addr')||{}).value||'';
+  st.innerHTML=modal.dataset.geox?'<b class="ok">✓ 위치 확인됨</b>':ad.trim()?'주소로 위치를 찾아요':'<span class="warn">아직 위치를 안 골랐어요</span>';}
+function formGeo(){var ti=document.getElementById('f-title'),ar=document.getElementById('f-area'),q=ti?ti.value.trim():'';
+  if(!q){toast('이름을 먼저 적어 주세요.');return;}
+  var b=document.getElementById('f-geo-box');if(!b)return;b.innerHTML='<div id="gf-map" class="gf-map"></div><div id="gf-r" class="gf-r"></div>';
+  geoSearch('',q,ar?ar.value.trim():'');}
+function pickFormGeo(k){var x=gfRes[k];if(!x)return;modal.dataset.geox=x.x;modal.dataset.geoy=x.y;
+  var ad=document.getElementById('f-addr');if(ad)ad.value=x.road_address_name||x.address_name||'';
+  var b=document.getElementById('f-geo-box');if(b)b.innerHTML='<p class="geo-ok">'+esc(x.place_name)+' · '+esc(x.road_address_name||x.address_name||'')+'</p>';geoFormStatus();}
+var pickGeo=guarded(function(id,k){if(!id)return pickFormGeo(k);var x=gfRes[k];if(!x)return;if(gfQ.length)gfNext();else{closeModal();toast('위치를 고쳤어요');}return db.doc('items/'+id).update({geo:{x:+x.x,y:+x.y},addr:x.road_address_name||x.address_name||''});});
 function jumpTo(id){
   var a=document.querySelector('article.it[data-id="'+id+'"]');if(!a)return false;
   var bm=document.querySelector('.tl-mapw.big');if(bm)mapBig(bm.dataset.d);
@@ -845,7 +895,9 @@ function renderTimeline(t,its){
   }
   var un=(sel!=='all')?[]:sortDay(sched.filter(function(i){var e=effDay(i,t);return !e||e>n||e<1;}));
   if(un.length){h+='<div class="tl-day" data-d="0"><div class="tl-dh">날짜 미정</div><div class="tl-list">';un.forEach(function(i){h+=ev(i);});h+='</div></div>';}
-  var mb='';if(window.TB_KAKAO&&tp.length){mapDays.push({d:'t',line:true,pins:tp});mb=mapBlock('t','t',sel==='all'?tleg:'<span>번호 = 타임라인 순서</span>');}
+  var mb='';if(window.TB_KAKAO){
+    if(candOn('t'))its.forEach(function(i){var sc=secOf(i.section);if(sc&&!sc.fixed&&!sc.check&&i.section!=='must'&&!isConf(i))tp.push({i:i,t:'',c:'c',j:1,sub:sc.name+' 후보'+(i.area?' · '+areaLabel(i.area):'')});});
+    if(tp.length||canWrite){mapDays.push({d:'t',line:true,pins:tp});mb=mapBlock('t','t',(sel==='all'?tleg:'<span>번호 = 타임라인 순서</span>')+(candOn('t')?'<span><i style="background:#fff"></i>후보</span>':''));}}
   h=h.replace('%%TLMAP%%',mb);
   return h+'</aside>';
 }
@@ -936,7 +988,7 @@ var saveName=guarded(function(){
   closeModal();
   return db.doc('members/'+uid).set({name:v,updatedAt:Date.now()});
 });
-function closeModal(){modal.className='';modal.innerHTML='';}
+function closeModal(){modal.className='';modal.innerHTML='';delete modal.dataset.geox;delete modal.dataset.geoy;}
 var MODES=[['plane','비행기'],['train','기차'],['car','자가용'],['rent','렌트카'],['bus','버스'],['ship','배'],['etc','기타']];
 var MODE_HINT={
   plane:{lab:'편명',ph:'예) KE1234',from:'예) 김포공항',to:'예) 제주공항'},
@@ -984,6 +1036,7 @@ function openTransportForm(it){
   setTimeout(function(){var f=document.getElementById('f-from');if(f)f.focus();},30);
 }
 function openStayForm(it){
+  delete modal.dataset.geox;delete modal.dataset.geoy;if(it&&it.geo&&it.geo.x){modal.dataset.geox=it.geo.x;modal.dataset.geoy=it.geo.y;}setTimeout(geoFormStatus,0);
   var t=trip();
   var ci=it?(it.checkin||''):((t&&t.startDate)||''),co=it?(it.checkout||''):((t&&t.endDate)||'');
   var h='<div class="card"><h3>'+(it?'숙소 수정':'숙소 추가')+'</h3>';
@@ -993,6 +1046,7 @@ function openStayForm(it){
   h+='<label>메모 (예약번호, 주소, 주차 등)<textarea id="f-memo" maxlength="400">'+esc(it?it.memo:'')+'</textarea></label>';
   h+='<label>링크<input id="f-link" inputmode="url" maxlength="300" value="'+esc(it?it.link:'')+'"></label>';
   h+='<label>주소 <small class="mut">지도 위치에 써요. 네이버 공유 내용을 붙여넣으면 자동으로 들어가요</small><input id="f-addr" maxlength="120" placeholder="예) 제주 제주시 애월읍 ○○로 12" value="'+esc(it?it.addr:'')+'"></label>';
+  h+='<div class="geo-f"><span id="f-geo-st"></span><button type="button" class="lb" data-act="fgeo">지도에서 위치 고르기</button></div><div id="f-geo-box"></div>';
   h+='<div class="foot"><button class="btn" data-act="close">취소</button><div class="r"><button class="btn pri" data-act="saveitem" data-sec="stay" data-id="'+(it?esc(it.id):'')+'">저장</button></div></div></div>';
   modal.innerHTML=h;modal.className='on';
   var a=document.getElementById('f-cin'),b=document.getElementById('f-cout');
@@ -1008,6 +1062,7 @@ function stayWhen(it){
   return w;
 }
 function openItemForm(opts){
+  if(!opts.pre){delete modal.dataset.geox;delete modal.dataset.geoy;var it0=opts.item;if(it0&&it0.geo&&it0.geo.x){modal.dataset.geox=it0.geo.x;modal.dataset.geoy=it0.geo.y;}}setTimeout(geoFormStatus,0);
   var sec0=opts.section||(opts.item&&opts.item.section);
   if(sec0==='transport'){openTransportForm(opts.item||null);return;}
   if(sec0==='stay'){openStayForm(opts.item||null);return;}
@@ -1030,6 +1085,7 @@ function openItemForm(opts){
   if(isMust){var cw=it?(it.who||''):(pre.who||'');h+='<div><div class="lab2">누가 할까요?</div><div class="pk-c" id="f-who"><button type="button" class="cp" data-who="" aria-pressed="'+(!cw)+'">같이 (각자 체크)</button>';memberIds().forEach(function(m){h+='<button type="button" class="cp" data-who="'+esc(m)+'" aria-pressed="'+(cw===m)+'">'+esc(nameOf(m))+'</button>';});h+='</div></div>';}
   if(!isMust)h+='<label>지도 주소 (링크)<input id="f-link" inputmode="url" maxlength="300" placeholder="네이버 지도 공유 내용 붙여넣기" value="'+esc(val('link'))+'"></label>';
   if(!isMust)h+='<label>주소 <small class="mut">지도 위치에 써요. 네이버 공유 내용을 붙여넣으면 자동으로 들어가요</small><input id="f-addr" maxlength="120" placeholder="예) 제주 제주시 애월읍 ○○로 12" value="'+esc(val('addr'))+'"></label>';
+  if(!isMust)h+='<div class="geo-f"><span id="f-geo-st"></span><button type="button" class="lb" data-act="fgeo">지도에서 위치 고르기</button></div><div id="f-geo-box"></div>';
   h+='<label>메모<textarea id="f-memo" maxlength="400" placeholder="영업시간, 가격, 예약 여부, 가고 싶은 이유">'+esc(val('memo'))+'</textarea></label>';
   if(it&&s.sched)h+='<div class="row"><label>일차<select id="f-day">'+dayOptions(t,it.day||0)+'</select></label><label>시간<input id="f-time" type="time" value="'+esc(it.time||'')+'"></label></div>';
   h+='<div class="foot"><button class="btn" data-act="close">취소</button><div class="r"><button class="btn pri" data-act="saveitem" data-sec="'+sec+'" data-id="'+(it?esc(it.id):'')+'">저장</button></div></div></div>';
@@ -1089,8 +1145,10 @@ var saveItem=guarded(function(btn){
     if(id){var old=items.filter(function(x){return x.id===id;})[0];if(old&&safeUrl(old.link)!==safeUrl(data.link))data.closedSrc=null;}
     if(s.sched&&document.getElementById('f-day')){data.day=parseInt(v('f-day'),10)||0;data.time=v('f-time');}
   }
+  var pg=document.getElementById('f-geo-st')&&modal.dataset.geox?{x:+modal.dataset.geox,y:+modal.dataset.geoy}:null;
   closeModal();
   if(id&&'addr' in data){var o2=items.filter(function(x){return x.id===id;})[0];if(o2&&(o2.addr||'')!==data.addr)data.geo=null;}
+  if(pg)data.geo=pg;
   if(id){var was=items.filter(function(x){return x.id===id;})[0];if(was&&was.section!==s.key&&!s.fixed)data.section=s.key;return db.doc('items/'+id).update(data);}
   data.tripId=tripId;data.section=s.key;data.status=s.fixed?'confirmed':'idea';data.done=false;data.likes={};data.createdBy=uid;data.createdAt=Date.now();
   return db.collection('items').add(data);
@@ -1269,6 +1327,10 @@ document.addEventListener('click',function(e){
   else if(a==='savename'){saveName();}
   else if(a==='mapbig'){mapBig(el.dataset.d);}
   else if(a==='gfsearch'){geoSearch(el.dataset.id);}
+  else if(a==='gfskip'){gfNext();}
+  else if(a==='geocheck'){startGeoCheck();}
+  else if(a==='fgeo'){formGeo();}
+  else if(a==='mapcand'){lsSet('mapcand:'+el.dataset.k,candOn(el.dataset.k)?'0':'1');render();}
   else if(a==='gfpick'){pickGeo(el.dataset.id,+el.dataset.k);}
   else if(a==='mapfold'){lsSet('mapfold:'+el.dataset.k,mapFolded(el.dataset.k)?'0':'1');render();}
   else if(a==='pstime'){openStayTime(el.dataset.key);}
@@ -1291,7 +1353,7 @@ document.addEventListener('click',function(e){
     if(armed===it.id){delItem(it);}else{armed=it.id;render();clearTimeout(render.t);render.t=setTimeout(function(){armed=null;render();},3000);}
   }
 });
-document.addEventListener('input',function(e){if(e.target&&e.target.id==='pk-time')pickTime=e.target.value;});
+document.addEventListener('input',function(e){if(e.target&&e.target.id==='pk-time')pickTime=e.target.value;if(e.target&&e.target.id==='f-addr'){delete modal.dataset.geox;delete modal.dataset.geoy;geoFormStatus();}});
 document.addEventListener('paste',function(e){
   var tg=e.target;if(!tg||(tg.id!=='f-link'&&tg.id!=='f-title'))return;
   var txt=(e.clipboardData||window.clipboardData).getData('text'),sh=parseShare(txt);
@@ -1301,7 +1363,7 @@ document.addEventListener('paste',function(e){
   if(lk)lk.value=sh.url;
   if(ti&&sh.name&&(tg.id==='f-title'||!ti.value.trim()))ti.value=sh.name;
   if(ar&&sh.area&&!ar.value.trim()){ar.value=sh.area;syncArea();}
-  var ad=document.getElementById('f-addr');if(ad&&sh.addr)ad.value=sh.addr;
+  var ad=document.getElementById('f-addr');if(ad&&sh.addr){ad.value=sh.addr;delete modal.dataset.geox;delete modal.dataset.geoy;geoFormStatus();}
   if(lk)toast('지도 링크를 넣었어요');
 });
 document.addEventListener('change',function(e){var tg=e.target;if(tg&&tg.id==='f-link'&&/\s/.test(tg.value.trim()))tg.value=pickUrl(tg.value);});
