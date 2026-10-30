@@ -148,6 +148,9 @@ h1{font-family:var(--font-en);font-weight:400;font-size:30px;margin:0;letter-spa
 .card .mut{color:var(--muted);font-size:13px;margin:0 0 10px;line-height:1.5}
 .tl-stay .mut,.tl .mut{color:var(--muted);font-size:12px}
 .tl-dh{font-weight:800;font-size:13px}
+.tl-map{height:220px;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:8px 0 12px;background:var(--soft)}
+.tl-mapn{font-size:11px;color:var(--muted);margin:-6px 0 12px}
+.mk{width:24px;height:24px;border-radius:50%;background:var(--accent);color:#0A0A0A;border:1.5px solid #0A0A0A;font:800 12px/21px sans-serif;text-align:center;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.3)}
 .tl-list{position:relative;margin:8px 0 14px 5px;padding-left:20px;border-left:1px solid var(--line)}
 .ev{position:relative;padding:0 62px 12px 0}
 .rm{position:absolute;right:30px;top:-4px;width:34px;height:34px;display:grid;place-items:center;border:0;background:none;color:var(--muted);border-radius:8px;padding:0}.rm svg{width:15px;height:15px}.rm:hover{color:var(--ink)}
@@ -318,7 +321,7 @@ button:not(.dh):active,[role=button]:not(.dh):active,[role=tab]:active,[role=che
 <script>
 (function(){
 "use strict";
-var API='https://script.google.com/macros/s/AKfycbzimOitL4vXiBqbCFrPjowDhy2qi5GUeLbRCiB1hlXERQqAjm-VM1VP_LszWHqOloVImg/exec';window.TB_API=API;
+var API='https://script.google.com/macros/s/AKfycbzimOitL4vXiBqbCFrPjowDhy2qi5GUeLbRCiB1hlXERQqAjm-VM1VP_LszWHqOloVImg/exec';window.TB_API=API;window.TB_KAKAO='ee68bbeb64e128ef7ad5e55ead5e6579';
 var OLD='u_dlVYupvgl0cBxjHyPC6CYQ';
 var PEOPLE=[{id:'u_sami',name:'새미'},{id:'u_juseong',name:'주성'}];
 var store={trips:{},items:{},members:{}},listeners={},errs={},inflight=0,last='',first={},UID=null,PW='';
@@ -638,6 +641,51 @@ function sortDay(arr){
   return a.concat(b);
 }
 function byTime(a,b){var x=a.time||'99:99',y=b.time||'99:99';if(x!==y)return x<y?-1:1;var r=slotRank(a.slot)-slotRank(b.slot);return r||(a.createdAt||0)-(b.createdAt||0);}
+/* ---------- 동선 지도 (카카오) ---------- */
+var mapDays=[],kakaoState=0,kakaoWait=[];
+function kakaoReady(cb){
+  if(kakaoState===2)return cb();if(kakaoState===3)return;kakaoWait.push(cb);if(kakaoState===1)return;kakaoState=1;
+  var sc=document.createElement('script');sc.src='https://dapi.kakao.com/v2/maps/sdk.js?appkey='+encodeURIComponent(window.TB_KAKAO)+'&libraries=services&autoload=false';
+  sc.onload=function(){try{kakao.maps.load(function(){kakaoState=2;var w=kakaoWait;kakaoWait=[];w.forEach(function(f){f();});});}catch(e){kakaoState=3;}};
+  sc.onerror=function(){kakaoState=3;document.querySelectorAll('.tl-map').forEach(function(m){m.style.display='none';});};
+  document.head.appendChild(sc);
+}
+function geoQuery(i){if(i.pseudo)return i.place;if(i.section==='transport')return (i.dir==='back'?i.from:i.to)||i.title;return i.title;}
+var geoMem={},geoBusy={};
+function geoFind(q,area,cb){
+  var k='geo:'+q;if(k in geoMem)return cb(geoMem[k]);
+  var c=lsGet(k);if(c){try{geoMem[k]=JSON.parse(c);return cb(geoMem[k]);}catch(e){}}
+  if(geoBusy[k]){geoBusy[k].push(cb);return;}geoBusy[k]=[cb];
+  var ps=new kakao.maps.services.Places(),done=function(v){geoMem[k]=v;if(v)lsSet(k,JSON.stringify(v));var w=geoBusy[k];delete geoBusy[k];w.forEach(function(f){f(v);});};
+  ps.keywordSearch(q,function(r,st){
+    if(st===kakao.maps.services.Status.OK&&r.length)return done({x:+r[0].x,y:+r[0].y});
+    if(area){ps.keywordSearch(area+' '+q,function(r2,st2){done(st2===kakao.maps.services.Status.OK&&r2.length?{x:+r2[0].x,y:+r2[0].y}:0);});return;}
+    done(0);
+  });
+}
+function evLink(i){return (!i.pseudo&&i.section!=='transport'&&safeUrl(i.link))||mapUrl(routePlace(i));}
+function drawMaps(){
+  var days=mapDays.filter(function(md){var b=document.querySelector('.tl-map[data-d="'+md.d+'"]');return b&&b.offsetParent;});
+  if(!days.length)return;
+  kakaoReady(function(){days.forEach(function(md){
+    var box=document.querySelector('.tl-map[data-d="'+md.d+'"]');if(!box||!box.offsetParent)return;
+    var note=document.querySelector('.tl-mapn[data-d="'+md.d+'"]'),left=md.list.length,pts=[];
+    md.list.forEach(function(i,k){geoFind(geoQuery(i),i.area?areaLabel(i.area):'',function(v){pts[k]=v;if(--left===0)paint(box,note,md.list,pts);});});
+  });});
+}
+function paint(box,note,list,pts){
+  if(!box.isConnected)return;
+  var ok=[];list.forEach(function(i,k){if(pts[k])ok.push({i:i,n:k+1,p:new kakao.maps.LatLng(pts[k].y,pts[k].x)});});
+  var miss=list.filter(function(i,k){return !pts[k];}).map(function(i){return i.pseudo?i.place:i.title;});
+  if(note)note.textContent=miss.length?'위치를 못 찾은 곳: '+miss.join(', '):'';
+  if(!ok.length){box.style.display='none';return;}
+  var map=new kakao.maps.Map(box,{center:ok[0].p,level:9}),bd=new kakao.maps.LatLngBounds();
+  ok.forEach(function(o){bd.extend(o.p);var el=document.createElement('div');el.className='mk';el.textContent=o.n;el.title=o.i.pseudo?o.i.place:o.i.title;
+    el.onclick=function(){window.open(evLink(o.i),'_blank','noopener');};
+    new kakao.maps.CustomOverlay({map:map,position:o.p,content:el,yAnchor:.5});});
+  if(ok.length>1){new kakao.maps.Polyline({map:map,path:ok.map(function(o){return o.p;}),strokeWeight:3,strokeColor:'#0A0A0A',strokeOpacity:.7,strokeStyle:'shortdash'});map.setBounds(bd,40,40,40,40);}
+  else map.setLevel(6);
+}
 function renderTimeline(t,its){
   var conf=its.filter(function(i){return isConf(i)&&!secOf(i.section).check;});
   var stays=conf.filter(function(i){return i.section==='stay';});
@@ -661,7 +709,7 @@ function renderTimeline(t,its){
     var tt=it.time?timeStr(it):(it.slot?slotName(it.slot):'');
     return '<div class="ev" data-id="'+esc(it.id)+'" data-key="'+esc(it.id)+'">'+(sc.key!=='transport'&&canWrite?'<button class="rm" data-act="unconf" aria-label="일정에서 빼기" title="일정에서 빼기">'+X_SVG+'</button><span class="dh" role="button" tabindex="0" aria-label="순서 바꾸기 (끌어서 이동)">'+DRAG_SVG+'</span>':'')+(tt?'<div class="ev-t">'+esc(tt)+(it.time&&it.slot?' · '+esc(slotName(it.slot)):'')+'</div>':'')+'<div class="ev-n">'+esc(it.title)+'</div><div class="ev-m">'+m+'</div></div>';
   }
-  var n=t.days||2;
+  var n=t.days||2;mapDays=[];
   for(var d=1;d<=n;d++){
     if(sel!=='all'&&String(d)!==sel)continue;
     var dd=sortDay(sched.filter(function(i){return effDay(i,t)===d;}));
@@ -673,6 +721,7 @@ function renderTimeline(t,its){
         h+='<li><span>'+esc(names[k])+(!i.pseudo&&i.area?' <small>'+esc(areaLabel(i.area))+'</small>':'')+'</span><a class="route-leg" href="'+esc(lk)+'" target="_blank" rel="noopener noreferrer">네이버 지도</a></li>';});
       h+='</ol><div class="route-go">네이버 지도에서 장소가 열리면 \'도착\'을 눌러 지금 위치에서 길찾기 하세요</div>';
     }
+    if(dd.length&&window.TB_KAKAO){mapDays.push({d:d,list:dd});h+='<div class="tl-map" data-d="'+d+'"></div><div class="tl-mapn" data-d="'+d+'"></div>';}
     if(dd.length){h+='<div class="tl-list">';dd.forEach(function(i){h+=ev(i);});h+='</div>';}
     else h+='<div class="tl-list"><div class="tl-empty">아직 비어 있어요. 후보에서 일정에 넣거나 여기로 끌어 놓으세요.</div></div>';
     h+='</div>';
@@ -748,6 +797,7 @@ function render(){
     h+='</div></nav><div class="layout v-'+view+'"><div class="bd">'+renderSection(activeSec,its,t)+'</div>'+renderTimeline(t,its)+'</div>';
   }
   app.innerHTML=h;
+  drawMaps();
   if(ready&&!fadedIn){fadedIn=true;app.classList.add('fi');setTimeout(function(){app.classList.remove('fi');},800);}
   if(keep){var q=document.querySelector('[data-quick="'+keep.sec+'"]');if(q){q.focus();try{q.setSelectionRange(keep.pos,keep.pos);}catch(e){}}}
 }
