@@ -160,7 +160,7 @@ h1{font-family:var(--font-en);font-weight:400;font-size:30px;margin:0;letter-spa
 .ev::before{content:"";position:absolute;left:-26px;top:4px;width:11px;height:11px;border-radius:50%;background:var(--accent);border:1.5px solid var(--ink);box-shadow:0 0 0 3px var(--surface)}
 .ev-t{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;font-weight:600}
 .ev-t{position:relative}.ev-tm{font:inherit;color:inherit;background:transparent;border:0;padding:0;margin:0;min-height:0;height:18px;width:auto;max-width:110px}.ev-tm:focus{outline:1px solid var(--line);border-radius:4px}.ev-tm.empty:not(:focus){color:transparent}.ev-tm::-webkit-calendar-picker-indicator{display:none}.ev-tm::-webkit-datetime-edit-fields-wrapper{padding:0}
-.ev-t .ev-ph{position:absolute;left:0;top:0;pointer-events:none;background:var(--surface);padding-right:8px;text-decoration:underline;text-underline-offset:3px}
+.ev-t .ev-tp{position:absolute;left:0;top:0;pointer-events:none;background:var(--surface);padding-right:8px;text-decoration:underline;text-underline-offset:3px}
 .ev-n{font-weight:700;font-size:14px;overflow-wrap:anywhere}
 .ev-m{display:flex;gap:6px 10px;flex-wrap:wrap;align-items:center;margin-top:3px;font-size:12px}
 .ev-m .tag{border:1px solid var(--line);border-radius:999px;padding:0 8px;color:var(--muted)}
@@ -654,7 +654,7 @@ function renderTimeline(t,its){
   for(var k=1;k<=nDays;k++)h+='<button data-act="tlm" data-v="'+k+'" aria-pressed="'+(sel===String(k))+'">'+esc(dayLabel(t,k))+(k===tdn?' <i class="tdot"></i>':'')+'</button>';
   h+='</div>';
   function ev(it){
-    if(it.pseudo)return '<div class="ev" data-key="'+esc(it.id)+'">'+(canWrite?'<span class="dh" role="button" tabindex="0" aria-label="순서 바꾸기 (끌어서 이동)">'+DRAG_SVG+'</span>':'')+'<div class="ev-t"><input type="time" class="ev-tm'+(it.plan?'':' empty')+'" data-act="pstime" data-key="'+esc(it.id)+'" value="'+esc(it.plan)+'" aria-label="갈 시간"'+(canWrite?'':' disabled')+'>'+(it.plan?'':'<span class="ev-ph">시간 정하기</span>')+'</div><div class="ev-n">'+esc(it.title)+'</div><div class="ev-m"><span class="tag">숙소</span>'+(it.base?'<span class="ar2">'+esc(it.base)+'</span>':'')+'<a href="'+esc(mapUrl(it.place))+'" target="_blank" rel="noopener noreferrer" class="ib sm" aria-label="지도 열기">'+LINK_SVG+'</a></div></div>';
+    if(it.pseudo)return '<div class="ev" data-key="'+esc(it.id)+'">'+(canWrite?'<span class="dh" role="button" tabindex="0" aria-label="순서 바꾸기 (끌어서 이동)">'+DRAG_SVG+'</span>':'')+'<div class="ev-t"><input type="time" class="ev-tm'+(it.plan?'':' empty')+'" data-act="pstime" data-key="'+esc(it.id)+'" value="'+esc(it.plan)+'" aria-label="갈 시간"'+(canWrite?'':' disabled')+'>'+(it.plan?'':'<span class="ev-tp">시간 정하기</span>')+'</div><div class="ev-n">'+esc(it.title)+'</div><div class="ev-m"><span class="tag">숙소</span>'+(it.base?'<span class="ar2">'+esc(it.base)+'</span>':'')+'<a href="'+esc(mapUrl(it.place))+'" target="_blank" rel="noopener noreferrer" class="ib sm" aria-label="지도 열기">'+LINK_SVG+'</a></div></div>';
     var sc=secOf(it.section);
     var m='<span class="tag">'+esc(sc.key==='transport'&&it.mode?modeName(it.mode):sc.name)+'</span>'+(closedOn(it,t,effDay(it,t))?'<span class="tag w">휴무일</span>':'')+(it.area?'<span class="ar2">'+esc(areaLabel(it.area))+'</span>':'');
     var evl=(sc.key!=='transport'&&safeUrl(it.link))||mapUrl(routePlace(it));m+='<a href="'+esc(evl)+'" target="_blank" rel="noopener noreferrer" class="ib sm" aria-label="지도 열기">'+LINK_SVG+'</a>';
