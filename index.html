@@ -156,8 +156,8 @@ h1{font-family:var(--font-en);font-weight:400;font-size:30px;margin:0;letter-spa
 .mapc-h .lb{flex:none}
 .mapc-h{flex-wrap:wrap;row-gap:4px}.mapc-h b{margin-right:auto}.mapc-leg{order:3;flex-basis:100%}.mapc-leg:empty{display:none}
 .tl-mapw{position:relative}
-.tl-map{height:210px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--soft)}
-@media (min-width:900px){.tl-map{height:240px}}
+.tl-map{height:min(62vw,320px);border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--soft)}
+@media (min-width:900px){.tl-map{height:320px}}
 .tl-big{position:absolute;left:8px;bottom:8px;z-index:3;width:30px;height:30px;min-height:0;padding:0;border-radius:8px;background:#fff;color:#0A0A0A;border:1px solid rgba(0,0,0,.25);box-shadow:0 1px 4px rgba(0,0,0,.2);display:flex;align-items:center;justify-content:center;cursor:pointer}
 .tl-big svg{width:16px;height:16px}
 .tl-mapw.big{position:fixed;inset:0;z-index:80;background:var(--bg)}
@@ -211,7 +211,6 @@ h1{font-family:var(--font-en);font-weight:400;font-size:30px;margin:0;letter-spa
 .ms-q{display:flex;align-items:center;gap:8px;margin-top:4px;font-size:11px;color:#7A3E00;font-weight:600}
 .ms-q button{min-height:0;padding:0;border:0;background:none;font-family:inherit;font-size:11px;font-weight:700;color:#7A3E00;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
 .ms-q2,.ms-q2 button{color:#6C6C6C;font-weight:500}
-@media (max-width:600px){.tl-mapw.has-sheet .tl-map{height:260px}}
 .mk.sel{transform:scale(1.5);box-shadow:0 0 0 3px rgba(200,255,46,.6),0 2px 6px rgba(0,0,0,.4)}
 .mk.c.sel,.mk.s.sel{transform:scale(1.8)}
 .tl-mapw.big .msheet{left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom))}
@@ -796,7 +795,7 @@ function paint(box,note,md,pts){
   map.addControl(new kakao.maps.ZoomControl(),kakao.maps.ControlPosition.RIGHT);
   /* 핀을 누르면 지도 아래쪽 카드에 정보를 보여 줘요 (지도 밖으로 잘리지 않게) */
   var sh=w.querySelector('.msheet');if(!sh){sh=document.createElement('div');sh.className='msheet';w.appendChild(sh);}
-  function closeSheet(){if(sel){sel.classList.remove('sel');sel.parentNode.style.zIndex='';}var had=w.classList.contains('has-sheet');sel=null;sh.innerHTML='';w.classList.remove('has-sheet');if(had)map.relayout();}
+  function closeSheet(){if(sel){sel.classList.remove('sel');sel.parentNode.style.zIndex='';}var had=w.classList.contains('has-sheet');sel=null;sh.innerHTML='';w.classList.remove('has-sheet');if(had&&mapObjs[box.dataset.d])fitMap(mapObjs[box.dataset.d]);}
   closeSheet();
   kakao.maps.event.addListener(map,'click',closeSheet);
   function syncLbl(){w.classList.toggle('zl',map.getLevel()<=7||ok.length<=4&&md.line);}
@@ -814,8 +813,8 @@ function paint(box,note,md,pts){
       sh.innerHTML='<div class="ms-r"><div class="ms-t"'+(hasRow&&!fromList?' data-m="j" role="button"':'')+'><b>'+esc(nm)+'</b>'+(meta?'<small>'+esc(meta)+'</small>':'')+'</div>'
         +'<button class="ms-i pri" data-m="n" aria-label="네이버 지도" title="네이버 지도">N</button><button class="ms-i" data-m="x" aria-label="닫기">'+X_SVG+'</button></div>'
         +(o.src==='name'&&fx?'<div class="ms-q">이 위치 맞아요? <button data-m="ok">맞아요</button><button data-m="f">고치기</button></div>':(fx?'<div class="ms-q ms-q2"><button data-m="f">위치 고치기</button></div>':''));
-      sh.dataset.x=o.x;sh.dataset.y=o.y;sh.dataset.a=o.a||'';sh.dataset.id=i.id||'';sh.dataset.fid=i.sid||i.id||'';sh.dataset.link=evLink(i);w.classList.add('has-sheet');map.relayout();
-      try{var pr=map.getProjection(),pt=pr.pointFromCoords(o.p);pt.y+=sh.offsetHeight/2;map.panTo(pr.coordsFromPoint(pt));}catch(e){map.panTo(o.p);}
+      sh.dataset.x=o.x;sh.dataset.y=o.y;sh.dataset.a=o.a||'';sh.dataset.id=i.id||'';sh.dataset.fid=i.sid||i.id||'';sh.dataset.link=evLink(i);w.classList.add('has-sheet');
+      if(map.getLevel()>5)map.setLevel(5);map.setCenter(o.p);try{var pr=map.getProjection(),pt=pr.pointFromCoords(o.p);pt.y+=sh.offsetHeight/2;map.setCenter(pr.coordsFromPoint(pt));}catch(e){}
     }
     if(i.id)byId[i.id]=open;
     el.addEventListener('click',function(e){e.stopPropagation();open(false);});
