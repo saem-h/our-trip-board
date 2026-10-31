@@ -654,6 +654,7 @@ function itemHTML(it,s,t,tag){
   var ct=closedTxt(it);if(ct&&it.closed&&it.closed.length)sp.push('<span class="cl">'+esc(ct)+'</span>');
   var first=sp.join(' · ');
   h+='<button class="it-m" data-act="row" aria-expanded="'+open+'"><span class="it-t">'+(tag?'<em class="tg" data-s="'+s.key+'">'+esc(s.name)+'</em>':'')+esc(it.title)+(it.area&&!groupedNow?'<em class="loc">'+esc(areaLabel(it.area))+'</em>':'')+(both?'<em class="both">둘 다</em>':'')+(isNew?'<em class="new">new</em>':'')+'</span>'+(first?'<span class="it-s">'+first+'</span>':'')+'</button>';
+  if(safeUrl(it.link))h+='<a class="ib" href="'+esc(safeUrl(it.link))+'" target="_blank" rel="noopener noreferrer" aria-label="링크 열기" title="링크 열기">'+LINK_SVG+'</a>';
   if(!s.check)h+='<button class="ib cf'+(conf?' on':'')+'" data-act="confirm" aria-pressed="'+conf+'" aria-label="'+(conf?'확정 취소':'일정에 넣기')+'" title="'+(conf?'일정에 넣음 (누르면 취소)':'일정에 넣기')+'">'+(conf?CALOK_SVG:CALADD_SVG)+'</button>';
   h+='</div>';
   if(pickId===it.id&&!s.check){
@@ -672,7 +673,7 @@ function itemHTML(it,s,t,tag){
     var m='',lk=safeUrl(it.link);
     if(s.sched&&conf)m+='<select data-act="day" aria-label="일차">'+dayOptions(t,effDay(it,t))+'</select>'+(s.key==='food'?'<select data-act="slot" aria-label="식사·간식">'+slotOpts(it.slot||'')+'</select>':'')+(it.time?'<span>'+esc(it.time)+'</span>':'');
     if(m)h+='<div class="it-meta">'+m+'</div>';
-    h+='<div class="it-a">'+(safeUrl(it.link)?'<a class="lb" href="'+esc(safeUrl(it.link))+'" target="_blank" rel="noopener noreferrer">네이버 지도</a>':'')+'<button class="lb" data-act="edit">수정</button><button class="lb'+(armed===it.id?' warn':'')+'" data-act="del">'+(armed===it.id?'정말 삭제':'삭제')+'</button>';
+    h+='<div class="it-a"><button class="lb" data-act="edit">수정</button><button class="lb'+(armed===it.id?' warn':'')+'" data-act="del">'+(armed===it.id?'정말 삭제':'삭제')+'</button>';
     if(it.createdBy)h+='<span>'+esc(nameOf(it.createdBy))+' 등록</span>';
     if(!s.check&&likes.length)h+='<span>'+likes.map(nameOf).map(esc).join(', ')+' 좋아요</span>';
     h+='</div></div>';
