@@ -727,7 +727,7 @@ function renderSection(key,its,t){
   if(areaFilter&&areas.indexOf(areaFilter)<0)areaFilter='';
   var a=secOf(addSec);
   var dis=canWrite?'':' disabled';
-  var h='<div class="addbar"><button class="add-b" data-act="add" data-sec="'+(all?'':key)+'"'+dis+'>+ '등록하기</button></div>';
+  var h='<div class="addbar"><button class="add-b" data-act="add" data-sec="'+(all?'':key)+'"'+dis+'>+ 등록하기</button></div>';
   if(false&&areas.length&&!all){h+='<div class="areaf"><button data-act="areaf" data-v="" aria-pressed="'+(areaFilter==='')+'">전체 위치</button>';areas.forEach(function(x){h+='<button data-act="areaf" data-v="'+esc(x)+'" aria-pressed="'+(areaFilter===x)+'">'+esc(x)+'</button>';});h+='</div>';}
   if(false)list=list.filter(function(i){return i.area===areaFilter;});
   if(key==='must'){h+='<div class="areaf"><button data-act="mustf" data-v="" aria-pressed="'+(!mustMine)+'">전체</button><button data-act="mustf" data-v="1" aria-pressed="'+mustMine+'">내 할 일</button></div>';if(mustMine)list=list.filter(function(i){return i.who?i.who===uid:!(i.doneBy&&i.doneBy[uid]);});}
