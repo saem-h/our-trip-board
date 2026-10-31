@@ -196,6 +196,7 @@ h1{font-family:var(--font-en);font-weight:400;font-size:30px;margin:0;letter-spa
 .geo-f{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;color:var(--muted);margin:-4px 0 6px}
 .geo-f .ok{color:var(--ink)}.geo-f .warn{color:#B54708}
 .geo-ok{font-size:12px;border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin:0 0 8px}
+.gf-i em.nv{background:#03C75A;color:#fff}
 .gf-i.hit{border-color:var(--ink)}.gf-i em{font-style:normal;font-size:10px;font-weight:800;background:var(--accent);color:#0A0A0A;border-radius:999px;padding:1px 6px;margin-left:4px;vertical-align:1px}
 .gf-s{display:flex;gap:6px;margin:10px 0}.gf-s input{flex:1;min-width:0}
 .gf-r{display:flex;flex-direction:column;gap:6px;max-height:50vh;overflow-y:auto}
@@ -755,14 +756,28 @@ function areaHit(x,area){var ad=(x.road_address_name||'')+' '+(x.address_name||'
 function rankRes(r,area){if(!area)return r;return r.filter(function(x){return areaHit(x,area);}).concat(r.filter(function(x){return !areaHit(x,area);}));}
 function kwAll(q,opt,cb){new kakao.maps.services.Places().keywordSearch(q,function(r,st){cb(st===kakao.maps.services.Status.OK?r:[]);},opt||{});}
 /* 여행지 근처(약 50km)에서만 찾고, 등록한 위치(구좌, 제주시…)와 주소가 맞는 곳을 먼저 골라요 */
+/* 네이버 지역 검색 (Apps Script가 대신 물어봐요). 서버에 키가 없으면 조용히 카카오만 써요 */
+var nsOff=false;
+function inArea(x,an){return !an||(Math.abs(+x.y-an.y)<=.45&&Math.abs(+x.x-an.x)<=.6);}
+function nSearch(q,an,cb){
+  if(nsOff||API_URL.indexOf('http')!==0)return cb([]);
+  memo('nsr:'+q,function(done){
+    fetch(API_URL+'?action=nsearch&q='+encodeURIComponent(q)).then(function(r){return r.json();}).then(function(j){
+      if(!j||!j.ok||!Array.isArray(j.items)){if(!j||j.error!=='empty')nsOff=true;return done(0);}
+      done(j.items.map(function(x){return {place_name:x.name,road_address_name:x.road||'',address_name:x.addr||'',x:x.x,y:x.y,nv:1};}));
+    }).catch(function(){nsOff=true;done(0);});
+  },function(v){cb((v||[]).filter(function(x){return inArea(x,an);}));});
+}
 function geoFind(q,area,cb){
   geoAnchor(function(an){
     var ak=an?(an.y.toFixed(1)+','+an.x.toFixed(1)):'-';
-    memo('geo3:'+ak+':'+area+':'+q,function(done){
+    memo('geo4:'+ak+':'+area+':'+q,function(done){
       var opt=jejuBounds(an);
       function pick(r){var x=rankRes(r,area)[0];return x?{x:+x.x,y:+x.y,a:x.road_address_name||x.address_name||''}:0;}
-      kwAll(q,opt,function(r){if(r.length&&(!area||areaHit(r[0],area)||r.some(function(x){return areaHit(x,area);})))return done(pick(r));
-        if(!area)return done(0);kwAll(area+' '+q,opt,function(r2){done(pick(r2.length?r2:r));});});
+      function kakao_(){kwAll(q,opt,function(r){if(r.length&&(!area||areaHit(r[0],area)||r.some(function(x){return areaHit(x,area);})))return done(pick(r));
+        if(!area)return done(0);kwAll(area+' '+q,opt,function(r2){done(pick(r2.length?r2:r));});});}
+      var an2=an,hint=(area||anchorName()||'');
+      nSearch((hint?hint+' ':'')+q,an2,function(n){var p=n.length?pick(n):0;if(p){p.nv=1;return done(p);}kakao_();});
     },cb);
   });
 }
@@ -857,9 +872,13 @@ function geoSearch(id,q0,a0){
   box.innerHTML='<p class="mut">찾는 중…</p>';
   kakaoReady(function(){geoAnchor(function(an){
     function show(r){gfRes=rankRes(r||[],area).slice(0,8);if(!gfRes.length){box.innerHTML='<p class="mut">결과가 없어요. 이름을 줄이거나 동네 이름을 붙여 보세요.</p>';return;}
-      box.innerHTML=gfRes.map(function(x,k){var hit=areaHit(x,area);return '<button class="gf-i'+(hit?' hit':'')+'" data-act="gfpick" data-id="'+esc(id)+'" data-k="'+k+'"><b><span class="gf-n">'+(k+1)+'</span>'+esc(x.place_name)+(hit&&k===0?' <em>추천</em>':'')+'</b><small>'+esc(x.road_address_name||x.address_name)+'</small></button>';}).join('');gfMap();}
+      box.innerHTML=gfRes.map(function(x,k){var hit=areaHit(x,area);return '<button class="gf-i'+(hit?' hit':'')+'" data-act="gfpick" data-id="'+esc(id)+'" data-k="'+k+'"><b><span class="gf-n">'+(k+1)+'</span>'+esc(x.place_name)+(hit&&k===0?' <em>추천</em>':'')+(x.nv?' <em class="nv">네이버</em>':'')+'</b><small>'+esc(x.road_address_name||x.address_name)+'</small></button>';}).join('');gfMap();}
     var opt=jejuBounds(an);
-    kwAll(q,opt,function(r){if(r.length||!an)return show(r);kwAll(q,null,show);});
+    var hint=(area||anchorName()||'');
+    nSearch((hint?hint+' ':'')+q,an,function(n){kwAll(q,opt,function(r){
+      var seen={};n.forEach(function(x){seen[(x.road_address_name||x.address_name).replace(/\s/g,'')]=1;});
+      var all=n.concat(r.filter(function(x){return !seen[(x.road_address_name||x.address_name).replace(/\s/g,'')];}));
+      if(all.length||!an)return show(all);kwAll(q,null,show);});});
   });});
 }
 function gfMap(){
