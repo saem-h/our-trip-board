@@ -322,7 +322,7 @@ button:not(.dh):active,[role=button]:not(.dh):active,[role=tab]:active,[role=che
   button:active,[role=button]:active,[role=tab]:active,[role=checkbox]:active,.tab:active,.chip:active,.mchip:active,.btn:active,.ib:active,.lb:active,.cp:active,.rm:active,.lk:active,.chk:active,.add-b:active,.linkbtn:active{transform:none}
 }
 /* like pulse */
-.lk{position:relative}
+.lk{position:relative;-webkit-tap-highlight-color:transparent;transition:transform .12s ease}.lk:active{transform:scale(.82)}
 .lk[aria-pressed="true"]{color:#f3b7bd}
 .lk[aria-pressed="true"] svg{fill:currentColor;stroke:currentColor}
 .lk .hw{position:relative;display:grid;place-items:center;width:17px;height:17px}
@@ -1053,6 +1053,12 @@ var saveName=guarded(function(){
   closeModal();
   return db.doc('members/'+uid).set({name:v,updatedAt:Date.now()});
 });
+/* 햅틱: 안드로이드는 진동, 아이폰(iOS 18+ 사파리)은 숨긴 스위치를 눌러서 '톡' 느낌을 내요 */
+var hapEl=null;
+function haptic(){
+  try{if(navigator.vibrate&&navigator.vibrate(12))return;}catch(e){}
+  try{if(!hapEl){hapEl=document.createElement('label');hapEl.setAttribute('aria-hidden','true');hapEl.style.cssText='position:fixed;left:-9999px;width:1px;height:1px;overflow:hidden;opacity:0';var c=document.createElement('input');c.type='checkbox';c.setAttribute('switch','');c.tabIndex=-1;hapEl.appendChild(c);document.body.appendChild(hapEl);}hapEl.click();}catch(e){}
+}
 function closeModal(){modal.className='';modal.innerHTML='';delete modal.dataset.geox;delete modal.dataset.geoy;}
 var MODES=[['plane','비행기'],['train','기차'],['car','자가용'],['rent','렌트카'],['bus','버스'],['ship','배'],['etc','기타']];
 var MODE_HINT={
@@ -1415,7 +1421,7 @@ document.addEventListener('click',function(e){
   else if(a==='savetrip'){saveTrip(el);}
   else if(a==='deltrip'){delTrip();}
   else if(a==='edit'){it=itemFrom(el);if(!it)return;if(!canWrite){toast('보기 전용이에요.');return;}openItemForm({item:it});}
-  else if(a==='like'){it=itemFrom(el);if(it)toggleLike(it);}
+  else if(a==='like'){it=itemFrom(el);if(it){haptic();toggleLike(it);}}
   else if(a==='confirm'){it=itemFrom(el);if(it){if(isConf(it))toggleConfirm(it);else{pickId=pickId===it.id?null:it.id;pickDay=0;pickSlot='';pickTime='';render();}}}
   else if(a==='pickday'){pickDay=parseInt(el.dataset.v,10)||0;render();}
   else if(a==='pickslot'){pickSlot=el.dataset.v;render();}
