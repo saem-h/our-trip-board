@@ -393,7 +393,7 @@ button:not(.dh):active,[role=button]:not(.dh):active,[role=tab]:active,[role=che
   body{padding-bottom:env(safe-area-inset-bottom,0px)}
   .msheet button,.msheet a{min-height:40px}
 }
-/* PREVIEW: 같은 색, 더 많은 여백, 작은 아이콘, 교통·숙소 컴팩트 */
+/* PREVIEW: 같은 색, 더 많은 여백, 작은 아이콘, 교통·숙소 접힘, 요약 줄 숨김 */
 .chip-list{gap:12px!important;margin:18px 0 8px!important}
 .layout>*+*{margin-top:28px}
 .tl-map{margin-top:14px;margin-bottom:14px}
@@ -405,6 +405,7 @@ button:not(.dh):active,[role=button]:not(.dh):active,[role=tab]:active,[role=che
 .pin-grid{gap:0 16px}
 .pr{padding:8px 0}
 .pr-m,.pr-s{display:none}
+.bar .st{display:none}
 @media (max-width:640px){
   .layout>*+*{margin-top:24px}
   .chip-list{gap:14px 12px!important}
@@ -518,7 +519,7 @@ var SECTIONS=[
   {key:'must',en:'to do',name:'해야 할 일',hint:'예약, 챙길 것, 놓치면 안 되는 것',check:true,doneWord:'완료',ph:'예) 체험 프로그램 예약하기'}
 ];
 var db=null,user=null,uid=null,canWrite=true;
-var groupedNow=false,dragActive=false,renderPending=false,members={},nameAsked=false,areaFilter='',seenAt=0,seenFor=null,viewInit=false,tlMode=null,routeOpen={},pickTime='',pickId=null,pickDay=0,pickSlot='',addSec='food',trips=[],items=[],tripId=null,view='board',activeSec=(function(){try{var v=localStorage.getItem('sec');return (v&&v!=='all')?v:'food';}catch(e){return 'food';}})(),openId=null,infoOpen=true,profs={},armed=null,ready=false,offline=false,quickVals={};
+var groupedNow=false,dragActive=false,renderPending=false,members={},nameAsked=false,areaFilter='',seenAt=0,seenFor=null,viewInit=false,tlMode=null,routeOpen={},pickTime='',pickId=null,pickDay=0,pickSlot='',addSec='food',trips=[],items=[],tripId=null,view='board',activeSec=(function(){try{var v=localStorage.getItem('sec');return (v&&v!=='all')?v:'food';}catch(e){return 'food';}})(),openId=null,infoOpen=false,profs={},armed=null,ready=false,offline=false,quickVals={};
 var scaleT=null,fadedIn=false,API_URL=window.TB_API||'',app=document.getElementById('app'),modal=document.getElementById('modal'),toastEl=document.getElementById('toast');
 
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
