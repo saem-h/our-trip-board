@@ -519,7 +519,7 @@ function parseShare(txt){
 }
 function safeUrl(u){u=pickUrl(u);if(!u)return '';try{var x=new URL(/^https?:\/\//i.test(u)?u:'https://'+u);return x.href;}catch(e){return '';}}
 function host(u){try{return new URL(u).hostname.replace(/^www\./,'');}catch(e){return u;}}
-function routePlace(i){if(i.pseudo)return i.place;if(i.section==='transport')return (i.dir==='back'?i.from:i.to)||i.title;return i.title+(i.area?' '+i.area:'');}
+function routePlace(i){if(i.pseudo)return i.place;if(i.section==='transport')return (i.mode==='rent'?i.from:i.dir==='back'?i.from:i.to)||i.title;return i.title+(i.area?' '+i.area:'');}
 function mapUrl(q){return 'https://map.naver.com/p/search/'+encodeURIComponent(q);}
 function todayStr(){var n=new Date();return n.getFullYear()+'-'+('0'+(n.getMonth()+1)).slice(-2)+'-'+('0'+n.getDate()).slice(-2);}
 function todayDayOf(t){if(!t||!t.startDate||!t.endDate)return 0;var td=todayStr();if(td<t.startDate||td>t.endDate)return 0;return diffDays(t.startDate,td)+1;}
@@ -732,7 +732,7 @@ function kakaoReady(cb){
   sc.onerror=function(){kakaoState=3;document.querySelectorAll('.mapc').forEach(function(m){m.style.display='none';});};
   document.head.appendChild(sc);
 }
-function geoQuery(i){if(i.pseudo)return i.place;if(i.section==='transport')return (i.dir==='back'?i.from:i.to)||i.title;return i.title;}
+function geoQuery(i){if(i.pseudo)return i.place;if(i.section==='transport')return (i.mode==='rent'?i.from:i.dir==='back'?i.from:i.to)||i.title;return i.title;}
 function anchorName(){var t=trip(),n=(t&&t.name)||'';for(var i=0;i<REGIONS.length;i++){var m=n.match(REGIONS[i][0]);if(m)return m[0];}return '';}
 var geoMem={},geoBusy={};
 function memo(k,fn,cb){
@@ -895,6 +895,7 @@ function renderTimeline(t,its){
   var stays=conf.filter(function(i){return i.section==='stay';});
   var sched=conf.filter(function(i){return secOf(i.section).sched;});
   var cnt=sched.length;
+  sched.slice().forEach(function(r){if(r.section==='transport'&&r.mode==='rent'&&r.rdate)sched.push({pseudo:true,rent:true,place:r.to||r.from||'렌터카',id:'rr'+r.id,title:'렌터카 반납'+(r.name?' · '+r.name:''),time:r.arrive||'',plan:r.arrive||'',base:r.to||'',date:r.rdate,createdAt:r.createdAt||0});});
   stays.forEach(function(st){
     if(st.checkin)sched.push({pseudo:true,ord:st.ordIn,place:st.title,id:'si'+st.id,sid:st.id,addr:st.addr,geo:st.geo,title:'체크인 · '+st.title,time:st.cinPlan||st.cinTime||'',plan:st.cinPlan||'',base:st.cinTime?st.cinTime+'부터':'',date:st.checkin,createdAt:st.createdAt||0});
     if(st.checkout)sched.push({pseudo:true,ord:st.ordOut,place:st.title,id:'so'+st.id,sid:st.id,addr:st.addr,geo:st.geo,title:'체크아웃 · '+st.title,time:st.coutPlan||st.coutTime||'',plan:st.coutPlan||'',base:st.coutTime?st.coutTime+'까지':'',date:st.checkout,createdAt:st.createdAt||0});
@@ -906,12 +907,13 @@ function renderTimeline(t,its){
   for(var k=1;k<=nDays;k++)h+='<button data-act="tlm" data-v="'+k+'" aria-pressed="'+(sel===String(k))+'">'+esc(dayLabel(t,k))+(k===tdn?' <i class="tdot"></i>':'')+'</button>';
   h+='</div>';
   function ev(it,num,col){var dn=num?' data-n="'+num+'"'+(col?' style="--dc:'+col+'"':''):'';
+    if(it.rent)return '<div class="ev" data-key="'+esc(it.id)+'"'+dn+'>'+(it.time?'<div class="ev-t">'+esc(it.time)+'</div>':'')+'<div class="ev-n">'+esc(it.title)+'</div><div class="ev-m"><span class="tag">렌터카</span>'+(it.base?'<span class="ar2">'+esc(it.base)+'</span>':'')+'<a href="'+esc(mapUrl(it.place))+'" target="_blank" rel="noopener noreferrer" class="ib sm" aria-label="지도 열기">'+LINK_SVG+'</a></div></div>';
     if(it.pseudo)return '<div class="ev" data-key="'+esc(it.id)+'"'+dn+'>'+(canWrite?'<span class="dh" role="button" tabindex="0" aria-label="순서 바꾸기 (끌어서 이동)">'+DRAG_SVG+'</span>':'')+'<div class="ev-t"><button type="button" class="ev-tb'+(it.plan?'':' empty')+'" data-act="pstime" data-key="'+esc(it.id)+'" aria-label="시간 정하기"'+(canWrite?'':' disabled')+'>'+esc(it.plan||'시간 정하기')+'</button></div><div class="ev-n">'+esc(it.title)+'</div><div class="ev-m"><span class="tag">숙소</span>'+(it.base?'<span class="ar2">'+esc(it.base)+'</span>':'')+'<a href="'+esc(mapUrl(it.place))+'" target="_blank" rel="noopener noreferrer" class="ib sm" aria-label="지도 열기">'+LINK_SVG+'</a></div></div>';
     var sc=secOf(it.section);
     var m='<span class="tag">'+esc(sc.key==='transport'&&it.mode?modeName(it.mode):sc.name)+'</span>'+(closedOn(it,t,effDay(it,t))?'<span class="tag w">휴무일</span>':'')+(it.area?'<span class="ar2">'+esc(areaLabel(it.area))+'</span>':'');
     var evl=(sc.key!=='transport'&&safeUrl(it.link))||mapUrl(routePlace(it));m+='<a href="'+esc(evl)+'" target="_blank" rel="noopener noreferrer" class="ib sm" aria-label="지도 열기">'+LINK_SVG+'</a>';
-    var tt=it.time?timeStr(it):(it.slot?slotName(it.slot):'');
-    return '<div class="ev" data-id="'+esc(it.id)+'" data-key="'+esc(it.id)+'"'+dn+'>'+(sc.key!=='transport'&&canWrite?'<button class="rm" data-act="unconf" aria-label="일정에서 빼기" title="일정에서 빼기">'+X_SVG+'</button><span class="dh" role="button" tabindex="0" aria-label="순서 바꾸기 (끌어서 이동)">'+DRAG_SVG+'</span>':'')+(tt?'<div class="ev-t">'+esc(tt)+(it.time&&it.slot?' · '+esc(slotName(it.slot)):'')+'</div>':'')+'<div class="ev-n">'+esc(it.title)+'</div><div class="ev-m">'+m+'</div></div>';
+    var tt=it.mode==='rent'?(it.time||''):it.time?timeStr(it):(it.slot?slotName(it.slot):'');
+    return '<div class="ev" data-id="'+esc(it.id)+'" data-key="'+esc(it.id)+'"'+dn+'>'+(sc.key!=='transport'&&canWrite?'<button class="rm" data-act="unconf" aria-label="일정에서 빼기" title="일정에서 빼기">'+X_SVG+'</button><span class="dh" role="button" tabindex="0" aria-label="순서 바꾸기 (끌어서 이동)">'+DRAG_SVG+'</span>':'')+(tt?'<div class="ev-t">'+esc(tt)+(it.time&&it.slot?' · '+esc(slotName(it.slot)):'')+'</div>':'')+'<div class="ev-n">'+esc(it.mode==='rent'?'렌터카 픽업'+(it.name?' · '+it.name:''):it.title)+'</div><div class="ev-m">'+m+'</div></div>';
   }
   var n=t.days||2,tp=[],tleg='';h+='%%TLMAP%%';
   for(var d=1;d<=n;d++){
@@ -949,10 +951,11 @@ function renderFixed(t,its){
     mine.forEach(function(it){
       var when='';
       var tm=it.time?(it.time+(it.arrive?' → '+it.arrive:'')):'';
+      if(sc.key==='transport'&&it.mode==='rent'){when=[it.date?'픽업 '+wkd(it.date)+(it.time?' '+it.time:''):'',it.rdate?'반납 '+wkd(it.rdate)+(it.arrive?' '+it.arrive:''):''].filter(Boolean).join(' → ');}else
       if(sc.key==='stay'&&(it.checkin||it.checkout)){when=stayWhen(it);}else
       if(it.date)when=wkd(it.date)+(tm?' '+tm:'');else if(sc.sched&&it.day)when=dayLabel(t,it.day)+(tm?' '+tm:'');else if(sc.sched&&tm)when=tm;
       var lk=safeUrl(it.link),tags='';
-      if(sc.key==='transport'){tags=[it.mode?modeName(it.mode):'',it.dir?dirName(it.dir):''].filter(Boolean).join(' · ');}
+      if(sc.key==='transport'){tags=it.mode==='rent'?'':[it.mode?modeName(it.mode):'',it.dir?dirName(it.dir):''].filter(Boolean).join(' · ');}
       h+='<article class="pr" data-id="'+esc(it.id)+'"><div class="pr-main"><div class="pr-n">'+(tags?'<span class="pr-tag">'+esc(tags)+'</span>':'')+esc(it.title)+(it.name?' <span class="pr-s">'+esc(it.name)+'</span>':'')+'</div>';
       if(when)h+='<div class="pr-w">'+esc(when)+'</div>';
       if(it.memo)h+='<div class="pr-m">'+esc(it.memo)+'</div>';
@@ -1044,12 +1047,14 @@ function openTransportForm(it){
   var t=trip(),mode=it?(it.mode||'etc'):'plane',dir=it?(it.dir||'out'):'out';
   var h='<div class="card"><h3>'+(it?'교통편 수정':'교통 추가')+'</h3><div><div class="lab2">이동 수단</div><div class="modes" id="f-modes">';
   MODES.forEach(function(m){h+='<button type="button" class="mchip" data-m="'+m[0]+'" aria-pressed="'+(m[0]===mode)+'">'+m[1]+'</button>';});
-  h+='</div></div><label>언제 타나요?<select id="f-dir">';
+  h+='</div></div><label id="w-dir">언제 타나요?<select id="f-dir">';
   DIRS.forEach(function(d){h+='<option value="'+d[0]+'"'+(d[0]===dir?' selected':'')+'>'+d[1]+'</option>';});
-  h+='</select></label><div class="row"><label>출발지<input id="f-from" maxlength="40" value="'+esc(it?it.from:'')+'"></label><label>도착지<input id="f-to" maxlength="40" value="'+esc(it?it.to:'')+'"></label></div>';
+  h+='</select></label><div class="row"><label><span id="lb-from">출발지</span><input id="f-from" maxlength="40" value="'+esc(it?it.from:'')+'"></label><label><span id="lb-to">도착지</span><input id="f-to" maxlength="40" value="'+esc(it?it.to:'')+'"></label></div>';
   h+='<label><span id="lb-name"></span><input id="f-name" maxlength="60" value="'+esc(it?it.name:'')+'"></label>';
   var dv=it?(it.date||(effDay(it,t)>0&&t&&t.startDate?addDays(t.startDate,effDay(it,t)-1):'')):((t&&t.startDate)||'');
-  h+='<label>날짜<input id="f-date" type="date" value="'+esc(dv)+'"'+(t&&t.startDate?' min="'+esc(t.startDate)+'"':'')+(t&&t.endDate?' max="'+esc(t.endDate)+'"':'')+'></label><div class="row"><label>출발 시간<input id="f-time" type="time" value="'+esc(it?it.time:'')+'"></label><label>도착 시간<input id="f-arrive" type="time" value="'+esc(it?it.arrive:'')+'"></label></div>';
+  var mn=t&&t.startDate?' min="'+esc(t.startDate)+'"':'',mx=t&&t.endDate?' max="'+esc(t.endDate)+'"':'',rv=it?(it.rdate||''):((t&&t.endDate)||'');
+  h+='<div class="row" id="w-norm"><label>날짜<input id="f-date" type="date" value="'+esc(dv)+'"'+mn+mx+'></label></div><div class="row"><label><span id="lb-time">출발 시간</span><input id="f-time" type="time" value="'+esc(it?it.time:'')+'"></label><label id="w-arr"><span id="lb-arr">도착 시간</span><input id="f-arrive" type="time" value="'+esc(it?it.arrive:'')+'"></label></div>';
+  h+='<div class="row" id="w-ret" style="display:none"><label>반납 날짜<input id="f-rdate" type="date" value="'+esc(rv)+'"'+mn+mx+'></label><label>반납 시간<input id="f-rtime" type="time" value="'+esc(it?it.arrive:'')+'"></label></div>';
   h+='<label>메모 (예약번호, 좌석, 주차 등)<textarea id="f-memo" maxlength="400">'+esc(it?it.memo:'')+'</textarea></label>';
   h+='<label>링크<input id="f-link" inputmode="url" maxlength="300" value="'+esc(it?it.link:'')+'"></label>';
   h+='<div class="foot"><button class="btn" data-act="close">취소</button><div class="r"><button class="btn pri" data-act="saveitem" data-sec="transport" data-id="'+(it?esc(it.id):'')+'">저장</button></div></div></div>';
@@ -1060,6 +1065,11 @@ function openTransportForm(it){
     document.getElementById('f-name').placeholder=hh.ph;
     document.getElementById('f-from').placeholder=hh.from;
     document.getElementById('f-to').placeholder=hh.to;
+    var rent=k==='rent';
+    document.getElementById('w-dir').style.display=rent?'none':'';document.getElementById('w-arr').style.display=rent?'none':'';document.getElementById('w-ret').style.display=rent?'':'none';
+    document.getElementById('lb-from').textContent=rent?'픽업 장소':'출발지';document.getElementById('lb-to').textContent=rent?'반납 장소':'도착지';
+    document.getElementById('lb-time').textContent=rent?'픽업 시간':'출발 시간';
+    document.querySelector('#w-norm label').firstChild.textContent=rent?'픽업 날짜':'날짜';
     document.querySelectorAll('#f-modes .mchip').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.m===k));});
   }
   var dirty=!!it;
@@ -1164,8 +1174,9 @@ var saveItem=guarded(function(btn){
     var from=v('f-from'),to=v('f-to'),name=v('f-name');
     var route=(from&&to)?from+' → '+to:(from||to||'');
     var title=route||name;
-    if(!title){toast('출발지, 도착지 또는 이름을 입력해 주세요.');return;}
+    if(!title&&modal.dataset.mode!=='rent'){toast('출발지, 도착지 또는 이름을 입력해 주세요.');return;}
     data={title:title,mode:modal.dataset.mode||'etc',dir:v('f-dir')||'out',from:from,to:to,name:name,date:v('f-date'),day:0,time:v('f-time'),arrive:v('f-arrive'),memo:v('f-memo'),link:v('f-link')};
+    if(data.mode==='rent'){data.title='렌터카';data.dir='local';data.rdate=v('f-rdate');data.arrive=v('f-rtime');if(data.date&&data.rdate&&data.rdate<data.date){toast('반납 날짜가 픽업보다 빨라요.');return;}}else data.rdate='';
   }else if(s.key==='stay'){
     var nm=v('f-title'),ci=v('f-cin'),co=v('f-cout');
     if(!nm){toast('숙소 이름을 입력해 주세요.');return;}
