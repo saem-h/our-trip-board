@@ -419,11 +419,13 @@ button:not(.dh):active,[role=button]:not(.dh):active,[role=tab]:active,[role=che
   .chip-list{gap:6px!important}
   .pin-grid{grid-template-columns:1fr}
 }
-/* 지도 점: 작은 점 + 얇은 검은 테두리 */
-.mk{width:8px!important;height:8px!important;min-width:8px;border:1px solid #0A0A0A!important;box-shadow:none!important;font-size:0!important;line-height:0!important;color:transparent!important}
-.mk.c{width:6px!important;height:6px!important;opacity:.55;background:var(--accent)!important;border:1px solid #0A0A0A!important;box-shadow:none!important}
-.mk.s{width:9px!important;height:9px!important;border:1px solid #0A0A0A!important}
-.mk.h{width:10px!important;height:10px!important;background:#0A0A0A!important;border:1px solid #0A0A0A!important}
+/* 지도 점: 작은 점 + 얇은 검은 테두리 (항상 정원) */
+.mk{box-sizing:border-box!important;aspect-ratio:1/1!important;flex:none!important;border-radius:50%!important;width:8px!important;height:8px!important;min-width:8px!important;min-height:8px!important;max-width:8px!important;max-height:8px!important;padding:0!important;border:1px solid #0A0A0A!important;box-shadow:none!important;font-size:0!important;line-height:0!important;color:transparent!important}
+.mk.c{width:6px!important;height:6px!important;min-width:6px!important;min-height:6px!important;max-width:6px!important;max-height:6px!important;opacity:.55;background:var(--accent)!important;border:1px solid #0A0A0A!important}
+.mk.ap{border-style:solid!important;opacity:.55}
+.mk.s{width:9px!important;height:9px!important;min-width:9px!important;min-height:9px!important;max-width:9px!important;max-height:9px!important;border:1px solid #0A0A0A!important}
+.mk.h{width:10px!important;height:10px!important;min-width:10px!important;min-height:10px!important;max-width:10px!important;max-height:10px!important;background:#0A0A0A!important;border:1px solid #0A0A0A!important}
+.mkw{line-height:0}
 .mkl{font-size:10px!important;margin-left:3px!important}
 </style>
 </head><body>
