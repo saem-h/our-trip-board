@@ -874,8 +874,8 @@ function paint(box,note,md,pts){
   kakao.maps.event.addListener(map,'zoom_changed',syncLbl);
   var groups={};ok.forEach(function(o){if(md.line&&o.pn.g!=null)(groups[o.pn.g]=groups[o.pn.g]||[]).push(o.p);});
   Object.keys(groups).forEach(function(g){var path=groups[g];if(path.length<2)return;
-    new kakao.maps.Polyline({map:map,path:path,strokeWeight:5,strokeColor:'#FFFFFF',strokeOpacity:.9});
-    new kakao.maps.Polyline({map:map,path:path,strokeWeight:2.5,strokeColor:'#0A0A0A',strokeOpacity:.75});});
+    new kakao.maps.Polyline({map:map,path:path,strokeWeight:3.5,strokeColor:'#FFFFFF',strokeOpacity:.9});
+    new kakao.maps.Polyline({map:map,path:path,strokeWeight:1.5,strokeColor:'#0A0A0A',strokeOpacity:.6});});
   ok.forEach(function(o){var pn=o.pn,i=pn.i;bd.extend(o.p);var nm=i.pseudo?i.place:i.title,el=document.createElement('div');el.className='mkw';
     el.innerHTML='<div class="mk'+(pn.c?' '+pn.c:'')+(o.src==='name'?' ap':'')+'"'+(pn.col?' style="background:'+pn.col+'"':'')+'>'+esc(pn.t)+'</div><div class="mkl">'+esc(nm)+'</div>';
     function open(fromList){
