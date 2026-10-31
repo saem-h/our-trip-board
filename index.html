@@ -322,7 +322,8 @@ button:not(.dh):active,[role=button]:not(.dh):active,[role=tab]:active,[role=che
   button:active,[role=button]:active,[role=tab]:active,[role=checkbox]:active,.tab:active,.chip:active,.mchip:active,.btn:active,.ib:active,.lb:active,.cp:active,.rm:active,.lk:active,.chk:active,.add-b:active,.linkbtn:active{transform:none}
 }
 /* like pulse */
-.lk{position:relative;-webkit-tap-highlight-color:transparent;transition:transform .12s ease}.lk:active{transform:scale(.82)}
+.hapsw{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:.001;cursor:pointer;z-index:2}
+.lk{position:relative;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .12s ease}.lk:active{transform:scale(.82)}
 .lk[aria-pressed="true"]{color:#f3b7bd}
 .lk[aria-pressed="true"] svg{fill:currentColor;stroke:currentColor}
 .lk .hw{position:relative;display:grid;place-items:center;width:17px;height:17px}
@@ -640,7 +641,7 @@ function itemHTML(it,s,t,tag){
     var cnt;
     if(pl){var o=pl.prev?pl.prev:'',n=pl.next?pl.next:'';cnt='<span class="cnt"><span class="roll '+(pl.on?'up':'dn')+' go">'+(pl.on?'<i>'+o+'</i><i>'+n+'</i>':'<i>'+n+'</i><i>'+o+'</i>')+'</span></span>';}
     else cnt=likes.length?'<span class="cnt"><span class="roll"><i>'+likes.length+'</i></span></span>':'';
-    h+='<button class="lk'+(pl?(pl.on?' pl-on':' pl-off'):'')+'"'+(pl?' style="--d:-'+(Date.now()-pl.t)+'ms"':'')+' data-act="like" aria-pressed="'+(!!mine)+'" aria-label="좋아요"><span class="hw">'+HEART+(pl&&pl.on?'<i class="ring"></i>'+pts:'')+'</span>'+cnt+'</button>';
+    h+='<label class="lk'+(pl?(pl.on?' pl-on':' pl-off'):'')+'"'+(pl?' style="--d:-'+(Date.now()-pl.t)+'ms"':'')+' data-act="like" role="button" aria-pressed="'+(!!mine)+'" aria-label="좋아요"><input type="checkbox" switch class="hapsw" tabindex="-1" aria-hidden="true"><span class="hw">'+HEART+(pl&&pl.on?'<i class="ring"></i>'+pts:'')+'</span>'+cnt+'</label>';
   }
   var firstMemo=String(it.memo||'').split('\n')[0],sp=[];
   if(conf&&!s.check&&s.key!=='transport'){var ed=effDay(it,t),lab=(ed?dayLabel(t,ed):'날짜 미정')+(it.time?' '+it.time:'')+(it.slot?' '+slotName(it.slot):'');var bad=ed&&closedOn(it,t,ed);sp.push('<span class="lb2'+(bad?' w':'')+'">'+esc(lab)+(bad?' · 휴무일!':'')+'</span>');}
@@ -1421,7 +1422,7 @@ document.addEventListener('click',function(e){
   else if(a==='savetrip'){saveTrip(el);}
   else if(a==='deltrip'){delTrip();}
   else if(a==='edit'){it=itemFrom(el);if(!it)return;if(!canWrite){toast('보기 전용이에요.');return;}openItemForm({item:it});}
-  else if(a==='like'){it=itemFrom(el);if(it){haptic();toggleLike(it);}}
+  else if(a==='like'){if(e.target!==el.querySelector('.hapsw')&&e.target.closest('.hapsw'))return;it=itemFrom(el);if(it){try{navigator.vibrate&&navigator.vibrate(12);}catch(x){}toggleLike(it);}}
   else if(a==='confirm'){it=itemFrom(el);if(it){if(isConf(it))toggleConfirm(it);else{pickId=pickId===it.id?null:it.id;pickDay=0;pickSlot='';pickTime='';render();}}}
   else if(a==='pickday'){pickDay=parseInt(el.dataset.v,10)||0;render();}
   else if(a==='pickslot'){pickSlot=el.dataset.v;render();}
