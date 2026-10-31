@@ -393,6 +393,32 @@ button:not(.dh):active,[role=button]:not(.dh):active,[role=tab]:active,[role=che
   body{padding-bottom:env(safe-area-inset-bottom,0px)}
   .msheet button,.msheet a{min-height:40px}
 }
+/* PREVIEW: 같은 색, 더 많은 여백, 작은 아이콘, 교통·숙소 접힘, 요약 줄 숨김, 본문 영문 프리텐다드 */
+.en{font-family:var(--font-body);font-weight:600;letter-spacing:-0.01em}
+.chip-list{gap:12px!important;margin:18px 0 8px!important}
+.layout>*+*{margin-top:28px}
+.tl-map{margin-top:14px;margin-bottom:14px}
+.tl>*+*{margin-top:18px}
+.ib{width:30px!important;height:30px!important;min-width:30px!important;min-height:30px!important}
+.ib.sm{width:28px!important;height:28px!important}
+.pin{padding:2px 12px 0;margin-top:8px}
+.pin-h{padding:4px 0}
+.pin-grid{gap:0 16px}
+.pr{padding:8px 0}
+.pr-m,.pr-s{display:none}
+.bar .st{display:none}
+.mkl{display:block!important;background:none!important;box-shadow:none!important;border-radius:0!important;padding:0 2px!important;font:500 10.5px/1.3 Pretendard,sans-serif!important;color:#0A0A0A!important;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 2px #fff;max-width:88px;margin-left:2px!important}
+.mk.sel+.mkl,.mkw .mk.sel~.mkl{font-weight:600!important}
+.dd{font-family:var(--font-body);font-weight:700;font-size:12px;padding:0 8px;line-height:1.6;letter-spacing:-0.01em;text-transform:none}
+.dt{font-size:13px}
+.chip{min-height:30px!important;font-size:12.5px!important;padding:3px 8px!important}
+.chip i{font-size:11px!important}
+.chip-list{gap:6px!important;margin:10px 0 4px!important}
+@media (max-width:640px){
+  .layout>*+*{margin-top:24px}
+  .chip-list{gap:6px!important}
+  .pin-grid{grid-template-columns:1fr}
+}
 </style>
 </head><body>
 
@@ -501,7 +527,7 @@ var SECTIONS=[
   {key:'must',en:'to do',name:'해야 할 일',hint:'예약, 챙길 것, 놓치면 안 되는 것',check:true,doneWord:'완료',ph:'예) 체험 프로그램 예약하기'}
 ];
 var db=null,user=null,uid=null,canWrite=true;
-var groupedNow=false,dragActive=false,renderPending=false,members={},nameAsked=false,areaFilter='',seenAt=0,seenFor=null,viewInit=false,tlMode=null,routeOpen={},pickTime='',pickId=null,pickDay=0,pickSlot='',addSec='food',trips=[],items=[],tripId=null,view='board',activeSec=(function(){try{var v=localStorage.getItem('sec');return (v&&v!=='all')?v:'food';}catch(e){return 'food';}})(),openId=null,infoOpen=true,profs={},armed=null,ready=false,offline=false,quickVals={};
+var groupedNow=false,dragActive=false,renderPending=false,members={},nameAsked=false,areaFilter='',seenAt=0,seenFor=null,viewInit=false,tlMode=null,routeOpen={},pickTime='',pickId=null,pickDay=0,pickSlot='',addSec='food',trips=[],items=[],tripId=null,view='board',activeSec=(function(){try{var v=localStorage.getItem('sec');return (v&&v!=='all')?v:'food';}catch(e){return 'food';}})(),openId=null,infoOpen=false,profs={},armed=null,ready=false,offline=false,quickVals={};
 var scaleT=null,fadedIn=false,API_URL=window.TB_API||'',app=document.getElementById('app'),modal=document.getElementById('modal'),toastEl=document.getElementById('toast');
 
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
@@ -701,7 +727,7 @@ function renderSection(key,its,t){
   if(areaFilter&&areas.indexOf(areaFilter)<0)areaFilter='';
   var a=secOf(addSec);
   var dis=canWrite?'':' disabled';
-  var h='<div class="addbar"><button class="add-b" data-act="add" data-sec="'+(all?'':key)+'"'+dis+'>+ '+(all?'':esc(secOf(key).name)+' ')+'등록하기</button></div>';
+  var h='<div class="addbar"><button class="add-b" data-act="add" data-sec="'+(all?'':key)+'"'+dis+'>+ 등록하기</button></div>';
   if(false&&areas.length&&!all){h+='<div class="areaf"><button data-act="areaf" data-v="" aria-pressed="'+(areaFilter==='')+'">전체 위치</button>';areas.forEach(function(x){h+='<button data-act="areaf" data-v="'+esc(x)+'" aria-pressed="'+(areaFilter===x)+'">'+esc(x)+'</button>';});h+='</div>';}
   if(false)list=list.filter(function(i){return i.area===areaFilter;});
   if(key==='must'){h+='<div class="areaf"><button data-act="mustf" data-v="" aria-pressed="'+(!mustMine)+'">전체</button><button data-act="mustf" data-v="1" aria-pressed="'+mustMine+'">내 할 일</button></div>';if(mustMine)list=list.filter(function(i){return i.who?i.who===uid:!(i.doneBy&&i.doneBy[uid]);});}
