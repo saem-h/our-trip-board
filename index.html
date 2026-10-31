@@ -783,7 +783,14 @@ function drawMaps(keep){
     md.pins.forEach(function(pn,k){locate(pn.i,function(v){pts[k]=v;if(--left===0)paint(box,note,md,pts);});});
   });});
 }
-function fitMap(o){if(o.n>1)o.map.setBounds(o.bd,40,40,40,40);else if(o.n){o.map.setCenter(o.c);o.map.setLevel(6);}}
+/* 핀이 지도 칸에 꽉 차게: 한 단계 더 확대해도 가장자리가 조금만 잘리면 확대해요 */
+function fitMap(o){
+  if(o.n<=1){if(o.n){o.map.setCenter(o.c);o.map.setLevel(6);}return;}
+  o.map.setBounds(o.bd,8,8,8,8);
+  try{var el=o.map.getNode?o.map.getNode():null,W=o.box.offsetWidth,H=o.box.offsetHeight,pr=o.map.getProjection(),a=pr.pointFromCoords(o.bd.getSouthWest()),b=pr.pointFromCoords(o.bd.getNorthEast());
+    var bw=Math.abs(b.x-a.x),bh=Math.abs(b.y-a.y),L=o.map.getLevel();
+    if(L>1&&bw*2<=W*1.12&&bh*2<=H*1.12){var c=pr.coordsFromPoint(new kakao.maps.Point((a.x+b.x)/2,(a.y+b.y)/2));o.map.setLevel(L-1);o.map.setCenter(c);}}catch(e){}
+}
 function paint(box,note,md,pts){
   if(!box.isConnected)return;
   var w=box.parentNode,ok=[];md.pins.forEach(function(pn,k){if(pts[k])ok.push({pn:pn,p:new kakao.maps.LatLng(pts[k].y,pts[k].x),x:pts[k].x,y:pts[k].y,a:pts[k].a,src:pts[k].src});});
@@ -821,7 +828,7 @@ function paint(box,note,md,pts){
     new kakao.maps.CustomOverlay({map:map,position:o.p,content:el,xAnchor:0,yAnchor:0,zIndex:pn.c==='h'?20:pn.c?8:12});});
   sh.onclick=function(ev){ev.stopPropagation();var t=ev.target.closest&&ev.target.closest('[data-m]'),m=t&&t.dataset.m;if(!m)return;var cur=null;
     if(m==='x')closeSheet();else if(m==='ok'){var fid=sh.dataset.fid,gx=+sh.dataset.x,gy=+sh.dataset.y,ga=sh.dataset.a;closeSheet();geoOk(fid,gx,gy,ga);}else if(m==='n'||m==='j'||m==='f'){var id=sh.dataset.id;if(m==='n')window.open(sh.dataset.link,'_blank','noopener');else if(m==='j'){closeSheet();jumpTo(id);}else{closeSheet();openGeoFix(sh.dataset.fid);}}};
-  var mo={map:map,bd:bd,n:ok.length,c:c0,note:note?note.textContent:'',byId:byId};mapObjs[box.dataset.d]=mo;fitMap(mo);syncLbl();
+  var mo={box:box,map:map,bd:bd,n:ok.length,c:c0,note:note?note.textContent:'',byId:byId};mapObjs[box.dataset.d]=mo;fitMap(mo);syncLbl();
 }
 var gfQ=[],gfI=0,gfRes=[];
 function needGeo(){var t=trip();return tripItems().filter(function(i){var sc=secOf(i.section);return sc&&i.section!=='must'&&i.section!=='transport'&&!(i.geo&&i.geo.x)&&!i.addr&&!(t&&false);}).map(function(i){return i.id;});}
