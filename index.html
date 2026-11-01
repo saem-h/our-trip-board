@@ -169,6 +169,7 @@ h1{font-family:var(--font-en);font-weight:400;font-size:30px;margin:0;letter-spa
 .mk{width:20px;height:20px;border-radius:50%;background:var(--accent);color:#0A0A0A;border:1.5px solid #0A0A0A;font:800 11px/17px sans-serif;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.35)}
 .mk.c,.mk.s{width:12px;height:12px;font-size:0;line-height:0}
 .mk.s{width:15px;height:15px;border-width:3px}
+.mapc-leg .mrow{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%}
 .mapc-leg i.lcf{background:#fff;border-width:3px}
 .mseg{display:flex;flex-basis:100%;margin-bottom:3px}.mseg button{min-height:0;padding:3px 10px;border:1px solid var(--line);background:transparent;color:var(--muted);font-family:inherit;font-size:11px;font-weight:600;cursor:pointer}.mseg button:first-child{border-radius:999px 0 0 999px}.mseg button:last-child{border-radius:0 999px 999px 0;border-left:0}.mseg button[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .mk.c{background:#fff}
@@ -774,7 +775,7 @@ var BIG_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-w
 function mapFolded(k){return lsGet('mapfold:'+k)==='1';}
 function candOn(k){var v=lsGet('mapcand:'+k);return v==null?k==='c':v==='1';}
 function mapBlock(id,fk,leg){
-  var nq=0,f=mapFolded(fk),h='<div class="mapc" data-d="'+id+'"><div class="mapc-h"><b>지도</b><span class="mapc-leg">'+(f?'':leg)+'</span>'+(!f?'<button class="lb ct" data-act="mapcand" data-k="'+fk+'" aria-pressed="'+candOn(fk)+'">후보 '+(candOn(fk)?'켜짐':'꺼짐')+'</button>':'')+(canWrite&&!f&&(nq=needGeo().length)?'<button class="lb gc" data-act="geocheck">위치 확인 '+nq+'곳</button>':'')+'<button class="lb" data-act="mapfold" data-k="'+fk+'">'+(f?'펼치기':'접기')+'</button></div>';
+  var nq=0,f=mapFolded(fk),h='<div class="mapc" data-d="'+id+'"><div class="mapc-h"><b>지도</b><span class="mapc-leg">'+(f?'':(leg.indexOf('mseg')>-1?'<span class="mrow">'+leg.slice(0,leg.indexOf('</span>')+7)+(!f?'<button class="lb ct" data-act="mapcand" data-k="'+fk+'" aria-pressed="'+candOn(fk)+'">후보 '+(candOn(fk)?'켜짐':'꺼짐')+'</button>':'')+'<button class="lb" data-act="mapfold" data-k="'+fk+'">'+(f?'펼치기':'접기')+'</button>'+'</span>'+leg.slice(leg.indexOf('</span>')+7):leg+(!f?'<button class="lb ct" data-act="mapcand" data-k="'+fk+'" aria-pressed="'+candOn(fk)+'">후보 '+(candOn(fk)?'켜짐':'꺼짐')+'</button>':'')+'<button class="lb" data-act="mapfold" data-k="'+fk+'">'+(f?'펼치기':'접기')+'</button>'))+'</span>'+(f?'<button class="lb" data-act="mapfold" data-k="'+fk+'">'+(f?'펼치기':'접기')+'</button>':'')+(canWrite&&!f&&(nq=needGeo().length)?'<button class="lb gc" data-act="geocheck">위치 확인 '+nq+'곳</button>':'')+'</div>';
   if(!f)h+='<div class="tl-mapw" data-d="'+id+'"><div class="tl-map" data-d="'+id+'"></div><button type="button" class="tl-big" data-act="mapbig" data-d="'+id+'" aria-label="크게 보기">'+BIG_SVG+'</button></div><div class="tl-mapn" data-d="'+id+'"></div>';
   return h+'</div>';
 }
