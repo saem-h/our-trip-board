@@ -577,7 +577,7 @@ function todayDayOf(t){if(!t||!t.startDate||!t.endDate)return 0;var td=todayStr(
 function nameOf(id){var m=members[id],p=profs[id];if(m&&m.name)return m.name;if(id===uid)return (p&&p.name)||'나';return (p&&p.name)||'상대';}
 function likeIds(it){var l=it.likes||{};return Object.keys(l).filter(function(k){return l[k];});}
 function isConf(it){return it.status==='confirmed';}
-function tripItems(){return items.filter(function(i){return i.tripId===tripId;}).map(function(i){if(i.area==='제주시'&&i.addr){Object.keys(JEJU_EUP).forEach(function(k){if(i.area==='제주시'&&i.addr.indexOf(k)>-1)i.area=JEJU_EUP[k];});}return i;}).sort(function(a,b){return (a.createdAt||0)-(b.createdAt||0);});}
+function tripItems(){return items.filter(function(i){return i.tripId===tripId;}).map(function(i){if(i.id==='kostxa45vvjp4kfrxn6q'&&!i.fixedAddr){i.addr='제주특별자치도 제주시 구좌읍 평대리 1467-6';i.area='구좌';delete i.geo;i.fixedAddr=true;}if(i.area==='제주시'&&i.addr){Object.keys(JEJU_EUP).forEach(function(k){if(i.area==='제주시'&&i.addr.indexOf(k)>-1)i.area=JEJU_EUP[k];});}return i;}).sort(function(a,b){return (a.createdAt||0)-(b.createdAt||0);});}
 function pd(v){var a=String(v).split('-');return Date.UTC(+a[0],+a[1]-1,+a[2]);}
 function diffDays(a,b){return Math.round((pd(b)-pd(a))/86400000);}
 function fmtMD(v){var a=String(v).split('-');return (+a[1])+'/'+(+a[2]);}
