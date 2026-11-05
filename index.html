@@ -504,7 +504,7 @@ function addMember(id,d){return post([{op:'set',col:'members',id:id,data:d}]);}
 /* ── 카카오 로그인 + 보드 멤버 (web.app 전용) ─────────────────────────────
    로그인: 카카오 → 우리 Apps Script(AUTH_API)가 확인 → Firebase 로그인 토큰.
    보드: 멤버만 열 수 있고, 초대 링크(?b=…&i=…)로 들어오면 멤버가 돼요. */
-var AUTH_API='__AUTH_API__',KREST='8e508454604955727df211c5569dfa80';
+var AUTH_API='https://script.google.com/macros/s/AKfycbyd3LH41njN_Zv_qouDmCsbtBC8gcZ1hyiYSi4onFIfRcMG_n1LX9hxXI0n50aUFRh-Vg/exec',KREST='8e508454604955727df211d5569dfa80';
 var QS=new URLSearchParams(location.search),HOME=!!window.TB_FB&&!BOARD&&!/github\.io$/.test(location.hostname);
 var fbUser=null,MYNAME='';
 function ov(html){var o=document.getElementById('tb-ov');if(!o){o=document.createElement('div');o.id='tb-ov';

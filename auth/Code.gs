@@ -3,7 +3,7 @@
 // 스크립트 속성(⚙ 프로젝트 설정 → 스크립트 속성)에 넣어 주세요:
 //   SA_JSON      = 서비스 계정 키 json 파일 내용 전체
 //   KAKAO_SECRET = 카카오 REST API 키의 '카카오 로그인' 클라이언트 시크릿 코드
-const KAKAO_REST = '8e508454604955727df211c5569dfa80';
+const KAKAO_REST = '8e508454604955727df211d5569dfa80';
 const ALLOWED = ['https://our-trip-board.web.app/', 'https://our-trip-board.firebaseapp.com/'];
 
 function doGet(e) {
