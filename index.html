@@ -674,7 +674,10 @@ function parseShare(txt){
   var name='',addr='';
   if(ls.length===1){var m=ls[0].match(AD);if(m){name=ls[0].slice(0,m.index).trim();addr=ls[0].slice(m.index);}else name=ls[0];}
   else{name=ls[0];addr=ls.slice(1).filter(function(x){return AD.test(x)||/(시|군|구|읍|면|동|리|로|길)(\s|$)/.test(x);})[0]||'';}
-  var area='';
+  return {url:url,name:name,area:areaFromAddr(addr),addr:addr};
+}
+function areaFromAddr(addr){
+  var area='';addr=addr||'';
   if(regionG()===AREA_G){
     Object.keys(JEJU_EUP).forEach(function(k){if(!area&&addr.indexOf(k)>-1)area=JEJU_EUP[k];});
     if(!area&&addr.indexOf('중문')>-1)area='중문';
@@ -684,7 +687,24 @@ function parseShare(txt){
     var cand=[].concat.apply([],areaGroups().map(function(g){return g.slice(1);})).sort(function(x,y){return y.length-x.length;});
     area=cand.filter(function(a){return addr.indexOf(a)>-1;})[0]||'';
   }
-  return {url:url,name:name,area:area,addr:addr};
+  return area;
+}
+/* 카카오맵 공유엔 주소가 없어서, 붙여넣으면 이름(카카오 링크면 장소 번호)으로 위치를 바로 찾아 채워요 */
+function autoGeoPaste(sh){
+  if(!sh||sh.addr||!sh.name||!document.getElementById('f-geo-st'))return;
+  var pid=(sh.url.match(/place\.map\.kakao\.com\/(?:m\/)?(\d+)/)||[])[1]||'',st=document.getElementById('f-geo-st');
+  st.innerHTML='<span class="mut">위치 찾는 중…</span>';
+  kakaoReady(function(){geoAnchor(function(an){
+    function fin(r,wide){
+      var ti=document.getElementById('f-title');if(!ti||ti.value.trim()!==sh.name||modal.dataset.geox)return geoFormStatus();
+      var x=pid?r.filter(function(y){return String(y.id)===pid;})[0]:r[0];
+      if(!x&&pid&&!wide)return kwAll(sh.name,null,function(r2){fin(r2,1);});
+      if(!x)x=r[0];if(!x)return geoFormStatus();
+      gfRes=[x];pickFormGeo(0);
+      var ar=document.getElementById('f-area');if(ar&&!ar.value.trim()){var a=areaFromAddr(x.road_address_name+' '+x.address_name);if(a){ar.value=a;syncArea();}}
+    }
+    kwAll(sh.name,jejuBounds(an),function(r){if(!r.length&&an)return kwAll(sh.name,null,function(r2){fin(r2,1);});fin(r,!an);});
+  });});
 }
 function safeUrl(u){u=pickUrl(u);if(!u)return '';try{var x=new URL(/^https?:\/\//i.test(u)?u:'https://'+u);return x.href;}catch(e){return '';}}
 function host(u){try{return new URL(u).hostname.replace(/^www\./,'');}catch(e){return u;}}
@@ -1624,6 +1644,7 @@ document.addEventListener('paste',function(e){
   if(ar&&sh.area&&!ar.value.trim()){ar.value=sh.area;syncArea();}
   var ad=document.getElementById('f-addr');if(ad&&sh.addr){ad.value=sh.addr;delete modal.dataset.geox;delete modal.dataset.geoy;geoFormStatus();}
   if(lk)toast('지도 링크를 넣었어요');
+  autoGeoPaste(sh);
 });
 document.addEventListener('change',function(e){var tg=e.target;if(tg&&tg.id==='f-link'&&/\s/.test(tg.value.trim()))tg.value=pickUrl(tg.value);});
 function openStayTime(key){
