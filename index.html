@@ -1079,7 +1079,10 @@ function gAnchor(cb){var a=anchorName()||((trip()||{}).name||'');if(!a)return cb
 function gLocate(i,cb){
   if(i.geo&&i.geo.g)return cb({x:+i.geo.x,y:+i.geo.y,a:i.addr||''});
   gAnchor(function(an){var q=(i.addr||geoQuery(i)),k='gg:'+(anchorName()||'')+'|'+q;
-    memo(k,function(done){gSearch(q,an,done);},function(v){cb(v||0);});});
+    memo(k,function(done){gSearch(q,an,done);},function(v){cb(v||0);
+      /* 찾은 위치를 보드에 저장해서 다른 사람도 다시 찾지 않게 */
+      var fid=i.pseudo?i.sid:i.id;if(v&&fid&&db&&canWrite&&!i.rent&&i.section!=='transport'){var o={geo:{x:v.x,y:v.y,g:1}};if(!i.addr&&v.a)o.addr=v.a;db.doc('items/'+fid).update(o).catch(function(){});}
+    });});
 }
 function gFit(o){if(!o.n)return;if(o.n===1){o.map.setCenter(o.c);o.map.setZoom(15);return;}o.map.fitBounds(o.bd,24);}
 function gDraw(md){
