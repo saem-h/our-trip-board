@@ -11,7 +11,7 @@ service cloud.firestore {
       allow update: if isMember(b) && request.resource.data.owner == resource.data.owner && request.resource.data.invite == resource.data.invite;
     }
     match /boards/{b}/members/{uid} {
-      allow read: if isMember(b);
+      allow read: if isMember(b) || (signedIn() && uid == request.auth.uid);
       allow create: if signedIn() && uid == request.auth.uid
         && (board(b).owner == request.auth.uid || request.resource.data.inv == board(b).invite);
       allow update: if isMember(b) && uid == request.auth.uid;
