@@ -1296,7 +1296,7 @@ function todayBand(t,its){
   var nx=list.filter(function(i){return i.time&&i.time>=cur;})[0]||list[0];
   var when=nx.time?nx.time:(nx.slot?slotName(nx.slot):'');
   var go=evLink(nx);
-  return '<div class="tday"><span class="tday-k">오늘</span><span class="tday-t">'+(when?'<b>'+esc(when)+'</b> ':'')+esc(nx.title)+'</span>'
+  return '<div class="tday"><span class="tday-k">다음</span><span class="tday-t">'+(when?'<b>'+esc(when)+'</b> ':'')+esc(nx.title)+'</span>'
     +'<a class="tday-go" href="'+esc(go)+'" target="_blank" rel="noopener noreferrer">길찾기</a></div>';
 }
 function render(){
