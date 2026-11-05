@@ -1,6 +1,8 @@
 // Our Trip Board 로그인 확인 서버
 // 카카오 로그인 코드 → 카카오에서 사용자 확인 → Firebase 로그인 토큰을 만들어 돌려줘요.
-// 스크립트 속성(⚙ 프로젝트 설정 → 스크립트 속성)에 SA_JSON = 서비스 계정 키 json 전체를 넣어 주세요.
+// 스크립트 속성(⚙ 프로젝트 설정 → 스크립트 속성)에 넣어 주세요:
+//   SA_JSON      = 서비스 계정 키 json 파일 내용 전체
+//   KAKAO_SECRET = 카카오 REST API 키의 '카카오 로그인' 클라이언트 시크릿 코드
 const KAKAO_REST = '8e508454604955727df211c5569dfa80';
 const ALLOWED = ['https://our-trip-board.web.app/', 'https://our-trip-board.firebaseapp.com/'];
 
@@ -11,7 +13,8 @@ function doGet(e) {
     if (!p.code) return out_({ ok: false, error: 'no code' });
     const t = UrlFetchApp.fetch('https://kauth.kakao.com/oauth/token', {
       method: 'post', muteHttpExceptions: true,
-      payload: { grant_type: 'authorization_code', client_id: KAKAO_REST, redirect_uri: p.ru, code: p.code }
+      payload: { grant_type: 'authorization_code', client_id: KAKAO_REST, redirect_uri: p.ru, code: p.code,
+                 client_secret: PropertiesService.getScriptProperties().getProperty('KAKAO_SECRET') || '' }
     });
     const tj = JSON.parse(t.getContentText());
     if (!tj.access_token) return out_({ ok: false, error: 'kakao token: ' + (tj.error_description || tj.error || t.getResponseCode()) });
