@@ -1,0 +1,23 @@
+# main에 올라간 보드를 our-trip-board.web.app 에도 자동으로 올려요.
+name: Deploy to our-trip-board.web.app
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check key
+        id: key
+        env:
+          SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: if [ -n "$SA" ]; then echo "ok=1" >> "$GITHUB_OUTPUT"; else echo "FIREBASE_SERVICE_ACCOUNT secret not set yet, skipping"; fi
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        if: steps.key.outputs.ok == '1'
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: our-trip-board
+          channelId: live
