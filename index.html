@@ -451,7 +451,7 @@ button:not(.dh):active,[role=button]:not(.dh):active,[role=tab]:active,[role=che
 "use strict";
 var API='https://script.google.com/macros/s/AKfycbzimOitL4vXiBqbCFrPjowDhy2qi5GUeLbRCiB1hlXERQqAjm-VM1VP_LszWHqOloVImg/exec';window.TB_API=API;window.TB_KAKAO='ee68bbeb64e128ef7ad5e55ead5e6579';
 /* 구글 지도 키 (해외 여행 지도). 비어 있으면 해외 여행에선 지도를 숨겨요 */
-window.TB_GMAP=window.TB_GMAP||'AIzaSyBDhfwIua7W4lsi4dSoW45fSAOrOo4FsSk';
+window.TB_GMAP=window.TB_GMAP||'AIzaSyB5Gw_pwACvQrvXGMN0_1Ygm3nCoSUMgQA';
 /* 링크로 만드는 보드(?b=…)는 Firebase에 저장해요. 기본 주소(제주 보드)는 지금처럼 구글 시트를 써요. */
 window.TB_FB={apiKey:"AIzaSyBDhfwIua7W4lsi4dSoW45fSAOrOo4FsSk",authDomain:"our-trip-board.firebaseapp.com",projectId:"our-trip-board",storageBucket:"our-trip-board.firebasestorage.app",messagingSenderId:"322253671318",appId:"1:322253671318:web:499a937d19c73df4dfabb7"};
 var BOARD=(location.search.match(/[?&]b=([a-z0-9]{6,24})(&|$)/)||[])[1]||'';if(!window.TB_FB)BOARD='';window.TB_BOARD=BOARD;window.TB_LSP=BOARD?'b'+BOARD+':':'';
