@@ -219,6 +219,7 @@ h1{font-family:var(--font-en);font-weight:400;font-size:30px;margin:0;letter-spa
 .ms-i{flex:none;width:30px;height:30px;min-height:0;padding:0;border-radius:50%;border:0;background:none;color:#6C6C6C;display:flex;align-items:center;justify-content:center;cursor:pointer}
 .ms-i svg{width:15px;height:15px}
 .ms-i.pri{background:#03C75A;color:#fff;font:900 13px/1 sans-serif}
+.ms-i.pri.g{background:#1A73E8}
 .ms-q{display:flex;align-items:center;gap:8px;margin-top:4px;font-size:11px;color:#7A3E00;font-weight:600}
 .ms-q button{min-height:0;padding:0;border:0;background:none;font-family:inherit;font-size:11px;font-weight:700;color:#7A3E00;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
 .ms-q2,.ms-q2 button{color:#6C6C6C;font-weight:500}
@@ -449,6 +450,8 @@ button:not(.dh):active,[role=button]:not(.dh):active,[role=tab]:active,[role=che
 (function(){
 "use strict";
 var API='https://script.google.com/macros/s/AKfycbzimOitL4vXiBqbCFrPjowDhy2qi5GUeLbRCiB1hlXERQqAjm-VM1VP_LszWHqOloVImg/exec';window.TB_API=API;window.TB_KAKAO='ee68bbeb64e128ef7ad5e55ead5e6579';
+/* 구글 지도 키 (해외 여행 지도). 비어 있으면 해외 여행에선 지도를 숨겨요 */
+window.TB_GMAP=window.TB_GMAP||'';
 /* 링크로 만드는 보드(?b=…)는 Firebase에 저장해요. 기본 주소(제주 보드)는 지금처럼 구글 시트를 써요. */
 window.TB_FB={apiKey:"AIzaSyBDhfwIua7W4lsi4dSoW45fSAOrOo4FsSk",authDomain:"our-trip-board.firebaseapp.com",projectId:"our-trip-board",storageBucket:"our-trip-board.firebasestorage.app",messagingSenderId:"322253671318",appId:"1:322253671318:web:499a937d19c73df4dfabb7"};
 var BOARD=(location.search.match(/[?&]b=([a-z0-9]{6,24})(&|$)/)||[])[1]||'';if(!window.TB_FB)BOARD='';window.TB_BOARD=BOARD;window.TB_LSP=BOARD?'b'+BOARD+':':'';
@@ -727,6 +730,8 @@ function routePlace(i){if(i.pseudo)return i.place;if(i.section==='transport')ret
 var ABROAD=/일본|후쿠오카|오사카|교토|도쿄|삿포로|홋카이도|오키나와|나고야|고베|요코하마|가마쿠라|하코네|유후인|벳푸|기타큐슈|나가사키|구마모토|가고시마|히로시마|마쓰야마|다카마쓰|시즈오카|센다이|대만|타이베이|타이중|가오슝|타이난|홍콩|마카오|중국|상하이|베이징|칭다오|태국|방콕|치앙마이|푸켓|파타야|베트남|다낭|하노이|호치민|나트랑|푸꾸옥|달랏|호이안|필리핀|세부|보라카이|마닐라|보홀|싱가포르|말레이시아|쿠알라룸푸르|코타키나발루|발리|인도네시아|라오스|비엔티안|캄보디아|괌|사이판|하와이|호놀룰루|미국|뉴욕|엘에이|샌프란시스코|라스베이거스|캐나다|밴쿠버|토론토|유럽|파리|런던|로마|피렌체|베네치아|밀라노|바르셀로나|마드리드|리스본|포르투|프라하|부다페스트|스위스|취리히|인터라켄|독일|베를린|뮌헨|암스테르담|이스탄불|두바이|호주|시드니|멜버른|뉴질랜드|몽골|울란바토르|[ぁ-んァ-ン]|[一-龯]/i;
 function abroad(){var t=trip();return !!(t&&ABROAD.test(t.name||''));}
 function useKakao(){return !!window.TB_KAKAO&&!abroad();}
+function useGmap(){return !!window.TB_GMAP&&abroad();}
+function useMap(){return useKakao()||useGmap();}
 function mapUrl(q){return abroad()?'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q):'https://map.naver.com/p/search/'+encodeURIComponent(q);}
 function todayStr(){var n=new Date();return n.getFullYear()+'-'+('0'+(n.getMonth()+1)).slice(-2)+'-'+('0'+n.getDate()).slice(-2);}
 function todayDayOf(t){if(!t||!t.startDate||!t.endDate)return 0;var td=todayStr();if(td<t.startDate||td>t.endDate)return 0;return diffDays(t.startDate,td)+1;}
@@ -899,7 +904,7 @@ function renderSection(key,its,t){
   if(key==='must'){h+='<div class="areaf"><button data-act="mustf" data-v="" aria-pressed="'+(!mustMine)+'">전체</button><button data-act="mustf" data-v="1" aria-pressed="'+mustMine+'">내 할 일</button></div>';if(mustMine)list=list.filter(function(i){return i.who?i.who===uid:!(i.doneBy&&i.doneBy[uid]);});}
   if(!list.length)return h+'<div class="empty">'+esc(EMPTY[all?'all':key]||EMPTY.all)+'</div>';
   list.sort(function(x,y){var cx=isConf(x)&&!secOf(x.section).check?1:0,cy=isConf(y)&&!secOf(y.section).check?1:0;var mx=x.section==='must'?1:0,my=y.section==='must'?1:0;return mx-my||((x.done?1:0)-(y.done?1:0))||(areaRank(x)-areaRank(y))||String(x.area||'').localeCompare(String(y.area||''))||cy-cx||(x.createdAt||0)-(y.createdAt||0);});
-  if(useKakao()&&key!=='must'&&list.length){
+  if(useMap()&&key!=='must'&&list.length){
     var bp=[],ma=lsGet('mapall')==='1',ml=ma?its.filter(function(i){var x=secOf(i.section);return x&&!x.fixed&&!x.check&&i.section!=='must';}):list,used={};
     var co=candOn('c');ml.forEach(function(i){var cf=isConf(i)&&!secOf(i.section).check,ed=cf?effDay(i,t):0;if(!cf&&!co)return;used[i.section]=1;bp.push({i:i,t:'',c:cf?'s':'c',col:CATC[i.section]||'#fff',j:1,sub:secOf(i.section).name+' · '+(cf?(ed?dayLabel(t,ed)+' 확정':'확정'):'후보')+(i.area?' · '+areaLabel(i.area):'')});});
     its.filter(function(i){return i.section==='stay';}).forEach(function(i){bp.push({i:{pseudo:true,place:i.title,title:i.title,sid:i.id,addr:i.addr,geo:i.geo},t:'숙',c:'h',sub:'숙소'});});
@@ -932,7 +937,7 @@ var BIG_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-w
 function mapFolded(k){return lsGet('mapfold:'+k)==='1';}
 function candOn(k){var v=lsGet('mapcand:'+k);return v==null?k==='c':v==='1';}
 function mapBlock(id,fk,leg){
-  var nq=0,f=mapFolded(fk),h='<div class="mapc" data-d="'+id+'"><div class="mapc-h"><b>지도</b><span class="mapc-leg">'+(f?'':(leg.indexOf('mseg')>-1?'<span class="mrow">'+leg.slice(0,leg.indexOf('</span>')+7)+(!f?'<button class="lb ct" data-act="mapcand" data-k="'+fk+'" aria-pressed="'+candOn(fk)+'">후보 '+(candOn(fk)?'켜짐':'꺼짐')+'</button>':'')+'<button class="lb" data-act="mapfold" data-k="'+fk+'">'+(f?'펼치기':'접기')+'</button>'+'</span>'+leg.slice(leg.indexOf('</span>')+7):leg+(!f?'<button class="lb ct" data-act="mapcand" data-k="'+fk+'" aria-pressed="'+candOn(fk)+'">후보 '+(candOn(fk)?'켜짐':'꺼짐')+'</button>':'')+'<button class="lb" data-act="mapfold" data-k="'+fk+'">'+(f?'펼치기':'접기')+'</button>'))+'</span>'+(f?'<button class="lb" data-act="mapfold" data-k="'+fk+'">'+(f?'펼치기':'접기')+'</button>':'')+(canWrite&&!f&&(nq=needGeo().length)?'<button class="lb gc" data-act="geocheck">위치 확인 '+nq+'곳</button>':'')+'</div>';
+  var nq=0,f=mapFolded(fk),h='<div class="mapc" data-d="'+id+'"><div class="mapc-h"><b>지도</b><span class="mapc-leg">'+(f?'':(leg.indexOf('mseg')>-1?'<span class="mrow">'+leg.slice(0,leg.indexOf('</span>')+7)+(!f?'<button class="lb ct" data-act="mapcand" data-k="'+fk+'" aria-pressed="'+candOn(fk)+'">후보 '+(candOn(fk)?'켜짐':'꺼짐')+'</button>':'')+'<button class="lb" data-act="mapfold" data-k="'+fk+'">'+(f?'펼치기':'접기')+'</button>'+'</span>'+leg.slice(leg.indexOf('</span>')+7):leg+(!f?'<button class="lb ct" data-act="mapcand" data-k="'+fk+'" aria-pressed="'+candOn(fk)+'">후보 '+(candOn(fk)?'켜짐':'꺼짐')+'</button>':'')+'<button class="lb" data-act="mapfold" data-k="'+fk+'">'+(f?'펼치기':'접기')+'</button>'))+'</span>'+(f?'<button class="lb" data-act="mapfold" data-k="'+fk+'">'+(f?'펼치기':'접기')+'</button>':'')+(canWrite&&!f&&!useGmap()&&(nq=needGeo().length)?'<button class="lb gc" data-act="geocheck">위치 확인 '+nq+'곳</button>':'')+'</div>';
   if(!f)h+='<div class="tl-mapw" data-d="'+id+'"><div class="tl-map" data-d="'+id+'"></div><button type="button" class="tl-big" data-act="mapbig" data-d="'+id+'" aria-label="크게 보기">'+BIG_SVG+'</button></div><div class="tl-mapn" data-d="'+id+'"></div>';
   return h+'</div>';
 }
@@ -998,9 +1003,10 @@ function drawMaps(keep){
   var days=mapDays.filter(function(md){
     var w=document.querySelector('.tl-mapw[data-d="'+md.d+'"]');if(!w)return false;if(!w.querySelector('.tl-map').offsetParent)return false;
     var sig=pinSig(md),old=keep[md.d+'|'+sig];
-    if(old){w.parentNode.replaceChild(old,w);var nt=document.querySelector('.tl-mapn[data-d="'+md.d+'"]');if(nt&&mapObjs[md.d])nt.textContent=mapObjs[md.d].note||'';if(mapObjs[md.d])mapObjs[md.d].map.relayout();return false;}
+    if(old){w.parentNode.replaceChild(old,w);var nt=document.querySelector('.tl-mapn[data-d="'+md.d+'"]');if(nt&&mapObjs[md.d])nt.textContent=mapObjs[md.d].note||'';if(mapObjs[md.d]&&mapObjs[md.d].map.relayout)mapObjs[md.d].map.relayout();return false;}
     w.dataset.sig=sig;return true;});
   if(!days.length)return;
+  if(useGmap())return gReady(function(){days.forEach(gDraw);});
   kakaoReady(function(){days.forEach(function(md){
     var box=document.querySelector('.tl-map[data-d="'+md.d+'"]');if(!box||!box.offsetParent)return;
     var note=document.querySelector('.tl-mapn[data-d="'+md.d+'"]'),left=md.pins.length,pts=[];
@@ -1054,6 +1060,74 @@ function paint(box,note,md,pts){
   sh.onclick=function(ev){ev.stopPropagation();var t=ev.target.closest&&ev.target.closest('[data-m]'),m=t&&t.dataset.m;if(!m)return;var cur=null;
     if(m==='x')closeSheet();else if(m==='ok'){var fid=sh.dataset.fid,gx=+sh.dataset.x,gy=+sh.dataset.y,ga=sh.dataset.a;closeSheet();geoOk(fid,gx,gy,ga);}else if(m==='n'||m==='j'||m==='f'){var id=sh.dataset.id;if(m==='n')window.open(sh.dataset.link,'_blank','noopener');else if(m==='j'){closeSheet();jumpTo(id);}else{closeSheet();openGeoFix(sh.dataset.fid);}}};
   var mo={box:box,map:map,bd:bd,n:ok.length,c:c0,note:note?note.textContent:'',byId:byId};mapObjs[box.dataset.d]=mo;fitMap(mo);syncLbl();
+}
+/* ---------- 구글 지도 (해외 여행) ---------- */
+var gState=0,gWait=[];
+function gReady(cb){
+  if(gState===2)return cb();if(gState===3)return;gWait.push(cb);if(gState===1)return;gState=1;
+  window.tbGmapCb=function(){google.maps.importLibrary('places').then(function(){gState=2;var w=gWait;gWait=[];w.forEach(function(f){f();});},function(){gState=3;});};
+  var sc=document.createElement('script');sc.src='https://maps.googleapis.com/maps/api/js?key='+encodeURIComponent(window.TB_GMAP)+'&v=weekly&loading=async&language=ko&callback=tbGmapCb';
+  sc.onerror=function(){gState=3;document.querySelectorAll('.mapc').forEach(function(m){m.style.display='none';});};
+  document.head.appendChild(sc);
+}
+function gSearch(q,an,cb){
+  var o={textQuery:q,fields:['location','formattedAddress'],maxResultCount:1,language:'ko'};
+  if(an)o.locationBias={center:{lat:an.y,lng:an.x},radius:50000};
+  google.maps.places.Place.searchByText(o).then(function(r){var p=r&&r.places&&r.places[0];cb(p&&p.location?{x:p.location.lng(),y:p.location.lat(),a:p.formattedAddress||''}:0);},function(){cb(0);});
+}
+function gAnchor(cb){var a=anchorName()||((trip()||{}).name||'');if(!a)return cb(null);memo('gga:'+a,function(done){gSearch(a,null,done);},cb);}
+function gLocate(i,cb){
+  if(i.geo&&i.geo.g)return cb({x:+i.geo.x,y:+i.geo.y,a:i.addr||''});
+  gAnchor(function(an){var q=(i.addr||geoQuery(i)),k='gg:'+(anchorName()||'')+'|'+q;
+    memo(k,function(done){gSearch(q,an,done);},function(v){cb(v||0);});});
+}
+function gFit(o){if(!o.n)return;if(o.n===1){o.map.setCenter(o.c);o.map.setZoom(15);return;}o.map.fitBounds(o.bd,24);}
+function gDraw(md){
+  var box=document.querySelector('.tl-map[data-d="'+md.d+'"]');if(!box||!box.offsetParent)return;
+  var note=document.querySelector('.tl-mapn[data-d="'+md.d+'"]'),left=md.pins.length,pts=[];
+  function go(){
+    if(!box.isConnected)return;
+    var w=box.parentNode,ok=[];md.pins.forEach(function(pn,k){if(pts[k])ok.push({pn:pn,x:pts[k].x,y:pts[k].y,a:pts[k].a,p:{lat:pts[k].y,lng:pts[k].x}});});
+    var miss=md.pins.filter(function(pn,k){return !pts[k];}).map(function(pn){return pn.i.pseudo?pn.i.place:pn.i.title;});
+    if(note)note.textContent=miss.length?'못 찾은 곳: '+miss.join(', '):'';
+    gAnchor(function(an){
+      var c0=ok.length?ok[0].p:an?{lat:an.y,lng:an.x}:{lat:33.59,lng:130.40};
+      var map=new google.maps.Map(box,{center:c0,zoom:12,disableDefaultUI:true,zoomControl:true,clickableIcons:false,gestureHandling:'greedy'});
+      var bd=new google.maps.LatLngBounds(),sel=null,byId={};
+      var sh=w.querySelector('.msheet');if(!sh){sh=document.createElement('div');sh.className='msheet';w.appendChild(sh);}
+      function closeSheet(){if(sel){sel.classList.remove('sel');sel.parentNode.style.zIndex='';}sel=null;sh.innerHTML='';w.classList.remove('has-sheet');}
+      closeSheet();map.addListener('click',closeSheet);
+      function syncLbl(){w.classList.toggle('zl',map.getZoom()>=13||ok.length<=4&&md.line);}
+      map.addListener('zoom_changed',syncLbl);
+      var groups={};ok.forEach(function(o){if(md.line&&o.pn.g!=null)(groups[o.pn.g]=groups[o.pn.g]||[]).push(o.p);});
+      Object.keys(groups).forEach(function(g){var path=groups[g];if(path.length<2)return;
+        new google.maps.Polyline({map:map,path:path,strokeWeight:3.5,strokeColor:'#FFFFFF',strokeOpacity:.9});
+        new google.maps.Polyline({map:map,path:path,strokeWeight:1.5,strokeColor:'#0A0A0A',strokeOpacity:.6});});
+      function Ov(pos,el,z){this.pos=pos;this.el=el;this.z=z;this.setMap(map);}
+      Ov.prototype=new google.maps.OverlayView();
+      Ov.prototype.onAdd=function(){this.el.style.position='absolute';this.el.style.zIndex=this.z;this.getPanes().overlayMouseTarget.appendChild(this.el);};
+      Ov.prototype.draw=function(){var pt=this.getProjection().fromLatLngToDivPixel(new google.maps.LatLng(this.pos));if(pt){this.el.style.left=pt.x+'px';this.el.style.top=pt.y+'px';}};
+      Ov.prototype.onRemove=function(){if(this.el.parentNode)this.el.parentNode.removeChild(this.el);};
+      ok.forEach(function(o){var pn=o.pn,i=pn.i;bd.extend(o.p);var nm=i.pseudo?i.place:i.title,el=document.createElement('div');el.className='mkw';
+        var dz=pn.c==='h'?10:pn.c==='s'?9:pn.c==='c'?6:8;el.innerHTML='<div class="mk'+(pn.c?' '+pn.c:'')+'" style="width:'+dz+'px!important;height:'+dz+'px!important;'+(pn.col?'background:'+pn.col+'!important':'')+'">'+esc(pn.t)+'</div><div class="mkl">'+esc(nm)+'</div>';
+        function open(fromList){
+          closeSheet();sel=el.querySelector('.mk');sel.classList.add('sel');el.style.zIndex='60';
+          var hasRow=pn.j&&i.id&&document.querySelector('article.it[data-id="'+i.id+'"]'),meta=[pn.sub,o.a].filter(Boolean).join(' · ');
+          sh.innerHTML='<div class="ms-r"><div class="ms-t"'+(hasRow&&!fromList?' data-m="j" role="button"':'')+'><b>'+esc(nm)+'</b>'+(meta?'<small>'+esc(meta)+'</small>':'')+'</div>'
+            +'<button class="ms-i pri g" data-m="n" aria-label="구글 지도" title="구글 지도">G</button><button class="ms-i" data-m="x" aria-label="닫기">'+X_SVG+'</button></div>';
+          sh.dataset.id=i.id||'';sh.dataset.link=evLink(i);w.classList.add('has-sheet');
+          if(map.getZoom()<15)map.setZoom(15);map.panTo(o.p);
+        }
+        if(i.id)byId[i.id]=open;
+        el.addEventListener('click',function(e){e.stopPropagation();open(false);});
+        new Ov(o.p,el,pn.c==='h'?20:pn.c?8:12);});
+      sh.onclick=function(ev){ev.stopPropagation();var t=ev.target.closest&&ev.target.closest('[data-m]'),m=t&&t.dataset.m;if(!m)return;
+        if(m==='x')closeSheet();else if(m==='n')window.open(sh.dataset.link,'_blank','noopener');else if(m==='j'){var id=sh.dataset.id;closeSheet();jumpTo(id);}};
+      var mo={g:1,box:box,map:map,bd:bd,n:ok.length,c:c0,note:note?note.textContent:'',byId:byId};mapObjs[box.dataset.d]=mo;gFit(mo);syncLbl();
+    });
+  }
+  if(!left)return go();
+  md.pins.forEach(function(pn,k){gLocate(pn.i,function(v){pts[k]=v;if(--left===0)go();});});
 }
 var gfQ=[],gfI=0,gfRes=[];
 function needGeo(){var t=trip();return tripItems().filter(function(i){var sc=secOf(i.section);return sc&&i.section!=='must'&&i.section!=='transport'&&!(i.geo&&i.geo.x)&&!i.addr&&!(t&&false);}).map(function(i){return i.id;});}
@@ -1117,7 +1191,7 @@ function mapBig(d){
   var w=document.querySelector('.tl-mapw[data-d="'+d+'"]'),o=mapObjs[d];if(!w)return;
   var on=!w.classList.contains('big');w.classList.toggle('big',on);document.body.style.overflow=on?'hidden':'';
   var b=w.querySelector('.tl-big');if(b)b.innerHTML=on?'닫기':BIG_SVG;
-  if(o)setTimeout(function(){o.map.relayout();fitMap(o);},50);
+  if(o)setTimeout(function(){if(o.g)return gFit(o);o.map.relayout();fitMap(o);},50);
 }
 function renderTimeline(t,its){
   var conf=its.filter(function(i){return isConf(i)&&!secOf(i.section).check;});
@@ -1163,7 +1237,7 @@ function renderTimeline(t,its){
   }
   var un=(sel!=='all')?[]:sortDay(sched.filter(function(i){var e=effDay(i,t);return !e||e>n||e<1;}));
   if(un.length){h+='<div class="tl-day" data-d="0"><div class="tl-dh">날짜 미정</div><div class="tl-list">';un.forEach(function(i){h+=ev(i);});h+='</div></div>';}
-  var mb='';if(useKakao()){
+  var mb='';if(useMap()){
     if(candOn('t'))its.forEach(function(i){var sc=secOf(i.section);if(sc&&!sc.fixed&&!sc.check&&i.section!=='must'&&!isConf(i))tp.push({i:i,t:'',c:'c',j:1,sub:sc.name+' 후보'+(i.area?' · '+areaLabel(i.area):'')});});
     if(tp.length||canWrite){mapDays.push({d:'t',line:true,pins:tp});mb=mapBlock('t','t',(sel==='all'?tleg:'<span>번호 = 타임라인 순서</span>')+(candOn('t')?'<span><i style="background:#fff"></i>후보</span>':''));}}
   h=h.replace('%%TLMAP%%',mb);
