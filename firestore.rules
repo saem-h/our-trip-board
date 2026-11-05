@@ -1,0 +1,24 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function board(b) { return get(/databases/$(database)/documents/boards/$(b)).data; }
+    function isMember(b) { return signedIn() && exists(/databases/$(database)/documents/boards/$(b)/members/$(request.auth.uid)); }
+
+    match /boards/{b} {
+      allow get: if isMember(b);
+      allow create: if signedIn() && request.resource.data.owner == request.auth.uid;
+      allow update: if isMember(b) && request.resource.data.owner == resource.data.owner && request.resource.data.invite == resource.data.invite;
+    }
+    match /boards/{b}/members/{uid} {
+      allow read: if isMember(b);
+      allow create: if signedIn() && uid == request.auth.uid
+        && (board(b).owner == request.auth.uid || request.resource.data.inv == board(b).invite);
+      allow update: if isMember(b) && uid == request.auth.uid;
+      allow delete: if signedIn() && uid == request.auth.uid;
+    }
+    match /boards/{b}/trips/{id} { allow read, write: if isMember(b); }
+    match /boards/{b}/items/{id} { allow read, write: if isMember(b); }
+    match /users/{uid}/boards/{b} { allow read, write: if signedIn() && request.auth.uid == uid; }
+  }
+}
