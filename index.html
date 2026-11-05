@@ -439,11 +439,18 @@ button:not(.dh):active,[role=button]:not(.dh):active,[role=tab]:active,[role=che
 (function(){
 "use strict";
 var API='https://script.google.com/macros/s/AKfycbzimOitL4vXiBqbCFrPjowDhy2qi5GUeLbRCiB1hlXERQqAjm-VM1VP_LszWHqOloVImg/exec';window.TB_API=API;window.TB_KAKAO='ee68bbeb64e128ef7ad5e55ead5e6579';
+/* 링크로 만드는 보드(?b=…)는 Firebase에 저장해요. 기본 주소(제주 보드)는 지금처럼 구글 시트를 써요. */
+window.TB_FB=null;
+var BOARD=(location.search.match(/[?&]b=([a-z0-9]{6,24})(&|$)/)||[])[1]||'';if(!window.TB_FB)BOARD='';window.TB_BOARD=BOARD;window.TB_LSP=BOARD?'b'+BOARD+':':'';
+var FBV='10.14.1',fsRoot=null;
+function loadJs(u){return new Promise(function(ok,no){var e=document.createElement('script');e.src=u;e.onload=ok;e.onerror=no;document.head.appendChild(e);});}
+function fbInit(){if(fbInit.p)return fbInit.p;var b='https://www.gstatic.com/firebasejs/'+FBV+'/';fbInit.p=loadJs(b+'firebase-app-compat.js').then(function(){return loadJs(b+'firebase-firestore-compat.js');}).then(function(){if(!firebase.apps.length)firebase.initializeApp(window.TB_FB);var fs=firebase.firestore();try{fs.settings({ignoreUndefinedProperties:true,merge:true});}catch(e){}return fs;});return fbInit.p;}
+window.TB_fbInit=fbInit;
 var OLD='u_dlVYupvgl0cBxjHyPC6CYQ';
-var PEOPLE=[{id:'u_sami',name:'새미'},{id:'u_juseong',name:'주성'}];
+var PEOPLE=BOARD?[]:[{id:'u_sami',name:'새미'},{id:'u_juseong',name:'주성'}];
 var store={trips:{},items:{},members:{}},listeners={},errs={},inflight=0,last='',first={},UID=null,PW='';
-function g(k){try{return localStorage.getItem(k);}catch(e){return null;}}
-function s(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+function g(k){try{return localStorage.getItem(window.TB_LSP+k);}catch(e){return null;}}
+function s(k,v){try{localStorage.setItem(window.TB_LSP+k,v);}catch(e){}}
 function rid(){var c='abcdefghijklmnopqrstuvwxyz0123456789',o='';for(var i=0;i<20;i++)o+=c[Math.floor(Math.random()*c.length)];return o;}
 function isO(x){return x&&typeof x==='object'&&!Array.isArray(x);}
 function merge(a,b){var o=Object.assign({},a);Object.keys(b).forEach(function(k){o[k]=(isO(b[k])&&isO(o[k]))?merge(o[k],b[k]):b[k];});return o;}
@@ -481,6 +488,20 @@ var db={
   };},
   doc:function(p){var a=p.split('/');return docRef(a[0],a[1]);}
 };
+function fref(col,id){var r=fsRoot.collection(col).doc(id);return {id:id,
+  set:function(d){return r.set(d);},update:function(d){return r.set(d,{merge:true});},delete:function(){return r.delete();}};}
+var fdb={
+  collection:function(col){var c=fsRoot.collection(col);return {
+    onSnapshot:function(ok,err){return c.onSnapshot(ok,err);},
+    add:function(d){var id=rid();return fref(col,id).set(d).then(function(){return {id:id};});},
+    doc:function(id){return fref(col,id||rid());}
+  };},
+  doc:function(p){var a=p.split('/');return fref(a[0],a[1]);}
+};
+function fbBoard(){return fbInit().then(function(fs){if(!fsRoot){fsRoot=fs.collection('boards').doc(BOARD);fsRoot.set({openedAt:Date.now()},{merge:true}).catch(function(){});}});}
+function getMembers(){if(BOARD)return fsRoot.collection('members').get().then(function(q){var m={};q.forEach(function(d){m[d.id]=d.data();});return m;});
+  return fetch(API+'?t='+Date.now()).then(function(r){return r.json();}).then(function(j){return j&&j.ok&&j.data&&j.data.members;});}
+function addMember(id,d){return BOARD?fref('members',id).set(d):post([{op:'set',col:'members',id:id,data:d}]);}
 function gate(){
   return new Promise(function(res){
     var u=g('tb_uid');
@@ -504,9 +525,9 @@ function gate(){
           ||(PEOPLE.filter(function(p){return p.name===v;})[0]||{}).id;
         if(hit)return done(hit);
         var id='u_'+rid();
-        post([{op:'set',col:'members',id:id,data:{name:v,updatedAt:Date.now()}}]).then(function(){done(id);},function(){done(id);});
+        addMember(id,{name:v,updatedAt:Date.now()}).then(function(){done(id);},function(){done(id);});
       }
-      fetch(API+'?t='+Date.now()).then(function(r){return r.json();}).then(function(j){pick(j&&j.ok&&j.data&&j.data.members);}).catch(function(){pick(null);});
+      getMembers().then(pick).catch(function(){pick(null);});
     }
     gb.onclick=go;
     gn.addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.isComposing&&e.keyCode!==229){e.preventDefault();go();}});
@@ -516,6 +537,8 @@ var started=false;
 function start(){if(started)return;started=true;pull(true);setInterval(function(){if(!document.hidden)pull();},5000);
   document.addEventListener('visibilitychange',function(){if(!document.hidden)pull();});}
 window.claude={use:function(n){
+  if(BOARD&&n==='user')return fbBoard().then(gate).then(function(){return {id:function(){return Promise.resolve(UID);},can:function(){return Promise.resolve(true);}};});
+  if(BOARD&&n==='db')return fbBoard().then(function(){return fdb;});
   if(n==='user')return gate().then(function(){return {id:function(){return Promise.resolve(UID);},can:function(){return Promise.resolve(true);}};});
   if(n==='db'){start();return Promise.resolve(db);}
   return Promise.reject(new Error('n/a'));
@@ -536,15 +559,15 @@ var SECTIONS=[
   {key:'must',en:'to do',name:'해야 할 일',hint:'예약, 챙길 것, 놓치면 안 되는 것',check:true,doneWord:'완료',ph:'예) 체험 프로그램 예약하기'}
 ];
 var db=null,user=null,uid=null,canWrite=true;
-var groupedNow=false,dragActive=false,renderPending=false,members={},nameAsked=false,areaFilter='',seenAt=0,seenFor=null,viewInit=false,tlMode=null,routeOpen={},pickTime='',pickId=null,pickDay=0,pickSlot='',addSec='food',trips=[],items=[],tripId=null,view='board',activeSec=(function(){try{var v=localStorage.getItem('sec');return (v&&v!=='all')?v:'food';}catch(e){return 'food';}})(),openId=null,infoOpen=false,profs={},armed=null,ready=false,offline=false,quickVals={};
+var groupedNow=false,dragActive=false,renderPending=false,members={},nameAsked=false,areaFilter='',seenAt=0,seenFor=null,viewInit=false,tlMode=null,routeOpen={},pickTime='',pickId=null,pickDay=0,pickSlot='',addSec='food',trips=[],items=[],tripId=null,view='board',activeSec=(function(){try{var v=localStorage.getItem(window.TB_LSP+'sec');return (v&&v!=='all')?v:'food';}catch(e){return 'food';}})(),openId=null,infoOpen=false,profs={},armed=null,ready=false,offline=false,quickVals={};
 var scaleT=null,fadedIn=false,API_URL=window.TB_API||'',app=document.getElementById('app'),modal=document.getElementById('modal'),toastEl=document.getElementById('toast');
 
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function secOf(k){return SECTIONS.filter(function(s){return s.key===k;})[0]||SECTIONS[2];}
 function trip(){return trips.filter(function(t){return t.id===tripId;})[0];}
 function toast(m){toastEl.textContent=m;toastEl.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(function(){toastEl.style.display='none';},2600);}
-function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
-function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+function lsGet(k){try{return localStorage.getItem(window.TB_LSP+k);}catch(e){return null;}}
+function lsSet(k,v){try{localStorage.setItem(window.TB_LSP+k,v);}catch(e){}}
 function pickUrl(u){var m=String(u||'').match(/https?:\/\/[^\s<>"']+/i);return m?m[0]:String(u||'').trim();}
 var AREA_GUESS=['함덕','협재','송당','중문','우도','애월','한림','한경','대정','안덕','남원','표선','성산','구좌','조천','서귀포','제주시'];
 var JEJU_EUP={'한림읍':'한림','애월읍':'애월','구좌읍':'구좌','조천읍':'조천','한경면':'한경','대정읍':'대정','안덕면':'안덕','남원읍':'남원','표선면':'표선','성산읍':'성산','우도면':'우도','월정':'구좌','김녕':'구좌','세화':'구좌','하도':'구좌','종달':'구좌','평대':'구좌','행원':'구좌','송당':'구좌','함덕':'조천','북촌':'조천','신촌':'조천','선흘':'조천','애월':'애월','고내':'애월','납읍':'애월','금성':'한림','협재':'한림','귀덕':'한림','모슬포':'대정','하모':'대정','상모':'대정','성산':'성산','위미':'남원','신흥':'표선','비자림로':'구좌','소농':'구좌'};
@@ -1061,7 +1084,7 @@ function render(){
   var nArc=trips.filter(isArchived).length;
   trips.filter(function(x){return isArchived(x)===showArc;}).forEach(function(x){h+='<button class="tab'+(tOn('t:'+x.id)?' tabpop':'')+'"'+tOn('t:'+x.id,1)+' role="tab" data-act="tab" data-id="'+esc(x.id)+'" aria-selected="'+(x.id===tripId)+'">'+esc(x.name)+'</button>';});
   if(showArc)h+='<button class="tab ghost" data-act="arcview">← 진행 중 여행</button></div></header>';
-  else h+='<button class="tab ghost" data-act="newtrip"'+(canWrite?'':' disabled')+'>+ 새 여행</button>'+(nArc?'<button class="tab ghost" data-act="arcview">지난 여행 '+nArc+'</button>':'')+'</div></header>';
+  else h+='<button class="tab ghost" data-act="newtrip"'+(canWrite?'':' disabled')+'>+ 새 여행</button>'+(nArc?'<button class="tab ghost" data-act="arcview">지난 여행 '+nArc+'</button>':'')+(window.TB_BOARD?'<button class="tab ghost" data-act="shareboard">친구 초대</button>':'')+'</div></header>';
   if(!canWrite)h+='<div class="note">지금은 보기 전용이에요. 같이 편집하려면 공유 설정에서 상대방을 편집 가능(기여자 이상)으로 초대해 주세요.</div>';
   if(offline)h+='<div class="note">저장소에 연결하지 못했어요. 새로고침하거나 로그인 상태를 확인해 주세요.</div>';
   if(!ready&&!offline){
@@ -1225,6 +1248,15 @@ function openItemForm(opts){
     openItemForm({item:it,section:b.dataset.c,pre:{title:g('f-title'),desc:g('f-desc'),area:g('f-area'),link:g('f-link'),addr:g('f-addr'),memo:g('f-memo'),closed:readClosed()}});});
   setTimeout(function(){var f=document.getElementById('f-title');if(f)f.focus();},30);
 }
+function openNewBoard(){
+  modal.innerHTML='<div class="card"><h3>새 보드 만들기</h3><p class="mut">지금 보드와 똑같은데 비어 있는 보드를 새로 만들어요. 지금 보드의 여행과 데이터는 그대로 남아요.</p><p class="mut">만든 뒤 위쪽 <b>초대</b>를 눌러 링크를 보내면 친구들과 같이 쓸 수 있어요. 링크를 아는 사람은 누구나 보고 고칠 수 있어요.</p><div class="foot"><button class="btn" data-act="close">취소</button><div class="r"><button class="btn pri" data-act="mknewboard">만들기</button></div></div></div>';
+  modal.className='on';
+}
+function shareBoard(){
+  var u=location.origin+location.pathname+'?b='+window.TB_BOARD,t=trip(),title=(t&&t.name?t.name+' · ':'')+'Our Trip Board';
+  if(navigator.share){navigator.share({title:title,text:'같이 여행 계획 짜자',url:u}).catch(function(){});return;}
+  (navigator.clipboard?navigator.clipboard.writeText(u):Promise.reject()).then(function(){toast('링크를 복사했어요. 친구들에게 보내 주세요.');},function(){prompt('이 링크를 복사해서 보내 주세요',u);});
+}
 function openTripForm(isNew){
   var t=isNew?null:trip();
   var h='<div class="card"><h3>'+(isNew?'새 여행':'여행 설정')+'</h3>';
@@ -1233,7 +1265,7 @@ function openTripForm(isNew){
   h+='<label>일정 일수 (날짜를 고르면 자동으로 계산돼요)<select id="t-days">';
   for(var d=1;d<=14;d++)h+='<option value="'+d+'"'+(((t&&t.days)||2)===d?' selected':'')+'>'+d+'일</option>';
   h+='</select></label>';
-  h+='<div class="foot">'+(isNew?'<button class="btn" data-act="close">취소</button>':'<button class="btn warn" data-act="deltrip" id="b-deltrip">여행 삭제</button><button class="btn" data-act="arctrip">'+(t&&isArchived(t)?'보관 해제':'지난 여행으로')+'</button>')+'<div class="r">'+(isNew?'':'<button class="btn" data-act="close">닫기</button>')+'<button class="btn pri" data-act="savetrip" data-new="'+(isNew?1:0)+'">저장</button></div></div></div>';
+  h+='<div class="foot">'+(isNew?'<button class="btn" data-act="close">취소</button>':'<button class="btn warn" data-act="deltrip" id="b-deltrip">여행 삭제</button><button class="btn" data-act="arctrip">'+(t&&isArchived(t)?'보관 해제':'지난 여행으로')+'</button>')+'<div class="r">'+(isNew?'':'<button class="btn" data-act="close">닫기</button>')+'<button class="btn pri" data-act="savetrip" data-new="'+(isNew?1:0)+'">저장</button></div></div>'+(window.TB_FB?'<p class="mut" style="margin:18px 0 0;font-size:13px">다른 사람들과 따로 쓸 보드가 필요하면 <button class="linkbtn" data-act="newboard">새 보드 만들기</button></p>':'')+'</div>';
   modal.innerHTML=h;modal.className='on';
   var st=document.getElementById('t-start'),en=document.getElementById('t-end'),dy=document.getElementById('t-days');
   function sync(){if(st.value&&en.value){var n=diffDays(st.value,en.value)+1;if(n>=1&&n<=14){dy.value=String(n);dy.disabled=true;return;}}dy.disabled=false;}
@@ -1443,11 +1475,14 @@ document.addEventListener('click',function(e){
   else if(a==='route'){var rd=el.dataset.d;routeOpen[rd]=!routeOpen[rd];render();}
   else if(a==='qadd'){doQuick();}
   else if(a==='addsec'){addSec=el.dataset.sec;if(activeSec!=='all')activeSec=addSec;render();var q=document.querySelector('[data-quick=q]');if(q)q.focus();}
-  else if(a==='sec'){tabPop={k:'s:'+el.dataset.sec,t:Date.now()};activeSec=el.dataset.sec;if(activeSec!=='all')addSec=activeSec;openId=null;if(activeSec!=='all')try{localStorage.setItem('sec',activeSec);}catch(e){}render();}
+  else if(a==='sec'){tabPop={k:'s:'+el.dataset.sec,t:Date.now()};activeSec=el.dataset.sec;if(activeSec!=='all')addSec=activeSec;openId=null;if(activeSec!=='all')try{localStorage.setItem(window.TB_LSP+'sec',activeSec);}catch(e){}render();}
   else if(a==='row'){it=itemFrom(el);if(it){openId=openId===it.id?null:it.id;render();if(openId)mapFocus(it.id);}}
   else if(a==='info'){infoOpen=!infoOpen;render();}
   else if(a==='add'){if(canWrite)openItemForm({section:el.dataset.sec});}
   else if(a==='newtrip'){if(canWrite)openTripForm(true);}
+  else if(a==='newboard'){openNewBoard();}
+  else if(a==='mknewboard'){location.href=location.pathname+'?b='+Math.random().toString(36).slice(2,8)+Math.random().toString(36).slice(2,8);}
+  else if(a==='shareboard'){shareBoard();}
   else if(a==='settings'){openTripForm(false);}
   else if(a==='myname'){if(uid)openNameForm(false);}
   else if(a==='savename'){saveName();}
