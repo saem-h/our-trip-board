@@ -220,6 +220,10 @@ h1{font-family:var(--font-en);font-weight:400;font-size:30px;margin:0;letter-spa
 .ms-i svg{width:15px;height:15px}
 .ms-i.pri{background:#03C75A;color:#fff;font:900 13px/1 sans-serif}
 .ms-i.pri.g{background:#1A73E8}
+.tday{display:flex;align-items:center;gap:10px;margin:10px 0 0;padding:8px 12px;border-radius:999px;background:var(--accent);color:var(--accent-ink);border:1px solid var(--ink);font-size:13px}
+.tday-k{font-weight:800;font-size:11px;letter-spacing:.04em;text-transform:uppercase}
+.tday-t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tday-go{flex:none;font-weight:700;color:var(--accent-ink);text-decoration:underline;text-underline-offset:3px}
 .ms-q{display:flex;align-items:center;gap:8px;margin-top:4px;font-size:11px;color:#7A3E00;font-weight:600}
 .ms-q button{min-height:0;padding:0;border:0;background:none;font-family:inherit;font-size:11px;font-weight:700;color:#7A3E00;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
 .ms-q2,.ms-q2 button{color:#6C6C6C;font-weight:500}
@@ -1283,6 +1287,18 @@ function summaryHTML(t,its){
   its.forEach(function(i){var s=secOf(i.section);if(s.fixed)return;if(s.check){if(s.key==='must'){tt++;if(i.done)td++;}}else if(isConf(i))conf++;else cand++;});
   return '<div class="bar"><span class="dd">'+esc(big)+'</span><span class="dt">'+esc(t.dates||'날짜 미정')+' · '+(t.days||2)+'일</span><span class="st">확정 <b>'+conf+'</b> · 후보 <b>'+cand+'</b> · 해야 할 일 <b>'+td+'/'+tt+'</b></span><span class="sp"></span><button class="linkbtn" data-act="myname">'+esc(uid?nameOf(uid):'이름')+'</button><button class="linkbtn" data-act="settings" style="margin-left:12px">여행 설정</button></div>';
 }
+/* 여행 중이면 맨 위에 얇은 한 줄: 오늘 다음 일정 + 길찾기 */
+function todayBand(t,its){
+  var dn=todayDayOf(t);if(!dn)return '';
+  var list=sortDay(its.filter(function(i){var s=secOf(i.section);return isConf(i)&&s.sched&&!s.check&&!s.fixed&&effDay(i,t)===dn;}));
+  if(!list.length)return '';
+  var now=new Date(),cur=('0'+now.getHours()).slice(-2)+':'+('0'+now.getMinutes()).slice(-2);
+  var nx=list.filter(function(i){return i.time&&i.time>=cur;})[0]||list[0];
+  var when=nx.time?nx.time:(nx.slot?slotName(nx.slot):'');
+  var go=evLink(nx);
+  return '<div class="tday"><span class="tday-k">오늘</span><span class="tday-t">'+(when?'<b>'+esc(when)+'</b> ':'')+esc(nx.title)+'</span>'
+    +'<a class="tday-go" href="'+esc(go)+'" target="_blank" rel="noopener noreferrer">길찾기</a></div>';
+}
 function render(){
   if(dragActive){renderPending=true;return;}
   mapDays=[];
@@ -1309,6 +1325,7 @@ function render(){
     if(activeSec==='all'||!secOf(activeSec)||secOf(activeSec).fixed)activeSec='food';
     if(!secOf(addSec)||secOf(addSec).fixed)addSec='food';
     h+=summaryHTML(t,its);
+    h+=todayBand(t,its);
     h+=renderFixed(t,its);
     h+='<nav class="chips v-'+view+'"><div class="seg"><button'+tcA('v:board')+' data-act="view" data-v="board" aria-pressed="'+(view==='board')+'">후보지</button><button'+tcA('v:plan')+' data-act="view" data-v="plan" aria-pressed="'+(view==='plan')+'">타임라인</button></div><div class="chip-list" role="tablist">';
     SECTIONS.forEach(function(s){if(s.fixed)return;var c=secCount(s,its);h+='<button class="chip'+(tOn('s:'+s.key)?' tabpop':'')+'"'+tOn('s:'+s.key,1)+' role="tab" data-act="sec" data-sec="'+s.key+'" aria-selected="'+(s.key===activeSec)+'">'+esc(s.name)+'<i>'+c.ok+'/'+c.total+'</i></button>';});
