@@ -705,7 +705,7 @@ function areaFromAddr(addr){
 }
 /* 카카오맵 공유엔 주소가 없어서, 붙여넣으면 이름(카카오 링크면 장소 번호)으로 위치를 바로 찾아 채워요 */
 function autoGeoPaste(sh){
-  if(!sh||sh.addr||!sh.name||!document.getElementById('f-geo-st'))return;
+  if(!sh||sh.addr||!sh.name||!useKakao()||!document.getElementById('f-geo-st'))return;
   var pid=(sh.url.match(/place\.map\.kakao\.com\/(?:m\/)?(\d+)/)||[])[1]||'',st=document.getElementById('f-geo-st');
   st.innerHTML='<span class="mut">위치 찾는 중…</span>';
   kakaoReady(function(){geoAnchor(function(an){
@@ -723,7 +723,11 @@ function autoGeoPaste(sh){
 function safeUrl(u){u=pickUrl(u);if(!u)return '';try{var x=new URL(/^https?:\/\//i.test(u)?u:'https://'+u);return x.href;}catch(e){return '';}}
 function host(u){try{return new URL(u).hostname.replace(/^www\./,'');}catch(e){return u;}}
 function routePlace(i){if(i.pseudo)return i.place;if(i.section==='transport')return (i.mode==='rent'?i.from:i.dir==='back'?i.from:i.to)||i.title;return i.title+(i.area?' '+i.area:'');}
-function mapUrl(q){return 'https://map.naver.com/p/search/'+encodeURIComponent(q);}
+/* 해외 여행이면 구글맵: 네이버·카카오는 한국 밖 장소 정보가 거의 없어요 */
+var ABROAD=/일본|후쿠오카|오사카|교토|도쿄|삿포로|홋카이도|오키나와|나고야|고베|요코하마|가마쿠라|하코네|유후인|벳푸|기타큐슈|나가사키|구마모토|가고시마|히로시마|마쓰야마|다카마쓰|시즈오카|센다이|대만|타이베이|타이중|가오슝|타이난|홍콩|마카오|중국|상하이|베이징|칭다오|태국|방콕|치앙마이|푸켓|파타야|베트남|다낭|하노이|호치민|나트랑|푸꾸옥|달랏|호이안|필리핀|세부|보라카이|마닐라|보홀|싱가포르|말레이시아|쿠알라룸푸르|코타키나발루|발리|인도네시아|라오스|비엔티안|캄보디아|괌|사이판|하와이|호놀룰루|미국|뉴욕|엘에이|샌프란시스코|라스베이거스|캐나다|밴쿠버|토론토|유럽|파리|런던|로마|피렌체|베네치아|밀라노|바르셀로나|마드리드|리스본|포르투|프라하|부다페스트|스위스|취리히|인터라켄|독일|베를린|뮌헨|암스테르담|이스탄불|두바이|호주|시드니|멜버른|뉴질랜드|몽골|울란바토르|[ぁ-んァ-ン]|[一-龯]/i;
+function abroad(){var t=trip();return !!(t&&ABROAD.test(t.name||''));}
+function useKakao(){return !!window.TB_KAKAO&&!abroad();}
+function mapUrl(q){return abroad()?'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q):'https://map.naver.com/p/search/'+encodeURIComponent(q);}
 function todayStr(){var n=new Date();return n.getFullYear()+'-'+('0'+(n.getMonth()+1)).slice(-2)+'-'+('0'+n.getDate()).slice(-2);}
 function todayDayOf(t){if(!t||!t.startDate||!t.endDate)return 0;var td=todayStr();if(td<t.startDate||td>t.endDate)return 0;return diffDays(t.startDate,td)+1;}
 function nameOf(id){var m=members[id],p=profs[id];if(m&&m.name)return m.name;if(id===uid)return (p&&p.name)||'나';return (p&&p.name)||'상대';}
@@ -895,7 +899,7 @@ function renderSection(key,its,t){
   if(key==='must'){h+='<div class="areaf"><button data-act="mustf" data-v="" aria-pressed="'+(!mustMine)+'">전체</button><button data-act="mustf" data-v="1" aria-pressed="'+mustMine+'">내 할 일</button></div>';if(mustMine)list=list.filter(function(i){return i.who?i.who===uid:!(i.doneBy&&i.doneBy[uid]);});}
   if(!list.length)return h+'<div class="empty">'+esc(EMPTY[all?'all':key]||EMPTY.all)+'</div>';
   list.sort(function(x,y){var cx=isConf(x)&&!secOf(x.section).check?1:0,cy=isConf(y)&&!secOf(y.section).check?1:0;var mx=x.section==='must'?1:0,my=y.section==='must'?1:0;return mx-my||((x.done?1:0)-(y.done?1:0))||(areaRank(x)-areaRank(y))||String(x.area||'').localeCompare(String(y.area||''))||cy-cx||(x.createdAt||0)-(y.createdAt||0);});
-  if(window.TB_KAKAO&&key!=='must'&&list.length){
+  if(useKakao()&&key!=='must'&&list.length){
     var bp=[],ma=lsGet('mapall')==='1',ml=ma?its.filter(function(i){var x=secOf(i.section);return x&&!x.fixed&&!x.check&&i.section!=='must';}):list,used={};
     var co=candOn('c');ml.forEach(function(i){var cf=isConf(i)&&!secOf(i.section).check,ed=cf?effDay(i,t):0;if(!cf&&!co)return;used[i.section]=1;bp.push({i:i,t:'',c:cf?'s':'c',col:CATC[i.section]||'#fff',j:1,sub:secOf(i.section).name+' · '+(cf?(ed?dayLabel(t,ed)+' 확정':'확정'):'후보')+(i.area?' · '+areaLabel(i.area):'')});});
     its.filter(function(i){return i.section==='stay';}).forEach(function(i){bp.push({i:{pseudo:true,place:i.title,title:i.title,sid:i.id,addr:i.addr,geo:i.geo},t:'숙',c:'h',sub:'숙소'});});
@@ -1159,7 +1163,7 @@ function renderTimeline(t,its){
   }
   var un=(sel!=='all')?[]:sortDay(sched.filter(function(i){var e=effDay(i,t);return !e||e>n||e<1;}));
   if(un.length){h+='<div class="tl-day" data-d="0"><div class="tl-dh">날짜 미정</div><div class="tl-list">';un.forEach(function(i){h+=ev(i);});h+='</div></div>';}
-  var mb='';if(window.TB_KAKAO){
+  var mb='';if(useKakao()){
     if(candOn('t'))its.forEach(function(i){var sc=secOf(i.section);if(sc&&!sc.fixed&&!sc.check&&i.section!=='must'&&!isConf(i))tp.push({i:i,t:'',c:'c',j:1,sub:sc.name+' 후보'+(i.area?' · '+areaLabel(i.area):'')});});
     if(tp.length||canWrite){mapDays.push({d:'t',line:true,pins:tp});mb=mapBlock('t','t',(sel==='all'?tleg:'<span>번호 = 타임라인 순서</span>')+(candOn('t')?'<span><i style="background:#fff"></i>후보</span>':''));}}
   h=h.replace('%%TLMAP%%',mb);
@@ -1452,7 +1456,8 @@ function doQuick(raw,blur){
 /* 빠른 등록: 지도 공유 내용을 붙여넣으면 이름·주소·위치를 채워서 바로 저장, 이름만 쓰면 이름만 저장 */
 var quickAdd=guarded(function(sec,txt){
   var s=secOf(sec),sh=parseShare(txt),title=txt,link='',addr='',area='';
-  if(sh){link=sh.url;addr=sh.addr||'';area=sh.area||'';title=sh.name||host(sh.url);}
+  if(sh&&!sh.name){openItemForm({section:s.key,pre:{link:sh.url}});return;}
+  if(sh){link=sh.url;addr=sh.addr||'';area=sh.area||'';title=sh.name;}
   var data={tripId:tripId,section:s.key,title:title.slice(0,80),memo:'',desc:'',link:link,status:'idea',done:false,likes:{},createdBy:uid,createdAt:Date.now()};
   if(DESC[s.key]){data.area=area;if(addr)data.addr=addr;}
   if(s.sched){data.day=0;data.time='';}
@@ -1462,7 +1467,7 @@ var quickAdd=guarded(function(sec,txt){
 });
 /* 카카오맵 공유처럼 주소가 없으면, 저장한 뒤 조용히 위치를 찾아 채워요 */
 function quickGeo(id,sh){
-  if(!window.TB_KAKAO)return;
+  if(!useKakao())return;
   var pid=(sh.url.match(/place\.map\.kakao\.com\/(?:m\/)?(\d+)/)||[])[1]||'';
   kakaoReady(function(){geoAnchor(function(an){
     if(!pid&&!an)return;
