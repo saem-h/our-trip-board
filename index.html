@@ -626,6 +626,10 @@ function ensureMember(){
   return memberP;
 }
 function fbBoard(){return authReady().then(ensureMember);}
+/* 예전 보드(구글 시트) 가져오기: 같은 문서 id로 한 번에 써요 (다시 해도 중복이 안 생겨요) */
+window.TB_write=function(ws){if(!fsRoot)return Promise.reject(new Error('board'));var fs=fsDb(),p=Promise.resolve();
+  for(var i=0;i<ws.length;i+=15)(function(ch){p=p.then(function(){var b=fs.batch();ch.forEach(function(w){var r=fsRoot.collection(w.col).doc(w.id);if(w.merge)b.set(r,w.data,{merge:true});else b.set(r,w.data);});return b.commit();});})(ws.slice(i,i+15));
+  return p;};
 window.TB_home=function(){location.href='/';};
 
 function gate(){
@@ -1396,7 +1400,7 @@ function render(){
   if(!ready&&!offline){
     h+='<div class="hello"><div class="ld" role="status" aria-label="불러오는 중"><i style="--i:0"></i><i style="--i:1"></i><i style="--i:2"></i></div><h2>불러오는 중</h2><p>여행 목록을 가져오고 있어요.</p></div>';
   }else if(!t){
-    if(!offline)h+='<div class="hello"><h2>첫 여행을 만들어 보세요</h2><p>여행 이름과 날짜를 정하면 교통, 숙소, 맛집, 체험을 같이 모을 수 있어요.</p><p><button class="btn pri" data-act="newtrip"'+(canWrite?'':' disabled')+'>+ 새 여행 만들기</button></p></div>';
+    if(!offline)h+='<div class="hello"><h2>첫 여행을 만들어 보세요</h2><p>여행 이름과 날짜를 정하면 교통, 숙소, 맛집, 체험을 같이 모을 수 있어요.</p><p><button class="btn pri" data-act="newtrip"'+(canWrite?'':' disabled')+'>+ 새 여행 만들기</button></p>'+(window.TB_BOARD&&canWrite?'<p><button class="linkbtn" data-act="oldimp">예전 보드에서 가져오기</button></p>':'')+'</div>';
   }else{
     var its=tripItems();
     if(ready&&seenFor!==tripId){seenFor=tripId;var sv=parseInt(lsGet('seen_'+tripId),10);seenAt=sv||Date.now();lsSet('seen_'+tripId,String(Date.now()));}
@@ -1556,6 +1560,88 @@ function openItemForm(opts){
     openItemForm({item:it,section:b.dataset.c,pre:{title:g('f-title'),desc:g('f-desc'),area:g('f-area'),link:g('f-link'),addr:g('f-addr'),memo:g('f-memo'),closed:readClosed()}});});
   setTimeout(function(){var f=document.getElementById('f-title');if(f)f.focus();},30);
 }
+/* ---------- 예전 보드(구글 시트) → 이 보드로 옮기기 ----------
+   - 여행·장소의 id를 그대로 써서, 여러 번 눌러도 중복이 생기지 않아요.
+   - 이미 이 보드에 있는 건 내용을 덮어쓰지 않고, 사람(하트·담당·완료)만 새 계정으로 바꿔요.
+   - 예전 보드(구글 시트)는 읽기만 해요. */
+var imp=null;
+function impPeople(d){
+  var ids={},names={},used={};
+  Object.keys(d.members||{}).forEach(function(k){var m=d.members[k];if(m&&m.name){ids[k]=1;names[k]=m.name;}});
+  [['u_sami','새미'],['u_juseong','주성']].forEach(function(p){if(!names[p[0]])names[p[0]]=p[1];});
+  Object.keys(d.items||{}).forEach(function(k){var i=d.items[k]||{};
+    if(i.createdBy)ids[i.createdBy]=1;if(i.who)ids[i.who]=used[i.who]=1;
+    Object.keys(i.likes||{}).forEach(function(x){ids[x]=used[x]=1;});Object.keys(i.doneBy||{}).forEach(function(x){ids[x]=used[x]=1;});});
+  return Object.keys(ids).filter(function(k){return k&&!members[k]&&(names[k]||used[k]);}).map(function(k){return {id:k,name:names[k]||''};})
+    .sort(function(a,b){return (b.name?1:0)-(a.name?1:0);});
+}
+function impGuess(nm){
+  if(!nm)return '';
+  var ks=Object.keys(members),hit=ks.filter(function(k){var n=(members[k]&&members[k].name)||'';return n&&(n.indexOf(nm)>-1||nm.indexOf(n)>-1);});
+  return hit.length===1?hit[0]:'';
+}
+function openImport(){
+  if(!canWrite)return;
+  modal.innerHTML='<div class="card"><h3>예전 보드 가져오기</h3><p class="mut">예전 주소에 있던 여행을 불러오고 있어요…</p></div>';modal.className='on';
+  fetch(API_URL+'?action=all&t='+Date.now()).then(function(r){return r.json();}).then(function(j){
+    if(!j||!j.ok||!j.data)throw new Error('data');
+    imp={d:j.data,people:impPeople(j.data)};drawImport();
+  }).catch(function(){
+    modal.innerHTML='<div class="card"><h3>예전 보드 가져오기</h3><p class="mut">예전 보드를 불러오지 못했어요. 잠시 뒤 다시 해 주세요.</p><div class="foot"><div class="r"><button class="btn" data-act="close">닫기</button></div></div></div>';
+  });
+}
+function drawImport(){
+  var d=imp.d,have={},hi={};trips.forEach(function(t){have[t.id]=1;});items.forEach(function(i){hi[i.id]=1;});
+  var ts=Object.keys(d.trips||{}).map(function(k){var t=Object.assign({},d.trips[k]);t.id=k;return t;}).sort(function(a,b){return (a.createdAt||0)-(b.createdAt||0);});
+  var h='<div class="card"><h3>예전 보드 가져오기</h3><p class="mut">예전 주소(구글 시트)에 있던 여행과 장소를 이 보드로 옮겨요. 예전 보드는 그대로 남아요.</p>';
+  if(!ts.length)h+='<p class="mut">예전 보드에 여행이 없어요.</p>';
+  ts.forEach(function(t){
+    var all=Object.keys(d.items||{}).filter(function(k){return d.items[k]&&d.items[k].tripId===t.id;}),nw=all.filter(function(k){return !hi[k];}).length;
+    var st=have[t.id]?(nw?'이미 있어요 · 빠진 '+nw+'개만 더해요':'이미 다 옮겼어요'):all.length+'개';
+    h+='<label style="display:flex!important;flex-direction:row!important;align-items:center;gap:12px;margin:0 0 12px;font-weight:600"><input type="checkbox" data-imt="'+esc(t.id)+'"'+(have[t.id]&&!nw?'':' checked')+' style="display:block!important;width:20px!important;height:20px!important;min-width:0!important;flex:none;margin:0!important;padding:0!important"><span>'+esc(t.name||'이름 없는 여행')+'<span class="mut" style="display:block;font-weight:400;margin:2px 0 0">'+esc((t.dates||(t.startDate?t.startDate+(t.endDate?' ~ '+t.endDate:''):''))+(t.dates||t.startDate?' · ':''))+esc(st)+'</span></span></label>';
+  });
+  var opts=Object.keys(members).map(function(k){return {id:k,name:(members[k]&&members[k].name)||'이름 없음'};});
+  if(imp.people.length){
+    h+='<p class="mut" style="margin-top:16px">하트, 담당, 완료 표시를 누구 것으로 옮길지 골라 주세요. 아직 이 보드에 안 들어온 사람은 비워 두고, 들어온 뒤에 다시 가져오기를 누르면 돼요.</p>';
+    imp.people.forEach(function(p){var g=impGuess(p.name);
+      h+='<label>예전 '+esc(p.name||'이름 없는 사람')+'<select data-imp="'+esc(p.id)+'"><option value="">아직 없음 (그대로 두기)</option>'+opts.map(function(o){return '<option value="'+esc(o.id)+'"'+(o.id===g?' selected':'')+'>'+esc(o.name)+(o.id===uid?' (나)':'')+'</option>';}).join('')+'</select></label>';});
+  }
+  h+='<div class="foot"><button class="btn" data-act="close">취소</button><div class="r">'+(ts.length?'<button class="btn pri" data-act="oldimpgo" id="b-imp">가져오기</button>':'')+'</div></div></div>';
+  modal.innerHTML=h;modal.className='on';
+}
+function impMap(x,m){
+  if(Array.isArray(x))return x.map(function(v){return Array.isArray(v)?impMap(Object.assign({},v),m):impMap(v,m);});
+  if(x&&typeof x==='object'){var o={};Object.keys(x).forEach(function(k){if(!k||x[k]===undefined)return;var nk=m[k]||k;o[nk]=impMap(x[k],m);});return o;}
+  if(typeof x==='string'&&m[x])return m[x];
+  return x===undefined?null:x;
+}
+function runImport(){
+  if(!imp||!window.TB_write)return;
+  var b=document.getElementById('b-imp');if(b){if(b.disabled)return;b.disabled=true;b.textContent='옮기는 중…';}
+  var pick={},m={},d=imp.d,have={},hi={},ws=[],nt=0,ni=0,nf=0;
+  modal.querySelectorAll('[data-imt]').forEach(function(c){if(c.checked)pick[c.dataset.imt]=1;});
+  modal.querySelectorAll('[data-imp]').forEach(function(s){if(s.value)m[s.dataset.imp]=s.value;});
+  trips.forEach(function(t){have[t.id]=1;});items.forEach(function(i){hi[i.id]=i;});
+  Object.keys(pick).forEach(function(k){var t=d.trips[k];if(!t||have[k])return;var o=impMap(t,m);delete o.id;ws.push({col:'trips',id:k,data:o});nt++;});
+  Object.keys(d.items||{}).forEach(function(k){var i=d.items[k];if(!i||!pick[i.tripId])return;
+    if(!hi[k]){var o=impMap(i,m);delete o.id;ws.push({col:'items',id:k,data:o});ni++;}});
+  /* 이미 옮긴 것: 사람만 새 계정으로 (내용은 그대로) */
+  if(Object.keys(m).length)items.forEach(function(i){
+    if(!d.trips[i.tripId])return;
+    var p={},ch=false;
+    ['createdBy','who'].forEach(function(f){if(i[f]&&m[i[f]]){p[f]=m[i[f]];ch=true;}});
+    ['likes','doneBy'].forEach(function(f){var v=i[f];if(!v||typeof v!=='object')return;var hit=Object.keys(v).filter(function(x){return m[x];});
+      if(!hit.length)return;var o={};Object.keys(v).forEach(function(x){if(m[x]){if(v[x]||!(m[x] in v))o[m[x]]=v[x];}else o[x]=v[x];});p[f]=o;ch=true;});
+    if(ch){ws.push({col:'items',id:i.id,data:Object.assign({},i,p,{id:null})});nf++;}
+  });
+  ws.forEach(function(w){if(w.data&&w.data.id===null)delete w.data.id;});
+  if(!ws.length){closeModal();toast('이미 다 옮겨져 있어요.');return;}
+  window.TB_write(ws).then(function(){
+    closeModal();
+    toast((nt?'여행 '+nt+'개, ':'')+(ni?'장소·할 일 '+ni+'개를 옮겼어요':'')+(nf?(ni?' · ':'')+'사람 표시 '+nf+'개를 바꿨어요':'')+'.');
+    render();
+  },function(e){if(b){b.disabled=false;b.textContent='가져오기';}toast('옮기지 못했어요. 다시 해 주세요. ('+((e&&e.code)||'')+')');});
+}
 function openNewBoard(){
   modal.innerHTML='<div class="card"><h3>새 보드 만들기</h3><p class="mut">지금 보드와 똑같은데 비어 있는 보드를 새로 만들어요. 지금 보드의 여행과 데이터는 그대로 남아요.</p><p class="mut">만든 뒤 위쪽 <b>친구 초대</b>를 눌러 링크를 보내면 같이 쓸 수 있어요. 초대받은 사람만 들어올 수 있어요.</p><div class="foot"><button class="btn" data-act="close">취소</button><div class="r"><button class="btn pri" data-act="mknewboard">만들기</button></div></div></div>';
   modal.className='on';
@@ -1574,7 +1660,7 @@ function openTripForm(isNew){
   h+='<label>일정 일수 (날짜를 고르면 자동으로 계산돼요)<select id="t-days">';
   for(var d=1;d<=14;d++)h+='<option value="'+d+'"'+(((t&&t.days)||2)===d?' selected':'')+'>'+d+'일</option>';
   h+='</select></label>';
-  h+='<div class="foot">'+(isNew?'<button class="btn" data-act="close">취소</button>':'<button class="btn warn" data-act="deltrip" id="b-deltrip">여행 삭제</button><button class="btn" data-act="arctrip">'+(t&&isArchived(t)?'보관 해제':'지난 여행으로')+'</button>')+'<div class="r">'+(isNew?'':'<button class="btn" data-act="close">닫기</button>')+'<button class="btn pri" data-act="savetrip" data-new="'+(isNew?1:0)+'">저장</button></div></div>'+(window.TB_FB?'<p class="mut" style="margin:18px 0 0;font-size:13px">다른 사람들과 따로 쓸 보드가 필요하면 <button class="linkbtn" data-act="newboard">새 보드 만들기</button>'+(window.TB_BOARD?' · <button class="linkbtn" data-act="home">내 보드 목록</button>':'')+'</p>':'')+'</div>';
+  h+='<div class="foot">'+(isNew?'<button class="btn" data-act="close">취소</button>':'<button class="btn warn" data-act="deltrip" id="b-deltrip">여행 삭제</button><button class="btn" data-act="arctrip">'+(t&&isArchived(t)?'보관 해제':'지난 여행으로')+'</button>')+'<div class="r">'+(isNew?'':'<button class="btn" data-act="close">닫기</button>')+'<button class="btn pri" data-act="savetrip" data-new="'+(isNew?1:0)+'">저장</button></div></div>'+(window.TB_FB?'<p class="mut" style="margin:18px 0 0;font-size:13px">다른 사람들과 따로 쓸 보드가 필요하면 <button class="linkbtn" data-act="newboard">새 보드 만들기</button>'+(window.TB_BOARD?' · <button class="linkbtn" data-act="home">내 보드 목록</button>':'')+'</p>'+(window.TB_BOARD?'<p class="mut" style="margin:6px 0 0;font-size:13px">예전 주소에서 쓰던 여행이 있다면 <button class="linkbtn" data-act="oldimp">예전 보드 가져오기</button></p>':''):'')+'</div>';
   modal.innerHTML=h;modal.className='on';
   var st=document.getElementById('t-start'),en=document.getElementById('t-end'),dy=document.getElementById('t-days');
   function sync(){if(st.value&&en.value){var n=diffDays(st.value,en.value)+1;if(n>=1&&n<=14){dy.value=String(n);dy.disabled=true;return;}}dy.disabled=false;}
@@ -1813,6 +1899,8 @@ document.addEventListener('click',function(e){
   else if(a==='add'){if(canWrite)openItemForm({section:el.dataset.sec});}
   else if(a==='newtrip'){if(canWrite)openTripForm(true);}
   else if(a==='newboard'){openNewBoard();}
+  else if(a==='oldimp'){openImport();}
+  else if(a==='oldimpgo'){runImport();}
   else if(a==='mknewboard'){location.href='https://our-trip-board.web.app/?new=1';}
   else if(a==='home'){location.href='/';}
   else if(a==='shareboard'){shareBoard();}
