@@ -999,6 +999,16 @@ function nSearch(q,an,cb){
     }).catch(function(){nsOff=true;done(0);});
   },function(v){cb((v||[]).filter(function(x){return inArea(x,an);}));});
 }
+/* 맛집 추천용: 네이버에서 리뷰 많은 순으로 5곳 */
+function nTop(q,an,cb){
+  if(nsOff||API_URL.indexOf('http')!==0)return cb([]);
+  memo('nsc:'+q,function(done){
+    fetch(API_URL+'?action=nsearch&sort=comment&q='+encodeURIComponent(q)).then(function(r){return r.json();}).then(function(j){
+      if(!j||!j.ok||!Array.isArray(j.items))return done(0);
+      done(j.items.map(function(x){return {place_name:x.name,road_address_name:x.road||'',address_name:x.addr||'',x:x.x,y:x.y,category_name:x.cat||'',nv:1};}));
+    }).catch(function(){done(0);});
+  },function(v){cb((v||[]).filter(function(x){return inArea(x,an);}));});
+}
 function geoFind(q,area,cb){
   geoAnchor(function(an){
     var ak=an?(an.y.toFixed(1)+','+an.x.toFixed(1)):'-';
@@ -1190,7 +1200,7 @@ function rcSearch(){
   var tok=rcSearch.t=(rcSearch.t||0)+1;
   kakaoReady(function(){geoAnchor(function(an){
     var opt=jejuBounds(an);opt.category_group_code='FD6';
-    nSearch(q,an,function(n){
+    nTop(q,an,function(n){
       n=n.filter(function(x){return !/카페|디저트|베이커리|제과|술집|바\(BAR\)|호프/.test(x.category_name||'');});
       new kakao.maps.services.Places().keywordSearch(q,function(r,st){
         if(tok!==rcSearch.t)return;
