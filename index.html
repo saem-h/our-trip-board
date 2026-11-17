@@ -1724,12 +1724,29 @@ function doQuick(raw,blur){
   quickAdd(addSec,v);
 }
 /* 빠른 등록: 지도 공유 내용을 붙여넣으면 이름·주소·위치를 채워서 바로 저장, 이름만 쓰면 이름만 저장 */
+/* 구글 지도 공유 링크: Apps Script가 짧은 링크를 따라가서 가게 이름·좌표를 읽어 와요 */
+function isGmap(u){return /^https?:\/\/(maps\.app\.goo\.gl|goo\.gl\/maps|(www\.)?google\.[a-z.]+\/maps|maps\.google\.[a-z.]+)/i.test(u||'');}
+function gplace(url,cb){
+  if(API_URL.indexOf('http')!==0)return cb(0);
+  var fin=false,t=setTimeout(function(){if(!fin){fin=true;cb(0);}},9000);
+  memo('gpl:'+url,function(done){
+    fetch(API_URL+'?action=gplace&url='+encodeURIComponent(url)).then(function(r){return r.json();}).then(function(j){
+      done(j&&j.ok&&(j.name||j.y!=null)?{name:j.name||'',addr:j.addr||'',x:j.x,y:j.y}:0);
+    }).catch(function(){done(0);});
+  },function(v){if(fin)return;fin=true;clearTimeout(t);cb(v);});
+}
 var quickAdd=guarded(function(sec,txt){
-  var s=secOf(sec),sh=parseShare(txt),title=txt,link='',addr='',area='';
+  var sh=parseShare(txt);
+  if(sh&&isGmap(sh.url)){toast('구글 지도에서 불러오는 중…');gplace(sh.url,function(gp){quickSave(sec,txt,sh,gp);});return;}
+  return quickSave(sec,txt,sh,null);
+});
+var quickSave=guarded(function(sec,txt,sh,gp){
+  var s=secOf(sec),title=txt,link='',addr='',area='';
+  if(gp&&gp.name&&sh)sh.name=gp.name;
   if(sh&&!sh.name){openItemForm({section:s.key,pre:{link:sh.url}});return;}
-  if(sh){link=sh.url;addr=sh.addr||'';area=sh.area||'';title=sh.name;}
+  if(sh){link=sh.url;addr=sh.addr||(gp&&gp.addr)||'';area=sh.area||(gp&&gp.addr?areaFromAddr(gp.addr):'');title=sh.name;}
   var data={tripId:tripId,section:s.key,title:title.slice(0,80),memo:'',desc:'',link:link,status:'idea',done:false,likes:{},createdBy:uid,createdAt:Date.now()};
-  if(DESC[s.key]){data.area=area;if(addr)data.addr=addr;}
+  if(DESC[s.key]){data.area=area;if(addr)data.addr=addr;if(gp&&gp.y!=null&&gp.x!=null){data.geo={x:+gp.x,y:+gp.y,g:1};addr=addr||'-';}}
   if(s.sched){data.day=0;data.time='';}
   var ref=db.collection('items').doc();flashId=ref.id;
   toast(s.name+'에 넣었어요');
