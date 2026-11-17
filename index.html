@@ -553,7 +553,7 @@ function loginScreen(msg){
     location.href='https://kauth.kakao.com/oauth/authorize?response_type=code&client_id='+KREST+'&redirect_uri='+encodeURIComponent(ru())+'&state='+encodeURIComponent(location.search||'');};
 }
 function errScreen(msg){var o=ov('<p style="font-size:14px;color:#b8b8b8;line-height:1.6;margin:0 0 22px">'+hx(msg)+'</p><button id="hb" style="background:#C8FF2E;border:0;color:#0a0a0a;border-radius:10px;padding:13px 18px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit">내 보드로</button>');
-  o.querySelector('#hb').onclick=function(){location.href='/';};}
+  o.querySelector('#hb').onclick=function(){location.href='/?list=1';};}
 /* 카카오에서 돌아왔을 때: code → 로그인 */
 function finishKakao(fs){
   var code=QS.get('code'),st=QS.get('state')||'';
@@ -591,10 +591,9 @@ function homeScreen(){
   if(QS.get('new')){history.replaceState(null,'','/');return createBoard();}
   ov(DOTS);
   return fsDb().collection('users').doc(UID).collection('boards').orderBy('at','desc').get().then(function(q){
-    /* 홈 화면 앱으로 켜면 마지막에 본 보드를 바로 열어요 (목록은 '내 보드 목록'으로) */
-    var sa=false;try{sa=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true;}catch(e){}
-    var once=false;try{once=sessionStorage.getItem('tb_auto')==='1';sessionStorage.setItem('tb_auto','1');}catch(e){once=true;}
-    if(sa&&!once&&q.size){location.replace('/?b='+q.docs[0].id);return;}
+    /* 로그인하면 마지막에 본 보드를 바로 열어요 (목록은 여행 설정 → '내 보드 목록'으로) */
+    if(!QS.get('list')&&q.size){location.replace('/?b='+q.docs[0].id);return;}
+    if(QS.get('list'))history.replaceState(null,'','/');
     var rows='';q.forEach(function(d){var x=d.data();
       rows+='<a href="/?b='+hx(d.id)+'" style="display:block;padding:15px 0;border-bottom:1px solid #222;color:#fff;text-decoration:none"><div style="font-size:16px;font-weight:600">'+hx(x.name||'이름 없는 보드')+'</div>'
         +'<div style="font-size:12px;color:#8a8a8a;margin-top:4px">'+(x.at?new Date(x.at).toLocaleDateString('ko-KR')+' 열어 봄':'')+'</div></a>';});
@@ -632,7 +631,7 @@ function fbBoard(){return authReady().then(ensureMember);}
 window.TB_write=function(ws){if(!fsRoot)return Promise.reject(new Error('board'));var fs=fsDb(),p=Promise.resolve();
   for(var i=0;i<ws.length;i+=15)(function(ch){p=p.then(function(){var b=fs.batch();ch.forEach(function(w){var r=fsRoot.collection(w.col).doc(w.id);if(w.merge)b.set(r,w.data,{merge:true});else b.set(r,w.data);});return b.commit();});})(ws.slice(i,i+15));
   return p;};
-window.TB_home=function(){location.href='/';};
+window.TB_home=function(){location.href='/?list=1';};
 
 function gate(){
   return new Promise(function(res){
@@ -1914,7 +1913,7 @@ document.addEventListener('click',function(e){
   else if(a==='oldimp'){openImport();}
   else if(a==='oldimpgo'){runImport();}
   else if(a==='mknewboard'){location.href='https://our-trip-board.web.app/?new=1';}
-  else if(a==='home'){location.href='/';}
+  else if(a==='home'){location.href='/?list=1';}
   else if(a==='shareboard'){shareBoard();}
   else if(a==='settings'){openTripForm(false);}
   else if(a==='myname'){if(uid)openNameForm(false);}
