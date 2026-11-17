@@ -2066,4 +2066,46 @@ async function init(){
 init();
 })();
 </script>
+<style>
+#ptr{position:fixed;left:50%;top:env(safe-area-inset-top,0px);z-index:60;display:flex;gap:6px;padding:10px 12px;background:#161616;border:1px solid #2a2a2a;border-radius:999px;transform:translate(-50%,-70px);opacity:0;pointer-events:none}
+#ptr i{display:block;width:7px;height:7px;border-radius:50%;background:#C8FF2E;opacity:.3;transition:opacity .15s}
+#ptr.ok i{opacity:1}
+#ptr.spin i{opacity:1;animation:tbdot 1000ms ease-in-out calc(var(--i,0)*160ms) infinite}
+#ptr.back{transition:transform .25s ease,opacity .25s ease}
+</style>
+<script>
+/* 홈 화면 앱(사파리 주소창 없음)에서 맨 위에서 아래로 당기면 새로고침 */
+(function(){
+  var sa=false;try{sa=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true;}catch(e){}
+  if(!sa&&!/[?&]ptr=1(&|$)/.test(location.search))return;
+  var el=document.createElement('div');el.id='ptr';el.setAttribute('aria-hidden','true');
+  el.innerHTML='<i style="--i:0"></i><i style="--i:1"></i><i style="--i:2"></i>';document.body.appendChild(el);
+  var y0=null,x0=0,p=0,busy=false,TH=64;
+  function top(){return (window.scrollY||document.documentElement.scrollTop||0)<=0;}
+  function blocked(t){
+    var m=document.getElementById('modal');if(m&&m.className)return true;
+    if(window.dragActive)return true;
+    return !!(t&&t.closest&&t.closest('.tl-map,.gf-map,.tl-mapw.big,input,textarea,select,.dh,[contenteditable]'));
+  }
+  function set(v){p=v;el.classList.remove('back');el.style.transform='translate(-50%,'+(Math.min(v,TH+20)-70)+'px)';el.style.opacity=String(Math.min(1,v/TH));el.classList.toggle('ok',v>=TH);}
+  function reset(){y0=null;el.classList.add('back');el.classList.remove('ok');el.style.transform='translate(-50%,-70px)';el.style.opacity='0';p=0;}
+  document.addEventListener('touchstart',function(e){
+    if(busy||e.touches.length!==1||!top()||blocked(e.target)){y0=null;return;}
+    y0=e.touches[0].clientY;x0=e.touches[0].clientX;p=0;
+  },{passive:true});
+  document.addEventListener('touchmove',function(e){
+    if(y0==null||busy)return;
+    var dy=e.touches[0].clientY-y0,dx=Math.abs(e.touches[0].clientX-x0);
+    if(dy<=0||dx>dy||!top()||window.dragActive){if(p)reset();else y0=null;return;}
+    set(dy*.5);
+  },{passive:true});
+  function end(){
+    if(y0==null||busy)return;
+    if(p>=TH){busy=true;el.classList.remove('ok');el.classList.add('spin','back');el.style.transform='translate(-50%,14px)';setTimeout(function(){location.reload();},350);}
+    else reset();
+  }
+  document.addEventListener('touchend',end,{passive:true});
+  document.addEventListener('touchcancel',reset,{passive:true});
+})();
+</script>
 </body></html>
