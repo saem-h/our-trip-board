@@ -713,8 +713,10 @@ function parseShare(txt){
   else{name=ls[0];addr=ls.slice(1).filter(function(x){return AD.test(x)||/(시|군|구|읍|면|동|리|로|길)(\s|$)/.test(x);})[0]||'';}
   return {url:url,name:name,area:areaFromAddr(addr),addr:addr};
 }
+/* 구글 주소가 영어·일본어로 오면 동네 이름을 한글 버튼 이름으로 바꿔서 찾아요 */
+var AREA_ALIAS={'Hakata':'하카타','博多':'하카타','Tenjin':'텐진','天神':'텐진','Nakasu':'나카스','中洲':'나카스','Ohori':'오호리공원','大濠':'오호리공원','Momochi':'모모치','百道':'모모치','Dazaifu':'다자이후','太宰府':'다자이후','Itoshima':'이토시마','糸島':'이토시마','Yanagawa':'야나가와','柳川':'야나가와','Hita':'히타','日田':'히타','Yufu':'유후인','由布':'유후인','Beppu':'벳푸','別府':'벳푸'};
 function areaFromAddr(addr){
-  var area='';addr=addr||'';
+  var area='';addr=addr||'';Object.keys(AREA_ALIAS).forEach(function(k){if(addr.indexOf(k)>-1)addr+=' '+AREA_ALIAS[k];});
   if(regionG()===AREA_G){
     Object.keys(JEJU_EUP).forEach(function(k){if(!area&&addr.indexOf(k)>-1)area=JEJU_EUP[k];});
     if(!area&&addr.indexOf('중문')>-1)area='중문';
