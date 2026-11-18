@@ -162,6 +162,10 @@ a.it-t:active,.ev-n a:active,.pr-n a:active{opacity:.55}
 .it-meta{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-size:13px}
 .it-meta a{color:var(--ink);text-underline-offset:3px;overflow-wrap:anywhere}
 .it-meta select{border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:2px 10px;min-height:30px;font-size:13px}
+.more{display:inline-flex;vertical-align:-2px;width:16px;height:16px;align-items:center;justify-content:center;border-radius:50%;background:var(--soft);color:var(--ink);margin-left:2px;transition:transform .2s}
+.more svg{width:11px;height:11px}
+.more.on{transform:rotate(180deg)}
+.more-t{font-size:12px;margin-left:4px}
 .it-memo{white-space:pre-wrap;overflow-wrap:anywhere;font-size:13.5px;line-height:1.55;color:var(--ink)}
 .it-addr{font-size:12px;color:var(--muted);overflow-wrap:anywhere}
 .it-a{display:flex;gap:12px;align-items:center;font-size:12px;color:var(--muted)}
@@ -932,7 +936,7 @@ function itemHTML(it,s,t,tag){
   var ct=closedTxt(it);if(ct&&it.closed&&it.closed.length)sp.push('<span class="cl">'+esc(ct)+'</span>');
   var first=sp.join(' · ');
   var go=s.check?'':evLink(it);
-  h+='<div class="it-m" data-act="row" role="button" tabindex="0" aria-expanded="'+open+'">'+(go?'<a class="it-t" data-act="go" href="'+esc(go)+'" target="_blank" rel="noopener noreferrer">':'<span class="it-t">')+(tag?'<em class="tg" data-s="'+s.key+'">'+esc(s.name)+'</em>':'')+esc(it.title)+(it.area&&!groupedNow?'<em class="loc">'+esc(areaLabel(it.area))+'</em>':'')+(both?'<em class="both">둘 다</em>':'')+(isNew?'<em class="new">new</em>':'')+(go?'</a>':'</span>')+(first?'<span class="it-s">'+first+'</span>':'')+'</div>';
+  h+='<div class="it-m" data-act="row" role="button" tabindex="0" aria-expanded="'+open+'">'+(go?'<a class="it-t" data-act="go" href="'+esc(go)+'" target="_blank" rel="noopener noreferrer">':'<span class="it-t">')+(tag?'<em class="tg" data-s="'+s.key+'">'+esc(s.name)+'</em>':'')+esc(it.title)+(it.area&&!groupedNow?'<em class="loc">'+esc(areaLabel(it.area))+'</em>':'')+(both?'<em class="both">둘 다</em>':'')+(isNew?'<em class="new">new</em>':'')+(go?'</a>':'</span>')+'<span class="it-s">'+(first?first+' ':'')+'<i class="more'+(open?' on':'')+'" aria-hidden="true"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4.5l3 3 3-3"/></svg></i>'+(first?'':'<span class="more-t">메모·상세</span>')+'</span></div>';
   h+='<span class="it-ed"><button class="ib ed" data-act="edit" aria-label="수정" title="수정">'+EDIT_SVG+'</button><button class="ib ed'+(armed===it.id?' warn':'')+'" data-act="del" aria-label="'+(armed===it.id?'한 번 더 누르면 삭제':'삭제')+'" title="삭제">'+(armed===it.id?'<b>삭제?</b>':TRASH_SVG)+'</button></span>';
   if(!s.check)h+='<button class="ib cf'+(conf?' on':'')+'" data-act="confirm" aria-pressed="'+conf+'" aria-label="'+(conf?'확정 취소':'일정에 넣기')+'" title="'+(conf?'일정에 넣음 (누르면 취소)':'일정에 넣기')+'">'+(conf?CALOK_SVG:CALADD_SVG)+'</button>';
   h+='</div>';
