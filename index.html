@@ -214,6 +214,15 @@ a.it-t:active,.ev-n a:active,.pr-n a:active{opacity:.55}
 .tl-home{position:absolute;left:44px;bottom:8px;z-index:3;width:30px;height:30px;min-height:0;padding:0;border-radius:8px;background:#fff;color:#0A0A0A;border:1px solid rgba(0,0,0,.25);box-shadow:0 1px 4px rgba(0,0,0,.2);display:flex;align-items:center;justify-content:center;cursor:pointer}.tl-home svg,.tl-big svg{width:16px;height:16px}
 .tl-mapw.big .tl-home{left:12px;bottom:calc(12px + env(safe-area-inset-bottom));width:40px;height:40px;border-radius:999px}
 .tl-mapw.has-sheet .tl-home{display:none}
+.msq{position:absolute;left:8px;right:8px;top:8px;z-index:4;margin:0}
+.msq input{width:100%;height:38px;min-height:0;padding:0 12px 0 34px;border-radius:999px;border:1px solid rgba(0,0,0,.18);background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='6.5'/%3E%3Cpath d='M16 16l4.5 4.5'/%3E%3C/svg%3E") no-repeat 12px center/16px;color:#0A0A0A;font:inherit;font-size:15px;box-shadow:0 1px 6px rgba(0,0,0,.15);-webkit-appearance:none;appearance:none}
+.tl-mapw.big .msq{top:calc(12px + env(safe-area-inset-top));right:84px;left:12px}
+.msr{margin-top:8px;border:1px solid var(--line);border-radius:14px;padding:6px 6px 8px}
+.msr-h{display:flex;align-items:center;justify-content:space-between;padding:4px 8px 6px}.msr-h b{font-size:14px}
+.msr-i{display:flex;align-items:center;gap:4px}
+.msr-n{flex:1;min-width:0;display:flex;gap:10px;align-items:flex-start;text-align:left;background:none;border:0;padding:8px;border-radius:10px;color:inherit;font:inherit;cursor:pointer;min-height:0}
+.msr-n>span:last-child{min-width:0;display:flex;flex-direction:column}.msr-n b{font-size:15px}.msr-n small{color:var(--muted);font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.msr .mut{padding:4px 8px;margin:0}.msr-to{font-size:12px}
 .tl-mapw.big{position:fixed;inset:0;z-index:80;background:var(--bg)}
 .tl-mapw.big .tl-map{height:100%;border:0;border-radius:0}
 .tl-mapw.big .tl-big{left:auto;right:12px;top:calc(12px + env(safe-area-inset-top));bottom:auto;width:auto;padding:0 14px;height:36px;border-radius:999px;background:#0A0A0A;color:#fff;border:0;font-family:inherit;font-weight:700;font-size:13px}
@@ -1051,7 +1060,7 @@ function mapFolded(k){return lsGet('mapfold:'+k)==='1';}
 function candOn(k){var v=lsGet('mapcand:'+k);return v==null?k==='c':v==='1';}
 function mapBlock(id,fk,leg){
   var nq=0,f=mapFolded(fk),h='<div class="mapc" data-d="'+id+'"><div class="mapc-h"><b>지도</b><span class="mapc-leg">'+(f?'':(leg.indexOf('mseg')>-1?'<span class="mrow">'+leg.slice(0,leg.indexOf('</span>')+7)+(!f?'<button class="lb ct" data-act="mapcand" data-k="'+fk+'" aria-pressed="'+candOn(fk)+'">후보 '+(candOn(fk)?'켜짐':'꺼짐')+'</button>':'')+'<button class="lb" data-act="mapfold" data-k="'+fk+'">'+(f?'펼치기':'접기')+'</button>'+'</span>'+leg.slice(leg.indexOf('</span>')+7):leg+(!f?'<button class="lb ct" data-act="mapcand" data-k="'+fk+'" aria-pressed="'+candOn(fk)+'">후보 '+(candOn(fk)?'켜짐':'꺼짐')+'</button>':'')+'<button class="lb" data-act="mapfold" data-k="'+fk+'">'+(f?'펼치기':'접기')+'</button>'))+'</span>'+(f?'<button class="lb" data-act="mapfold" data-k="'+fk+'">'+(f?'펼치기':'접기')+'</button>':'')+(canWrite&&!f&&!useGmap()&&(nq=needGeo().length)?'<button class="lb gc" data-act="geocheck">위치 확인 '+nq+'곳</button>':'')+'</div>';
-  if(!f)h+='<div class="tl-mapw" data-d="'+id+'"><div class="tl-map" data-d="'+id+'"></div><button type="button" class="tl-big" data-act="mapbig" data-d="'+id+'" aria-label="크게 보기">'+BIG_SVG+'</button><button type="button" class="tl-home" data-act="maphome" data-d="'+id+'" aria-label="원래 위치로" title="원래 위치로">'+HOME_SVG+'</button></div><div class="tl-mapn" data-d="'+id+'"></div>';
+  if(!f)h+='<div class="tl-mapw" data-d="'+id+'">'+(id==='c'&&canWrite?'<form class="msq" data-d="c" role="search"><input type="search" id="ms-q" placeholder="지도에서 가게 찾기" enterkeyhint="search" autocomplete="off" maxlength="60" aria-label="지도에서 가게 찾기"></form>':'')+'<div class="tl-map" data-d="'+id+'"></div><button type="button" class="tl-big" data-act="mapbig" data-d="'+id+'" aria-label="크게 보기">'+BIG_SVG+'</button><button type="button" class="tl-home" data-act="maphome" data-d="'+id+'" aria-label="원래 위치로" title="원래 위치로">'+HOME_SVG+'</button></div><div class="tl-mapn" data-d="'+id+'"></div>'+(id==='c'&&!f?msResHTML():'');
   return h+'</div>';
 }
 function kakaoReady(cb){
@@ -1338,6 +1347,47 @@ function rcSearch(){
     });
   });});
 }
+/* ---------- 지도에서 가게 이름으로 찾아 담기 ---------- */
+var msRes=[],msBusy=false,msLast='';
+function msResHTML(){
+  if(msBusy)return '<div class="msr"><p class="mut">찾는 중…</p></div>';
+  if(!msLast)return '';
+  if(!msRes.length)return '<div class="msr"><p class="mut">‘'+esc(msLast)+'’ 찾은 곳이 없어요.</p><button class="lb" data-act="msclear">닫기</button></div>';
+  var sk=secOf(addSec);
+  return '<div class="msr"><div class="msr-h"><b>‘'+esc(msLast)+'’ 찾은 곳</b><button class="lb" data-act="msclear">닫기</button></div>'+msRes.map(function(r,k){
+    var have=dupItem({section:sk.key,title:r.n,link:r.link,geo:{x:r.x,y:r.y}});
+    return '<div class="msr-i"><button class="msr-n" data-act="msgo" data-k="'+k+'"><span class="gf-n">'+(k+1)+'</span><span><b>'+esc(r.n)+'</b><small>'+esc([r.t,r.a].filter(Boolean).join(' · '))+'</small></span></button>'
+      +(have?'<span class="ib cf on" aria-label="담겨 있어요" title="담겨 있어요">'+CHECK_SVG+'</span>':'<button class="ib" data-act="msadd" data-k="'+k+'" aria-label="'+esc(sk.name)+'에 담기" title="'+esc(sk.name)+'에 담기">'+PLUS_SVG+'</button>')+'</div>';
+  }).join('')+'<p class="mut msr-to">+ 누르면 ‘'+esc(sk.name)+'’에 담겨요</p></div>';
+}
+function msClearPins(){var o=mapObjs.c;if(o&&o.tmp){o.tmp.forEach(function(m){try{m.setMap(null);}catch(e){}});o.tmp=[];}}
+function msShow(){var o=mapObjs.c;if(!o)return;msClearPins();o.tmp=[];if(!msRes.length)return;
+  if(o.g){var bd=new google.maps.LatLngBounds();msRes.forEach(function(r,k){var p={lat:r.y,lng:r.x};bd.extend(p);o.tmp.push(new google.maps.Marker({map:o.map,position:p,label:{text:String(k+1),color:'#fff',fontWeight:'700',fontSize:'12px'},zIndex:999}));});
+    if(msRes.length===1){o.map.setCenter(bd.getCenter());o.map.setZoom(16);}else o.map.fitBounds(bd,40);}
+  else{var kb=new kakao.maps.LatLngBounds();msRes.forEach(function(r){var p=new kakao.maps.LatLng(r.y,r.x);kb.extend(p);o.tmp.push(new kakao.maps.Marker({map:o.map,position:p,zIndex:999}));});
+    if(msRes.length===1){o.map.setLevel(3);o.map.setCenter(kb.getSouthWest());}else o.map.setBounds(kb,40,40,40,40);}
+}
+function msSearch(q){
+  q=String(q||'').trim();if(!q)return;var o=mapObjs.c;if(!o){toast('지도를 불러오는 중이에요');return;}
+  msLast=q;msBusy=true;msRes=[];render();
+  function done(list){msBusy=false;msRes=list.slice(0,5);render();msShow();}
+  if(o.g){var c=o.map.getCenter(),opt={textQuery:q,maxResultCount:5,language:'ko',fields:['id','displayName','location','formattedAddress','primaryTypeDisplayName','types','regularOpeningHours'],locationBias:{center:{lat:c.lat(),lng:c.lng()},radius:30000}};
+    google.maps.places.Place.searchByText(opt).then(function(r){done(((r&&r.places)||[]).filter(function(p){return p.location;}).map(function(p){var n=p.displayName||q;
+      return {n:n,x:p.location.lng(),y:p.location.lat(),a:p.formattedAddress||'',t:gKindT(p.types,p.primaryTypeDisplayName),h:gHours(p.regularOpeningHours&&p.regularOpeningHours.weekdayDescriptions),g:1,link:'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(n)+(p.id?'&query_place_id='+encodeURIComponent(p.id):'')};}));},function(){done([]);});}
+  else{var kc=o.map.getCenter();kwAll(q,{location:kc,size:5},function(r){done(r.map(function(x){var ad=x.road_address_name||x.address_name||'';return {n:x.place_name,x:+x.x,y:+x.y,a:ad,t:rcCat(x),h:'',g:0,link:mapUrl(x.place_name+' '+rcWhere(x))};}));});}
+}
+function msGo(k){var r=msRes[k],o=mapObjs.c;if(!r||!o)return;if(o.g){o.map.setCenter({lat:r.y,lng:r.x});o.map.setZoom(16);}else{o.map.setLevel(3);o.map.setCenter(new kakao.maps.LatLng(r.y,r.x));}
+  var w=document.querySelector('.tl-mapw[data-d="c"]');if(w){var b=w.getBoundingClientRect();if(b.top<0)w.scrollIntoView({behavior:'smooth',block:'center'});}}
+var msAdd=guarded(function(k){
+  var r=msRes[k];if(!r)return;var sk=secOf(addSec);
+  var data={tripId:tripId,section:sk.key,title:String(r.n).slice(0,80),memo:r.h||'',desc:r.t||'',link:r.link,status:'idea',done:false,likes:{},createdBy:uid,createdAt:Date.now(),addr:r.a||'',area:areaFromAddr(r.a||'')};
+  data.geo=r.g?{x:r.x,y:r.y,g:1}:{x:r.x,y:r.y};
+  if(dupStop(data))return;
+  if(sk.sched){data.day=0;data.time='';}
+  var ref=db.collection('items').doc();flashId=ref.id;haptic();toast(sk.name+'에 담았어요 · '+r.n);
+  msRes=[];msLast='';msClearPins();var qi=document.getElementById('ms-q');if(qi)qi.value='';
+  return ref.set(data).then(function(){notifyAct('add',ref.id);});
+});
 function rcDraw(){
   var box=document.getElementById('rc-r');if(!box)return;
   if(!rcRes.length){box.innerHTML='<p class="mut">찾은 곳이 없어요. 동네 이름을 바꿔 보세요.</p>';return;}
@@ -2165,6 +2215,7 @@ document.addEventListener('pointerdown',dragStart);
 document.addEventListener('pointermove',dragMove);
 document.addEventListener('pointerup',dragEnd);
 document.addEventListener('pointercancel',dragEnd);
+document.addEventListener('submit',function(e){var f=e.target;if(f&&f.classList&&f.classList.contains('msq')){e.preventDefault();var qi=f.querySelector('input');if(qi){qi.blur();msSearch(qi.value);}}});
 document.addEventListener('keydown',function(e){
   var h=e.target&&e.target.classList&&e.target.classList.contains('dh')?e.target:null;if(!h)return;
   if(e.key!=='ArrowUp'&&e.key!=='ArrowDown')return;
@@ -2226,6 +2277,9 @@ document.addEventListener('click',function(e){
   else if(a==='myname'){if(uid)openNameForm(false);}
   else if(a==='savename'){saveName();}
   else if(a==='mapbig'){mapBig(el.dataset.d);}
+  else if(a==='msadd'){msAdd(+el.dataset.k);}
+  else if(a==='msgo'){msGo(+el.dataset.k);}
+  else if(a==='msclear'){msRes=[];msLast='';msClearPins();var qi=document.getElementById('ms-q');if(qi)qi.value='';render();}
   else if(a==='maphome'){mapHome(mapObjs[el.dataset.d]);}
   else if(a==='mappin'){it=itemFrom(el);if(it)mapShow(it.id);}
   else if(a==='gfsearch'){geoSearch(el.dataset.id);}
