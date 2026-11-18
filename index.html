@@ -1414,11 +1414,11 @@ function mapAway(o){try{if(!o.n)return false;var c=o.map.getCenter(),sw=o.bd.get
   var py=Math.max(.25,n-s),px=Math.max(.3,e-w);return la<s-py||la>n+py||ln<w-px||ln>e+px;}catch(x){return false;}}
 function mapHome(o){if(!o)return;if(o.g)gFit(o);else{try{o.map.relayout();}catch(e){}fitMap(o);}}
 function mapBack(o){if(!mapAway(o))return;setTimeout(function(){mapHome(o);toast('원래 지역으로 돌아왔어요');},250);}
-/* 줄의 핀 버튼: 앱 안 지도를 크게 열고 그 장소를 바로 보여 줘요 */
+/* 줄의 핀 버튼: 위쪽 미리보기 지도로 올라가서 그 장소를 바로 보여 줘요 (새 창 없이) */
 function mapShow(id){
   var ch=false;if(mapFolded('c')){lsSet('mapfold:c','0');ch=true;}if(!candOn('c')){lsSet('mapcand:c','1');ch=true;}if(ch)render();
   var tries=0;(function go(){var o=mapObjs.c,w=document.querySelector('.tl-mapw[data-d="c"]');
-    if(w&&o&&o.box&&o.box.isConnected&&o.byId&&o.byId[id]){if(!w.classList.contains('big'))mapBig('c');setTimeout(function(){o.byId[id](true);},180);return;}
+    if(w&&o&&o.box&&o.box.isConnected&&o.byId&&o.byId[id]){if(!w.classList.contains('big')){var r=w.getBoundingClientRect();if(r.top<0||r.bottom>innerHeight)try{w.scrollIntoView({behavior:'smooth',block:'center'});}catch(e){w.scrollIntoView();}}o.byId[id](true);return;}
     if(++tries<28)setTimeout(go,250);else toast('이 장소 위치를 아직 못 찾았어요');})();
 }
 function mapFocus(id){var o=mapObjs.c;if(!o||!o.byId||!o.byId[id])return;var w=document.querySelector('.tl-mapw[data-d="c"]');if(!w||!w.isConnected)return;o.byId[id](true);}
