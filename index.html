@@ -1641,7 +1641,7 @@ function delBoard(btn){
    켜면 이 기기의 알림 토큰을 보드 멤버 정보(push)에 저장해요.
    같이 쓰는 사람이 장소를 올리거나 좋아요·일정 확정을 하면 로그인 서버가 다른 멤버에게 알림을 보내요. */
 var PUSH_API='https://script.google.com/macros/s/AKfycbyd3LH41njN_Zv_qouDmCsbtBC8gcZ1hyiYSi4onFIfRcMG_n1LX9hxXI0n50aUFRh-Vg/exec';
-var VAPID='';/* Firebase 콘솔 → 프로젝트 설정 → 클라우드 메시징 → 웹 푸시 인증서의 '키 쌍' */
+var VAPID='BLcLCh7UzaNWuTb-1o23UvWfTV-TMIIdRaCFxX7cmR293Nd0HOrENl4Zhq2EbZFIFN9eDhGNKe5DS07MFPv089s';/* Firebase 콘솔 → 프로젝트 설정 → 클라우드 메시징 → 웹 푸시 인증서의 '키 쌍' */
 function fbUser(){try{return window.firebase&&firebase.auth&&firebase.auth().currentUser;}catch(e){return null;}}
 function pushPost(o){var u=fbUser();if(!u)return Promise.resolve(null);
   return u.getIdToken().then(function(t){o.idt=t;o.b=window.TB_BOARD;return fetch(PUSH_API,{method:'POST',body:JSON.stringify(o)});}).then(function(r){return r.json();});}
