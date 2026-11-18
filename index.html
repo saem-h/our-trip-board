@@ -1279,6 +1279,15 @@ function startGeoCheck(){gfQ=needGeo();gfI=0;if(!gfQ.length){toast('모든 장�
 var PLUS_SVG='<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M10 4.5v11M4.5 10h11"/></svg>';
 var rcRes=[],rcArea='';
 function normNm(v){return String(v||'').replace(/\s|<[^>]*>/g,'').toLowerCase();}
+function normUrl(u){return String(u||'').trim().replace(/^https?:\/\//,'').replace(/[?#].*$/,'').replace(/\/+$/,'').toLowerCase();}
+function geoM(a,b){if(!a||!b||a.x==null||b.x==null)return 1e9;var dy=(a.y-b.y)*111000,dx=(a.x-b.x)*111000*Math.cos(a.y*Math.PI/180);return Math.sqrt(dx*dx+dy*dy);}
+/* 같은 여행에 이미 담긴 같은 장소 찾기: 이름이 같거나, 링크가 같거나, 거의 같은 위치에 이름도 비슷하면 */
+function dupItem(d){if(!DESC[d.section])return null;var n=normNm(d.title),l=normUrl(d.link);
+  return tripItems().filter(function(i){if(!DESC[i.section])return false;var t=normNm(i.title);
+    if(t&&t===n)return true;if(l&&l.length>12&&normUrl(i.link)===l)return true;
+    return t&&n&&geoM(d.geo,i.geo)<60&&(t.indexOf(n)===0||n.indexOf(t)===0);})[0]||null;}
+function dupStop(d){var o=dupItem(d);if(!o)return false;haptic();toast('이미 '+secOf(o.section).name+'에 있어요 · '+o.title);
+  if(activeSec!=='all'&&activeSec!==o.section){activeSec=o.section;addSec=o.section;}flashId=o.id;render();return true;}
 function rcHave(x){var n=normNm(x.place_name);return tripItems().some(function(i){var t=normNm(i.title);return t&&(t===n||(t.length>2&&n.indexOf(t)===0)||(n.length>2&&t.indexOf(n)===0));});}
 function rcWhere(x){var a=String(x.road_address_name||x.address_name||'').split(' ');return (rcArea&&areaHit(x,rcArea)?rcArea:'')||(a[2]&&/[읍면구]$/.test(a[2])?a[2].replace(/[읍면]$/,''):a[1]||'');}
 function rcCat(x){var c=String(x.category_name||'').split('>').map(function(v){return v.trim();}).filter(Boolean);c=c.filter(function(v){return v!=='음식점';});return c.length?c[c.length-1]:'';}
@@ -1954,6 +1963,7 @@ var saveItem=guarded(function(btn){
     if(s.sched&&document.getElementById('f-day')){data.day=parseInt(v('f-day'),10)||0;data.time=v('f-time');}
   }
   var pg=document.getElementById('f-geo-st')&&modal.dataset.geox?{x:+modal.dataset.geox,y:+modal.dataset.geoy,g:1}:null;
+  if(!id&&dupStop({section:s.key,title:data.title,link:data.link,geo:pg}))return;
   closeModal();
   if(id&&'addr' in data){var o2=items.filter(function(x){return x.id===id;})[0];if(o2&&(o2.addr||'')!==data.addr)data.geo=null;}
   if(pg)data.geo=pg;
@@ -1996,6 +2006,7 @@ var quickSave=guarded(function(sec,txt,sh,gp){
   if(sh){link=sh.url;addr=sh.addr||(gp&&gp.addr)||'';area=sh.area||(gp&&gp.addr?areaFromAddr(gp.addr):'');title=sh.name;}
   var data={tripId:tripId,section:s.key,title:title.slice(0,80),memo:'',desc:'',link:link,status:'idea',done:false,likes:{},createdBy:uid,createdAt:Date.now()};
   if(DESC[s.key]){data.area=area;if(addr)data.addr=addr;if(gp&&gp.t)data.desc=gp.t;if(gp&&gp.h)data.memo=gp.h;if(gp&&gp.y!=null&&gp.x!=null){data.geo={x:+gp.x,y:+gp.y,g:1};addr=addr||'-';}}
+  if(dupStop(data))return;
   if(s.sched){data.day=0;data.time='';}
   var ref=db.collection('items').doc();flashId=ref.id;
   toast(s.name+'에 넣었어요');
