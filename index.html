@@ -518,13 +518,13 @@ button:not(.dh):active,[role=button]:not(.dh):active,[role=tab]:active,[role=che
   .bar .linkbtn{flex:none;max-width:40%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .bar .gear{flex:none}
   .bar .dd,.bar .linkbtn{min-height:32px;display:inline-flex;align-items:center}
-.bar{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:4px 8px}
-.bar .dd{grid-column:1;grid-row:1;justify-self:start}
-.bar .gear{grid-column:2;grid-row:1;margin-left:0}
-.bar .dt{grid-column:1;grid-row:2;min-width:0;margin-top:0}
-.bar .who{grid-column:2;grid-row:2;justify-self:end;display:inline-flex;align-items:center;gap:4px;min-width:0;max-width:100%}
+.bar{display:flex;align-items:center;gap:6px 8px;flex-wrap:wrap}
+.bar .dd{order:1;flex:none;justify-self:auto}
+.bar .dt{order:2;flex:none;white-space:nowrap;margin-top:0}
+.bar .gear{order:3;margin-left:auto}
+.bar .who{order:4;flex:1 0 100%;display:flex;justify-content:flex-end;align-items:center;gap:4px;min-width:0}
+.bar .who .linkbtn{max-width:none;overflow:visible;text-overflow:clip}
 .bar .sp{display:none}
-.bar .who .mates{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 }
 /* 영업시간: 데스크톱은 기존처럼 한 줄, 펼치면 상세에서는 숨김 */
 .it-hr::before{content:' · '}
