@@ -1649,17 +1649,21 @@ function notifyAct(kind,id){if(!window.TB_BOARD||!id)return;try{pushPost({action
 function pushOK(){return 'Notification' in window&&'serviceWorker' in navigator&&'PushManager' in window;}
 function isIOS(){return /iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);}
 function standalone(){return (window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true;}
-function pushOn(){return !!(g('push')&&pushOK()&&Notification.permission==='granted');}
+function pg(){try{return localStorage.getItem((window.TB_LSP||'')+'push');}catch(e){return null;}}
+function ps(v){try{localStorage.setItem((window.TB_LSP||'')+'push',v);}catch(e){}}
+function pushOn(){return !!(pg()&&pushOK()&&Notification.permission==='granted');}
+function pRoot(){return window.TB_BOARD&&window.firebase&&firebase.apps.length?firebase.firestore().collection('boards').doc(window.TB_BOARD):null;}
+function pLoad(u){return new Promise(function(ok,no){var x=document.createElement('script');x.src=u;x.onload=ok;x.onerror=no;document.head.appendChild(x);});}
 function msgReady(){if(msgReady.p)return msgReady.p;
-  msgReady.p=loadJs('https://www.gstatic.com/firebasejs/'+FBV+'/firebase-messaging-compat.js').then(function(){return navigator.serviceWorker.register('/firebase-messaging-sw.js');}).then(function(reg){
+  msgReady.p=(window.firebase&&firebase.messaging?Promise.resolve():pLoad('https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js')).then(function(){return navigator.serviceWorker.register('/firebase-messaging-sw.js');}).then(function(reg){
     var m=firebase.messaging();m.onMessage(function(p){var n=(p&&p.notification)||{};toast((n.title?n.title+' · ':'')+(n.body||'새 알림'));});return {m:m,reg:reg};});
   msgReady.p.catch(function(){msgReady.p=null;});return msgReady.p;}
 function pushToken(){return msgReady().then(function(x){return x.m.getToken({vapidKey:VAPID,serviceWorkerRegistration:x.reg});});}
-function savePushToken(tok){var u=fbUser();if(!u||!fsRoot||!tok)return Promise.resolve();var o={};o[tok]=Date.now();
-  var old=g('push');var d={push:o};
-  return fsRoot.collection('members').doc(u.uid).set(d,{merge:true}).then(function(){
-    if(old&&old!==tok){var del={};del['push.'+old]=firebase.firestore.FieldValue.delete();return fsRoot.collection('members').doc(u.uid).update(del).catch(function(){});}
-  }).then(function(){s('push',tok);});}
+function savePushToken(tok){var u=fbUser();if(!u||!pRoot()||!tok)return Promise.resolve();var o={};o[tok]=Date.now();
+  var old=pg();var d={push:o};
+  return pRoot().collection('members').doc(u.uid).set(d,{merge:true}).then(function(){
+    if(old&&old!==tok){var del={};del['push.'+old]=firebase.firestore.FieldValue.delete();return pRoot().collection('members').doc(u.uid).update(del).catch(function(){});}
+  }).then(function(){ps(tok);});}
 function openPush(){
   var on=pushOn(),h='<div class="card"><h3>알림</h3>';
   if(!window.TB_BOARD){h+='<p class="mut">알림은 로그인해서 쓰는 보드에서만 쓸 수 있어요.</p><div class="foot"><button class="btn" data-act="close">닫기</button></div></div>';}
@@ -1681,13 +1685,13 @@ function enablePush(btn){
     closeModal();render();toast('알림을 켰어요');pushPost({action:'test'}).catch(function(){});
   }).catch(function(e){if(btn){btn.disabled=false;btn.textContent='알림 켜기';}toast(String(e&&e.message)==='denied'?'알림이 허용되지 않았어요.':'알림을 켜지 못했어요. 잠시 후 다시 해 주세요.');});
 }
-function disablePush(){var tok=g('push'),u=fbUser();s('push','');
-  if(tok&&u&&fsRoot){var del={};del['push.'+tok]=firebase.firestore.FieldValue.delete();fsRoot.collection('members').doc(u.uid).update(del).catch(function(){});}
+function disablePush(){var tok=pg(),u=fbUser();ps('');
+  if(tok&&u&&pRoot()){var del={};del['push.'+tok]=firebase.firestore.FieldValue.delete();pRoot().collection('members').doc(u.uid).update(del).catch(function(){});}
   msgReady().then(function(x){return x.m.deleteToken();}).catch(function(){});
   closeModal();render();toast('이 기기 알림을 껐어요');}
 /* 앱을 열 때 켜져 있으면 토큰을 새로 확인해 둬요 (바뀌면 다시 저장) */
 function pushRefresh(){if(!window.TB_BOARD||!VAPID||!pushOn())return;
-  pushToken().then(function(tok){if(tok&&tok!==g('push'))return savePushToken(tok);}).catch(function(){});}
+  pushToken().then(function(tok){if(tok&&tok!==pg())return savePushToken(tok);}).catch(function(){});}
 var BELL_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/></svg>';
 function closeModal(){modal.className='';modal.innerHTML='';delete modal.dataset.geox;delete modal.dataset.geoy;}
 var MODES=[['plane','비행기'],['train','기차'],['car','자가용'],['rent','렌트카'],['bus','버스'],['ship','배'],['etc','기타']];
