@@ -64,8 +64,7 @@ h1{font-family:var(--font-en);font-weight:400;font-size:30px;margin:0;letter-spa
 .invite{flex:none;margin-left:auto;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:none;color:var(--ink);border-radius:999px;padding:5px 12px 5px 10px;min-height:34px;font-size:13px;font-weight:600;white-space:nowrap}
 .invite svg{width:16px;height:16px}
 .invite{position:relative}
-.invite.bell{margin-left:0;order:2;padding:0;width:34px;justify-content:center}
-.tabs>.invite.bell{margin-left:auto;flex:none;position:sticky;right:0;background:var(--bg)}
+.invite.bell{margin-left:0;order:1;padding:0;width:34px;justify-content:center}
 .invite.bell.on::after{content:'';position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;background:#C8FF2E;border:1.5px solid var(--bg)}
 .brd{border:0;background:none;padding:0;margin:0;font:inherit;color:inherit;letter-spacing:inherit;text-transform:inherit;display:inline-flex;align-items:center;gap:6px;cursor:pointer}
 .brd svg{width:14px;height:14px;flex:none;color:var(--muted);margin-top:4px}
@@ -450,9 +449,9 @@ button:not(.dh):active,[role=button]:not(.dh):active,[role=tab]:active,[role=che
   .chip i{margin-left:4px;font-size:11.5px}
   header.top{gap:6px 18px}
   header.top .tabs{flex:1 1 100%;order:2}
-  header.top .invite{order:1;width:36px;height:36px;padding:0;justify-content:center}
+  header.top .invite{order:1;width:34px;height:34px;padding:0;justify-content:center}
   header.top .inv-t{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
-  header.top h1{min-width:0;font-size:24px}
+  header.top h1{min-width:0;font-size:21px}
   header.top{column-gap:8px}
   .brd svg{margin-top:2px}
 }
@@ -519,6 +518,13 @@ button:not(.dh):active,[role=button]:not(.dh):active,[role=tab]:active,[role=che
   .bar .linkbtn{flex:none;max-width:40%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .bar .gear{flex:none}
   .bar .dd,.bar .linkbtn{min-height:32px;display:inline-flex;align-items:center}
+.bar{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:4px 8px}
+.bar .dd{grid-column:1;grid-row:1;justify-self:start}
+.bar .gear{grid-column:2;grid-row:1;margin-left:0}
+.bar .dt{grid-column:1;grid-row:2;min-width:0;margin-top:0}
+.bar .who{grid-column:2;grid-row:2;justify-self:end;display:inline-flex;align-items:center;gap:4px;min-width:0;max-width:100%}
+.bar .sp{display:none}
+.bar .who .mates{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 }
 /* 영업시간: 데스크톱은 기존처럼 한 줄, 펼치면 상세에서는 숨김 */
 .it-hr::before{content:' · '}
@@ -1692,7 +1698,7 @@ function summaryHTML(t,its){
   }else big=(t.days||2)+' days';
   var cand=0,conf=0,td=0,tt=0;
   its.forEach(function(i){var s=secOf(i.section);if(s.fixed)return;if(s.check){if(s.key==='must'){tt++;if(i.done)td++;}}else if(isConf(i))conf++;else cand++;});
-  return '<div class="bar"><span class="dd">'+esc(big)+'</span><span class="dt">'+esc(t.dates||'날짜 미정')+' · '+(t.days||2)+'일</span><span class="st">확정 <b>'+conf+'</b> · 후보 <b>'+cand+'</b> · 해야 할 일 <b>'+td+'/'+tt+'</b></span><span class="sp"></span><button class="linkbtn" data-act="myname">'+esc(uid?nameOf(uid):'이름')+'</button>'+mateHTML()+''+'<button class="gear" data-act="settings" aria-label="여행 설정" title="여행 설정"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button></div>';
+  return '<div class="bar"><span class="dd">'+esc(big)+'</span><span class="dt">'+esc(t.dates||'날짜 미정')+' · '+(t.days||2)+'일</span><span class="st">확정 <b>'+conf+'</b> · 후보 <b>'+cand+'</b> · 해야 할 일 <b>'+td+'/'+tt+'</b></span><span class="sp"></span><span class="who"><button class="linkbtn" data-act="myname">'+esc(uid?nameOf(uid):'이름')+'</button>'+mateHTML()+'</span>'+'<button class="gear" data-act="settings" aria-label="여행 설정" title="여행 설정"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button></div>';
 }
 /* 여행 중이면 맨 위에 얇은 한 줄: 오늘 다음 일정 + 길찾기 */
 function todayBand(t,its){
@@ -1719,7 +1725,7 @@ function render(){
   trips.filter(function(x){return isArchived(x)===showArc;}).forEach(function(x){h+='<button class="tab'+(tOn('t:'+x.id)?' tabpop':'')+'"'+tOn('t:'+x.id,1)+' role="tab" data-act="tab" data-id="'+esc(x.id)+'" aria-selected="'+(x.id===tripId)+'">'+esc(x.name)+'</button>';});
   if(showArc)h+='<button class="tab-x" data-act="arcview">← 진행 중 여행</button>';
   else h+='<button class="tab-x" data-act="newtrip"'+(canWrite?'':' disabled')+'>+ 새 여행</button>'+(nArc?'<button class="tab-x" data-act="arcview">지난 여행 '+nArc+'</button>':'');
-  h+=(window.TB_BOARD&&VAPID?'<button class="invite bell'+(pushOn()?' on':'')+'" data-act="push" aria-label="알림" title="알림">'+BELL_SVG+'</button>':'')+'</div>'+(window.TB_BOARD&&!showArc?'<button class="invite" data-act="shareboard"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="7" r="3"/><path d="M2.5 16c.6-2.8 2.8-4.5 5.5-4.5s4.9 1.7 5.5 4.5M15.5 6.5v5M13 9h5"/></svg><span class="inv-t">친구 초대</span></button>':'')+'</header>';
+  h+='</div>'+(window.TB_BOARD&&!showArc?'<button class="invite" data-act="shareboard"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="7" r="3"/><path d="M2.5 16c.6-2.8 2.8-4.5 5.5-4.5s4.9 1.7 5.5 4.5M15.5 6.5v5M13 9h5"/></svg><span class="inv-t">친구 초대</span></button>':'')+(window.TB_BOARD&&VAPID?'<button class="invite bell'+(pushOn()?' on':'')+'" data-act="push" aria-label="알림" title="알림">'+BELL_SVG+'</button>':'')+'</header>';
   if(!canWrite)h+='<div class="note">지금은 보기 전용이에요. 같이 편집하려면 공유 설정에서 상대방을 편집 가능(기여자 이상)으로 초대해 주세요.</div>';
   if(offline)h+='<div class="note">저장소에 연결하지 못했어요. 새로고침하거나 로그인 상태를 확인해 주세요.</div>';
   if(!ready&&!offline){
