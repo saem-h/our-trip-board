@@ -642,10 +642,11 @@ function homeScreen(){
     /* 로그인하면 마지막에 본 보드를 바로 열어요 (목록은 여행 설정 → '내 보드 목록'으로) */
     if(!QS.get('list')&&q.size){location.replace('/?b='+q.docs[0].id);return;}
     if(QS.get('list'))history.replaceState(null,'','/');
-    var rows='';q.forEach(function(d){var x=d.data();
-      rows+='<a href="/?b='+hx(d.id)+'" style="display:block;padding:15px 0;border-bottom:1px solid #222;color:#fff;text-decoration:none"><div style="font-size:16px;font-weight:600">'+hx(x.name||'이름 없는 보드')+'</div>'
-        +'<div style="font-size:12px;color:#8a8a8a;margin-top:4px">'+(x.at?new Date(x.at).toLocaleDateString('ko-KR')+' 열어 봄':'')+'</div></a>';});
-    var o=ov('<div style="font-size:13px;color:#b8b8b8;margin-bottom:6px">'+hx(MYNAME?MYNAME+'님의 보드':'내 보드')+'</div>'
+    var rows='';q.forEach(function(d,k){var x=d.data(),ts=String(x.name||'').split(' · ').filter(Boolean);
+      rows+='<a href="/?b='+hx(d.id)+'" style="display:block;padding:16px 16px 15px;margin-top:10px;border-radius:16px;background:'+(k?'#161616':'#1f1f1f')+';border:1px solid '+(k?'#262626':'#C8FF2E')+';color:#fff;text-decoration:none">'
+        +'<div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><div style="font-size:17px;font-weight:700;letter-spacing:-0.02em">'+hx(ts.length?ts.join(' · '):'빈 보드')+'</div>'+(k?'':'<span style="flex:none;font-size:11px;font-weight:700;background:#C8FF2E;color:#0a0a0a;border-radius:999px;padding:2px 8px">최근</span>')+'</div>'
+        +'<div style="font-size:12px;color:#7a7a7a;margin-top:6px">'+(x.at?new Date(x.at).toLocaleDateString('ko-KR')+' 열어 봄':'')+'</div></a>';});
+    var o=ov('<div style="font-size:13px;color:#b8b8b8;margin-bottom:2px">'+hx(MYNAME?MYNAME+'님의 보드 '+q.size+'개':'내 보드')+'</div>'
       +(rows||'<p style="font-size:14px;color:#8a8a8a;line-height:1.6;margin:10px 0 4px">아직 보드가 없어요. 새 보드를 만들고 같이 갈 사람을 초대해 보세요.</p>')
       +'<button id="nb" style="margin-top:22px;width:100%;background:#C8FF2E;border:0;color:#0a0a0a;border-radius:12px;padding:15px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit">+ 새 보드 만들기</button>'
       +'<button id="lo" style="margin-top:18px;background:none;border:0;color:#6a6a6a;font-size:12px;cursor:pointer;text-decoration:underline;font-family:inherit">로그아웃</button>');
@@ -959,7 +960,7 @@ function itemHTML(it,s,t,tag){
   var first=sp.join(' · ');
   var go=s.check?'':evLink(it);
   h+='<div class="it-m" data-act="row" role="button" tabindex="0" aria-expanded="'+open+'">'+(go?'<a class="it-t" data-act="go" href="'+esc(go)+'" target="_blank" rel="noopener noreferrer">':'<span class="it-t">')+(tag?'<em class="tg" data-s="'+s.key+'">'+esc(s.name)+'</em>':'')+esc(it.title)+(it.area&&!groupedNow?'<em class="loc">'+esc(areaLabel(it.area))+'</em>':'')+(both?'<em class="both">둘 다</em>':'')+(isNew?'<em class="new">new</em>':'')+(go?'</a>':'</span>')+(first?'<span class="it-s">'+first+'</span>':'')+'</div>';
-  h+='<span class="it-ed"><button class="ib ed" data-act="edit" aria-label="수정" title="수정">'+EDIT_SVG+'</button><button class="ib ed'+(armed===it.id?' warn':'')+'" data-act="del" aria-label="'+(armed===it.id?'한 번 더 누르면 삭제':'삭제')+'" title="삭제">'+(armed===it.id?'<b>삭제?</b>':TRASH_SVG)+'</button></span>';
+  h+='<span class="it-ed"><button class="ib ed" data-act="edit" aria-label="수정" title="수정">'+EDIT_SVG+'</button><button class="ib ed'+(armed===it.id?' warn':'')+'" data-act="del" aria-label="'+(armed===it.id?'한 번 더 누르면 삭제':'삭제')+'" title="삭제">'+(armed===it.id?'<b>삭제</b>':TRASH_SVG)+'</button></span>';
   if(!s.check)h+='<button class="ib cf'+(conf?' on':'')+'" data-act="confirm" aria-pressed="'+conf+'" aria-label="'+(conf?'확정 취소':'일정에 넣기')+'" title="'+(conf?'일정에 넣음 (누르면 취소)':'일정에 넣기')+'">'+(conf?CALOK_SVG:CALADD_SVG)+'</button>';
   if(!s.check)h+='<button class="ib more'+(open?' on':'')+'" data-act="row" aria-expanded="'+open+'" aria-label="'+(open?'접기':'메모·상세 보기')+'" title="'+(open?'접기':'메모·상세 보기')+'"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4.5l3 3 3-3"/></svg></button>';
   h+='</div>';
@@ -1619,14 +1620,14 @@ function openBoards(){
   firebase.firestore().collection('users').doc((firebase.auth().currentUser||{}).uid||'-').collection('boards').orderBy('at','desc').get().then(function(q){
     var el=modal.querySelector('.bl');if(!el)return;var h='';
     q.forEach(function(d){var x=d.data(),cur=d.id===window.TB_BOARD;
-      h+='<div class="bl-w" data-b="'+esc(d.id)+'"><a class="bl-r'+(cur?' on':'')+'" href="/?b='+esc(d.id)+'"'+(cur?' aria-current="true"':'')+'><span class="bl-t">'+esc(x.name||'이름 없는 보드')+'</span>'+(cur?'<span class="bl-c">지금 보는 중</span>':'<span class="bl-a">›</span>')+'</a>'+(cur?'':'<button class="ib ed bl-del" data-act="bdel" data-b="'+esc(d.id)+'" aria-label="이 보드 지우기" title="지우기">'+TRASH_SVG+'</button>')+'</div>';});
+      h+='<div class="bl-w" data-b="'+esc(d.id)+'"><a class="bl-r'+(cur?' on':'')+'" href="/?b='+esc(d.id)+'"'+(cur?' aria-current="true"':'')+'><span class="bl-t">'+esc(x.name||'이름 없는 보드')+'</span>'+(cur?'<span class="bl-c">지금 보는 중</span>':'')+'</a>'+(cur?'':'<button class="ib ed bl-del" data-act="bdel" data-b="'+esc(d.id)+'" aria-label="이 보드 지우기" title="지우기">'+TRASH_SVG+'</button>')+'</div>';});
     el.innerHTML=h||'<div class="mut">보드가 없어요.</div>';
   },function(){var el=modal.querySelector('.bl');if(el)el.innerHTML='<div class="mut">목록을 불러오지 못했어요.</div>';});
 }
 /* 보드 지우기: 내 목록에서 빼고 그 보드에서 나가요 (같이 쓰는 사람에게는 그대로 남아요) */
 function delBoard(btn){
   var b=btn.dataset.b,w=btn.closest('.bl-w');if(!b||!w)return;
-  if(!btn.dataset.armed){btn.dataset.armed='1';btn.classList.add('warn');btn.innerHTML='<b>지우기?</b>';
+  if(!btn.dataset.armed){btn.dataset.armed='1';btn.classList.add('warn');btn.innerHTML='<b>지우기</b>';
     var n=w.parentNode.querySelector('.bl-x');if(!n){n=document.createElement('div');n.className='bl-x';}n.textContent='한 번 더 누르면 내 목록에서 지워져요. 같이 쓰는 사람이 있으면 그 사람에게는 그대로 남아요.';w.after(n);return;}
   var uid0=(firebase.auth().currentUser||{}).uid;if(!uid0)return;var db0=firebase.firestore();
   w.style.opacity='.4';btn.disabled=true;
