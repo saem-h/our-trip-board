@@ -86,6 +86,7 @@ h1{font-family:var(--font-en);font-weight:400;font-size:30px;margin:0;letter-spa
 .pr-m{font-size:12.5px;color:var(--muted);white-space:pre-wrap;overflow-wrap:anywhere}
 .pr-l{font-size:12px;color:var(--muted);text-underline-offset:3px;overflow-wrap:anywhere}
 .pr-act{display:flex;gap:10px;flex:none}
+.mates{font-size:13px;color:var(--muted);margin-left:-9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:40vw}
 .pr-f{display:flex;align-items:center;gap:0;margin-top:1px;font-size:13px;min-height:26px}
 .pr-fl{color:var(--muted);font-size:12px;flex:none;width:60px}
 .pr-fv{font-weight:600;letter-spacing:.02em;font-variant-numeric:tabular-nums;overflow-wrap:anywhere;min-width:0}
@@ -1482,7 +1483,7 @@ function summaryHTML(t,its){
   }else big=(t.days||2)+' days';
   var cand=0,conf=0,td=0,tt=0;
   its.forEach(function(i){var s=secOf(i.section);if(s.fixed)return;if(s.check){if(s.key==='must'){tt++;if(i.done)td++;}}else if(isConf(i))conf++;else cand++;});
-  return '<div class="bar"><span class="dd">'+esc(big)+'</span><span class="dt">'+esc(t.dates||'날짜 미정')+' · '+(t.days||2)+'일</span><span class="st">확정 <b>'+conf+'</b> · 후보 <b>'+cand+'</b> · 해야 할 일 <b>'+td+'/'+tt+'</b></span><span class="sp"></span><button class="linkbtn" data-act="myname">'+esc(uid?nameOf(uid):'이름')+'</button><button class="linkbtn" data-act="settings" style="margin-left:12px">여행 설정</button></div>';
+  return '<div class="bar"><span class="dd">'+esc(big)+'</span><span class="dt">'+esc(t.dates||'날짜 미정')+' · '+(t.days||2)+'일</span><span class="st">확정 <b>'+conf+'</b> · 후보 <b>'+cand+'</b> · 해야 할 일 <b>'+td+'/'+tt+'</b></span><span class="sp"></span><button class="linkbtn" data-act="myname">'+esc(uid?nameOf(uid):'이름')+'</button>'+mateHTML()+'<button class="linkbtn" data-act="settings" style="margin-left:12px">여행 설정</button></div>';
 }
 /* 여행 중이면 맨 위에 얇은 한 줄: 오늘 다음 일정 + 길찾기 */
 function todayBand(t,its){
@@ -1918,6 +1919,8 @@ var toggleLike=guarded(function(it){
 var confirmWith=guarded(function(it,d,sl,tm){var t=trip();if(d&&closedOn(it,t,d))toast(dayLabel(t,d)+'은 '+closedTxt(it)+'인 곳이에요. 확인해 주세요.');var data={status:'confirmed',ord:null,day:d,time:tm||'',slot:it.section==='food'?sl:''};if(!d)data.date='';return db.doc('items/'+it.id).update(data);});
 var unconfirm=guarded(function(it){return db.doc('items/'+it.id).update({status:'idea',ord:null,day:0,time:'',slot:''});});
 var toggleConfirm=guarded(function(it){return db.doc('items/'+it.id).update({status:isConf(it)?'idea':'confirmed'});});
+/* 같은 보드에 들어온 사람(같이 가는 친구) 이름을 내 이름 옆에 보여 줘요 */
+function mateHTML(){var o=memberIds().filter(function(k){return k!==uid;}).map(nameOf).filter(Boolean);return o.length?'<span class="mates" title="'+esc(o.join(', '))+'">· '+esc(o.join(' · '))+'</span>':'';}
 function memberIds(){var ids=Object.keys(members);return ids.length?ids:(uid?[uid]:[]);}
 var mustMine=false;
 var toggleCheck=guarded(function(it){
