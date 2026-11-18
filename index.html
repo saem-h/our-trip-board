@@ -86,6 +86,14 @@ h1{font-family:var(--font-en);font-weight:400;font-size:30px;margin:0;letter-spa
 .pr-m{font-size:12.5px;color:var(--muted);white-space:pre-wrap;overflow-wrap:anywhere}
 .pr-l{font-size:12px;color:var(--muted);text-underline-offset:3px;overflow-wrap:anywhere}
 .pr-act{display:flex;gap:10px;flex:none}
+a.it-t{color:inherit;text-decoration:none;display:inline-block;max-width:100%;vertical-align:top;-webkit-tap-highlight-color:transparent}
+.ev-n a,.pr-n a{color:inherit;text-decoration:none}
+a.it-t:active,.ev-n a:active,.pr-n a:active{opacity:.55}
+.pr{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.pr:active{background:var(--soft)}
+.pr-go{flex:none;align-self:center;color:#C4C4C4;font-size:20px;line-height:1;padding-left:4px}
+.bar .gear{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border:0;background:none;color:var(--muted);padding:0;margin-left:2px}
+.bar .gear svg{width:19px;height:19px}
 .mates{font-size:13px;color:var(--muted);margin-left:-9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:40vw}
 .pr-f{display:flex;align-items:center;gap:0;margin-top:1px;font-size:13px;min-height:26px}
 .pr-fl{color:var(--muted);font-size:12px;flex:none;width:60px}
@@ -337,7 +345,7 @@ h1.scin{transform-origin:center;will-change:transform,opacity;animation:tbscale 
 .route-leg{font-size:12px;font-weight:600;color:var(--ink);text-underline-offset:3px;white-space:nowrap}
 .pre{flex:none;font-size:11px;font-weight:500;color:var(--muted)}
 .loc{font-style:normal;font-size:12px;font-weight:500;color:var(--muted);margin-left:8px;white-space:nowrap}
-.grp{padding:6px 14px;font-size:12px;font-weight:700;color:var(--muted);background:var(--soft);border-top:1px solid var(--line)}.rows .grp:first-child{border-top:0}
+.grp{padding:14px 14px 0;font-size:12px;font-weight:600;color:var(--muted);background:none;border-top:0;letter-spacing:.01em}.rows .grp:first-child{border-top:0}
 .seg2{flex-wrap:wrap}.tdot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);border:1px solid var(--ink);vertical-align:1px}
 /* press feedback */
 button:not(.dh),[role=button]:not(.dh),[role=tab],[role=checkbox],.tab,.chip,.mchip,.btn,.ib,.lb,.cp,.rm,.lk,.chk,.add-b,.linkbtn{
@@ -917,10 +925,9 @@ function itemHTML(it,s,t,tag){
   if(firstMemo)sp.push(esc(firstMemo));
   var ct=closedTxt(it);if(ct&&it.closed&&it.closed.length)sp.push('<span class="cl">'+esc(ct)+'</span>');
   var first=sp.join(' · ');
-  h+='<button class="it-m" data-act="row" aria-expanded="'+open+'"><span class="it-t">'+(tag?'<em class="tg" data-s="'+s.key+'">'+esc(s.name)+'</em>':'')+esc(it.title)+(it.area&&!groupedNow?'<em class="loc">'+esc(areaLabel(it.area))+'</em>':'')+(both?'<em class="both">둘 다</em>':'')+(isNew?'<em class="new">new</em>':'')+'</span>'+(first?'<span class="it-s">'+first+'</span>':'')+'</button>';
-  if(safeUrl(it.link))h+='<a class="ib" href="'+esc(safeUrl(it.link))+'" target="_blank" rel="noopener noreferrer" aria-label="링크 열기" title="링크 열기">'+LINK_SVG+'</a>';
+  var go=s.check?'':evLink(it);
+  h+='<div class="it-m" data-act="row" role="button" tabindex="0" aria-expanded="'+open+'">'+(go?'<a class="it-t" data-act="go" href="'+esc(go)+'" target="_blank" rel="noopener noreferrer">':'<span class="it-t">')+(tag?'<em class="tg" data-s="'+s.key+'">'+esc(s.name)+'</em>':'')+esc(it.title)+(it.area&&!groupedNow?'<em class="loc">'+esc(areaLabel(it.area))+'</em>':'')+(both?'<em class="both">둘 다</em>':'')+(isNew?'<em class="new">new</em>':'')+(go?'</a>':'</span>')+(first?'<span class="it-s">'+first+'</span>':'')+'</div>';
   if(!s.check)h+='<button class="ib cf'+(conf?' on':'')+'" data-act="confirm" aria-pressed="'+conf+'" aria-label="'+(conf?'확정 취소':'일정에 넣기')+'" title="'+(conf?'일정에 넣음 (누르면 취소)':'일정에 넣기')+'">'+(conf?CALOK_SVG:CALADD_SVG)+'</button>';
-  if(!s.check&&!conf)h+='<span class="pre">확정 전</span>';
   h+='</div>';
   if(pickId===it.id&&!s.check){
     var n=(t&&t.days)||2;
@@ -1378,9 +1385,9 @@ function renderTimeline(t,its){
     if(it.pseudo)return '<div class="ev" data-key="'+esc(it.id)+'"'+dn+'>'+(canWrite?'<span class="dh" role="button" tabindex="0" aria-label="순서 바꾸기 (끌어서 이동)">'+DRAG_SVG+'</span>':'')+'<div class="ev-t"><button type="button" class="ev-tb'+(it.plan?'':' empty')+'" data-act="pstime" data-key="'+esc(it.id)+'" aria-label="시간 정하기"'+(canWrite?'':' disabled')+'>'+esc(it.plan||'시간 정하기')+'</button></div><div class="ev-n">'+esc(it.title)+'</div><div class="ev-m"><span class="tag">숙소</span>'+(it.base?'<span class="ar2">'+esc(it.base)+'</span>':'')+'<a href="'+esc(mapUrl(it.place))+'" target="_blank" rel="noopener noreferrer" class="ib sm" aria-label="지도 열기">'+LINK_SVG+'</a></div></div>';
     var sc=secOf(it.section);
     var m='<span class="tag">'+esc(sc.key==='transport'&&it.mode?modeName(it.mode)+(it.name&&it.mode!=='rent'?' '+it.name:''):sc.name)+'</span>'+(closedOn(it,t,effDay(it,t))?'<span class="tag w">휴무일</span>':'')+(it.area?'<span class="ar2">'+esc(areaLabel(it.area))+'</span>':'');
-    var evl=(sc.key!=='transport'&&safeUrl(it.link))||mapUrl(routePlace(it));m+='<a href="'+esc(evl)+'" target="_blank" rel="noopener noreferrer" class="ib sm" aria-label="지도 열기">'+LINK_SVG+'</a>';
+    var evl=(sc.key!=='transport'&&safeUrl(it.link))||mapUrl(routePlace(it));
     var tt=it.mode==='rent'?(it.time||''):it.time?timeStr(it):(it.slot?slotName(it.slot):'');
-    return '<div class="ev" data-id="'+esc(it.id)+'" data-key="'+esc(it.id)+'"'+dn+'>'+(sc.key!=='transport'&&canWrite?'<button class="rm" data-act="unconf" aria-label="일정에서 빼기" title="일정에서 빼기">'+X_SVG+'</button><span class="dh" role="button" tabindex="0" aria-label="순서 바꾸기 (끌어서 이동)">'+DRAG_SVG+'</span>':'')+(tt?'<div class="ev-t">'+esc(tt)+(it.time&&it.slot?' · '+esc(slotName(it.slot)):'')+'</div>':'')+'<div class="ev-n">'+esc(it.mode==='rent'?'렌터카 픽업'+(it.name?' · '+it.name:''):it.title)+'</div><div class="ev-m">'+m+'</div></div>';
+    return '<div class="ev" data-id="'+esc(it.id)+'" data-key="'+esc(it.id)+'"'+dn+'>'+(sc.key!=='transport'&&canWrite?'<button class="rm" data-act="unconf" aria-label="일정에서 빼기" title="일정에서 빼기">'+X_SVG+'</button><span class="dh" role="button" tabindex="0" aria-label="순서 바꾸기 (끌어서 이동)">'+DRAG_SVG+'</span>':'')+(tt?'<div class="ev-t">'+esc(tt)+(it.time&&it.slot?' · '+esc(slotName(it.slot)):'')+'</div>':'')+'<div class="ev-n"><a data-act="go" href="'+esc(evl)+'" target="_blank" rel="noopener noreferrer">'+esc(it.mode==='rent'?'렌터카 픽업'+(it.name?' · '+it.name:''):it.title)+'</a></div><div class="ev-m">'+m+'</div></div>';
   }
   var n=t.days||2,tp=[],tleg='';h+='%%TLMAP%%';
   for(var d=1;d<=n;d++){
@@ -1423,12 +1430,12 @@ function renderFixed(t,its){
       if(it.date)when=wkd(it.date)+(tm?' '+tm:'');else if(sc.sched&&it.day)when=dayLabel(t,it.day)+(tm?' '+tm:'');else if(sc.sched&&tm)when=tm;
       var lk=safeUrl(it.link),tags='';
       if(sc.key==='transport'){tags=it.mode==='rent'?'':[it.mode?modeName(it.mode):'',it.dir?dirName(it.dir):''].filter(Boolean).join(' · ');}
-      h+='<article class="pr" data-id="'+esc(it.id)+'"><div class="pr-main"><div class="pr-n">'+(tags?'<span class="pr-tag">'+esc(tags)+'</span>':'')+esc(it.title)+(it.name&&sc.key!=='transport'?' <span class="pr-s">'+esc(it.name)+'</span>':'')+'</div>';
+      var ml=lk||(sc.key==='stay'?mapUrl(it.title):'')||(sc.key==='transport'&&it.mode!=='rent'?mapUrl(it.dir==='back'?it.from:it.to||it.title):'');
+      h+='<article class="pr" data-id="'+esc(it.id)+'" data-act="edit" role="button" tabindex="0"><div class="pr-main"><div class="pr-n">'+(tags?'<span class="pr-tag">'+esc(tags)+'</span>':'')+(ml?'<a data-act="go" href="'+esc(ml)+'" target="_blank" rel="noopener noreferrer">'+esc(it.title)+'</a>':esc(it.title))+(it.name&&sc.key!=='transport'?' <span class="pr-s">'+esc(it.name)+'</span>':'')+'</div>';
       var fno=sc.key==='transport'&&it.name&&it.mode!=='rent'?'<span class="pr-fno">'+esc(it.name)+cpBtn(it.name,'편명')+'</span>':'';
       if(when||fno)h+='<div class="pr-w">'+esc(when)+fno+'</div>';
       if(it.memo)h+='<div class="pr-m">'+esc(it.memo)+'</div>';
-      var ml=lk||(sc.key==='stay'?mapUrl(it.title):'');
-      h+='</div><div class="pr-act">'+(ml?'<a class="ib sm" href="'+esc(ml)+'" target="_blank" rel="noopener noreferrer" aria-label="지도 열기" title="지도 열기">'+LINK_SVG+'</a>':'')+'<button class="lb" data-act="edit">수정</button><button class="lb'+(armed===it.id?' warn':'')+'" data-act="del">'+(armed===it.id?'정말 삭제':'삭제')+'</button></div></article>';
+      h+='</div><span class="pr-go" aria-hidden="true">›</span></article>';
     });
     h+='</div>';
     if(sc.key==='transport'&&abroad())h+=passHTML();
@@ -1441,11 +1448,11 @@ function passHTML(){
   var ps=passItems(),h='<div class="pg"><div class="pg-h"><span>여권</span><button class="lb add" data-act="addpass"'+(canWrite?'':' disabled')+'>+ 추가</button></div>';
   if(!ps.length)h+='<div class="pin-empty">같이 가는 사람의 영문 이름과 여권번호를 적어 두세요</div>';
   ps.forEach(function(it){
-    h+='<article class="pr" data-id="'+esc(it.id)+'"><div class="pr-main"><div class="pr-n">'+esc(it.title||'이름 없음')+'</div>';
+    h+='<article class="pr" data-id="'+esc(it.id)+'" data-act="edit" role="button" tabindex="0"><div class="pr-main"><div class="pr-n">'+esc(it.title||'이름 없음')+'</div>';
     if(it.en)h+=cpRow('',it.en,'영문 이름');
     if(it.no)h+=cpRow('',it.no,'여권번호');
     var ew=passWarn(it.exp);if(ew)h+='<div class="pr-ew">'+esc(ew)+'</div>';
-    h+='</div><div class="pr-act"><button class="lb" data-act="edit">수정</button><button class="lb'+(armed===it.id?' warn':'')+'" data-act="del">'+(armed===it.id?'정말 삭제':'삭제')+'</button></div></article>';
+    h+='</div><span class="pr-go" aria-hidden="true">›</span></article>';
   });
   return h+'</div>';
 }
@@ -1466,7 +1473,7 @@ function openPassForm(it){
   h+='<label>여권번호<input id="f-no" maxlength="12" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="M12345678" value="'+esc(it?it.no:'')+'"></label>';
   h+='<label>만료일 (선택)<input id="f-exp" type="date" value="'+esc(it?it.exp:'')+'"></label>';
   h+='<p class="pass-note">이 보드 멤버만 볼 수 있어요.</p>';
-  h+='<div class="foot"><button class="btn" data-act="close">취소</button><div class="r"><button class="btn pri" data-act="savepass" data-id="'+(it?esc(it.id):'')+'">저장</button></div></div></div>';
+  h+='<div class="foot"><button class="btn" data-act="close">취소</button><div class="r">'+(it?'<button class="btn warn" data-act="fdel" data-id="'+esc(it.id)+'">삭제</button>':'')+'<button class="btn pri" data-act="savepass" data-id="'+(it?esc(it.id):'')+'">저장</button></div></div></div>';
   modal.innerHTML=h;modal.className='on';
   setTimeout(function(){var f=document.getElementById(it||!me||mine?'f-title':'f-en');if(f)f.focus();},30);
 }
@@ -1494,7 +1501,7 @@ function summaryHTML(t,its){
   }else big=(t.days||2)+' days';
   var cand=0,conf=0,td=0,tt=0;
   its.forEach(function(i){var s=secOf(i.section);if(s.fixed)return;if(s.check){if(s.key==='must'){tt++;if(i.done)td++;}}else if(isConf(i))conf++;else cand++;});
-  return '<div class="bar"><span class="dd">'+esc(big)+'</span><span class="dt">'+esc(t.dates||'날짜 미정')+' · '+(t.days||2)+'일</span><span class="st">확정 <b>'+conf+'</b> · 후보 <b>'+cand+'</b> · 해야 할 일 <b>'+td+'/'+tt+'</b></span><span class="sp"></span><button class="linkbtn" data-act="myname">'+esc(uid?nameOf(uid):'이름')+'</button>'+mateHTML()+'<button class="linkbtn" data-act="settings" style="margin-left:12px">여행 설정</button></div>';
+  return '<div class="bar"><span class="dd">'+esc(big)+'</span><span class="dt">'+esc(t.dates||'날짜 미정')+' · '+(t.days||2)+'일</span><span class="st">확정 <b>'+conf+'</b> · 후보 <b>'+cand+'</b> · 해야 할 일 <b>'+td+'/'+tt+'</b></span><span class="sp"></span><button class="linkbtn" data-act="myname">'+esc(uid?nameOf(uid):'이름')+'</button>'+mateHTML()+'<button class="gear" data-act="settings" aria-label="여행 설정" title="여행 설정"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button></div>';
 }
 /* 여행 중이면 맨 위에 얇은 한 줄: 오늘 다음 일정 + 길찾기 */
 function todayBand(t,its){
@@ -1597,7 +1604,7 @@ function openTransportForm(it){
   h+='<div class="row" id="w-ret" style="display:none"><label>반납 날짜<input id="f-rdate" type="date" value="'+esc(rv)+'"'+mn+mx+'></label><label>반납 시간<input id="f-rtime" type="time" value="'+esc(it?it.arrive:'')+'"></label></div>';
   h+='<label>메모 (예약번호, 좌석, 주차 등)<textarea id="f-memo" maxlength="400">'+esc(it?it.memo:'')+'</textarea></label>';
   h+='<label>링크<input id="f-link" inputmode="url" maxlength="300" value="'+esc(it?it.link:'')+'"></label>';
-  h+='<div class="foot"><button class="btn" data-act="close">취소</button><div class="r"><button class="btn pri" data-act="saveitem" data-sec="transport" data-id="'+(it?esc(it.id):'')+'">저장</button></div></div></div>';
+  h+='<div class="foot"><button class="btn" data-act="close">취소</button><div class="r">'+(it?'<button class="btn warn" data-act="fdel" data-id="'+esc(it.id)+'">삭제</button>':'')+'<button class="btn pri" data-act="saveitem" data-sec="transport" data-id="'+(it?esc(it.id):'')+'">저장</button></div></div></div>';
   modal.innerHTML=h;modal.className='on';modal.dataset.mode=mode;
   function apply(){
     var k=modal.dataset.mode,hh=MODE_HINT[k]||MODE_HINT.etc;
@@ -1634,7 +1641,7 @@ function openStayForm(it){
   h+='<label>링크<input id="f-link" inputmode="url" maxlength="300" value="'+esc(it?it.link:'')+'"></label>';
   h+='<label>주소 <small class="mut">지도 위치에 써요. 지도 공유 내용을 붙여넣으면 자동으로 들어가요</small><input id="f-addr" maxlength="120" placeholder="예) 제주 제주시 애월읍 ○○로 12" value="'+esc(it?it.addr:'')+'"></label>';
   h+='<div class="geo-f"><span id="f-geo-st"></span><button type="button" class="lb" data-act="fgeo">지도에서 위치 고르기</button></div><div id="f-geo-box"></div>';
-  h+='<div class="foot"><button class="btn" data-act="close">취소</button><div class="r"><button class="btn pri" data-act="saveitem" data-sec="stay" data-id="'+(it?esc(it.id):'')+'">저장</button></div></div></div>';
+  h+='<div class="foot"><button class="btn" data-act="close">취소</button><div class="r">'+(it?'<button class="btn warn" data-act="fdel" data-id="'+esc(it.id)+'">삭제</button>':'')+'<button class="btn pri" data-act="saveitem" data-sec="stay" data-id="'+(it?esc(it.id):'')+'">저장</button></div></div></div>';
   modal.innerHTML=h;modal.className='on';
   var a=document.getElementById('f-cin'),b=document.getElementById('f-cout');
   a.addEventListener('change',function(){if(a.value&&(!b.value||b.value<a.value))b.value=a.value;b.min=a.value;});
@@ -2036,6 +2043,7 @@ function burst(x,y,el){
 document.addEventListener('click',function(e){
   var el=e.target.closest('[data-act]');if(!el)return;
   var a=el.dataset.act,it;
+  if(a==='go')return;/* 장소 이름 = 지도 링크: 그대로 열어요 */
   if(a==='arcview'){var nv=!showArc,lst=trips.filter(function(x){return isArchived(x)===nv;});if(nv)lastLive=tripId;showArc=nv;if(lst.length){var pk=(!nv&&lst.filter(function(x){return x.id===lastLive;})[0])||(nv?lst[lst.length-1]:lst[0]);tripId=pk.id;lsSet('tripId',tripId);}openId=null;render();return;}
   if(a==='arctrip'){arcTrip();return;}
   if(a==='mustf'){mustMine=el.dataset.v==='1';render();return;}
@@ -2079,6 +2087,7 @@ document.addEventListener('click',function(e){
   else if(a==='pstclear'){closeModal();setStayTime(el.dataset.key,'');}
   else if(a==='close'){closeModal();}
   else if(a==='saveitem'){saveItem(el);}
+  else if(a==='fdel'){if(el.dataset.armed){var di=items.filter(function(x){return x.id===el.dataset.id;})[0];closeModal();if(di)delItem(di);}else{el.dataset.armed='1';el.textContent='정말 삭제';}}
   else if(a==='copy'){haptic();copyText(el.dataset.v||'');}
   else if(a==='addpass'){if(!canWrite){toast('보기 전용이에요.');return;}openPassForm(null);}
   else if(a==='savepass'){savePass(el);}
@@ -2126,6 +2135,7 @@ document.addEventListener('change',function(e){if(e.target&&e.target.id==='pk-ti
   else if(el.dataset&&el.dataset.act==='slot'){var it2=itemFrom(el);if(it2)setSlot(it2,el.value);}
 });
 document.addEventListener('keydown',function(e){
+  if((e.key==='Enter'||e.key===' ')&&e.target&&e.target.classList&&(e.target.classList.contains('it-m')||e.target.classList.contains('pr'))){e.preventDefault();e.target.click();return;}
   if(e.key==='Enter'&&!e.isComposing&&e.keyCode!==229&&e.target&&e.target.id==='f-rq'){e.preventDefault();e.target.blur();var rb=document.querySelector('[data-act=rcgo]');if(rb)rb.click();return;}
   if(e.key==='Enter'&&!e.isComposing&&e.keyCode!==229&&e.target&&e.target.id==='f-gq'){e.preventDefault();var gb=document.querySelector('[data-act=gfsearch]');if(gb)geoSearch(gb.dataset.id);return;}
   if(e.key==='Escape'){var bm=document.querySelector('.tl-mapw.big');if(bm){mapBig(bm.dataset.d);return;}}
