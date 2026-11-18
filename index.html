@@ -727,6 +727,29 @@ function areaFromAddr(addr){
   return area;
 }
 /* 카카오맵 공유엔 주소가 없어서, 붙여넣으면 이름(카카오 링크면 장소 번호)으로 위치를 바로 찾아 채워요 */
+/* 등록·수정 창 링크 칸에 구글 지도 링크를 넣으면 이름·주소·위치를 채워요 */
+function formGmap(sh){
+  var st=document.getElementById('f-geo-st');if(st)st.innerHTML='<span class="mut">구글 지도에서 불러오는 중…</span>';
+  var url=sh.url;
+  function apply(name,addr,x,y,kind){
+    var lk=document.getElementById('f-link');if(!lk||lk.value.trim()!==url)return;
+    var ti=document.getElementById('f-title'),ad=document.getElementById('f-addr'),ar=document.getElementById('f-area');
+    if(ti&&name&&(!ti.value.trim()||ti.value.trim()===sh.name||/〒|\d{3}-\d{4}/.test(ti.value)))ti.value=name;
+    if(ad&&addr)ad.value=addr;
+    var de=document.getElementById('f-desc');if(de&&kind&&!de.value.trim())de.value=kind;
+    if(ar&&addr&&!ar.value.trim()){var a=areaFromAddr(addr);if(a){ar.value=a;syncArea();}}
+    if(y!=null&&x!=null){modal.dataset.geox=x;modal.dataset.geoy=y;var b=document.getElementById('f-geo-box');if(b)b.innerHTML='<p class="geo-ok">'+esc(name||'')+(addr?' · '+esc(addr):'')+'</p>';}
+    geoFormStatus();
+  }
+  gplace(url,function(gp){
+    if(!gp){geoFormStatus();return;}
+    if(gp.y!=null)return apply(gp.name,gp.addr,gp.x,gp.y);
+    var q=gp.name+(gp.addr?', '+gp.addr:'');
+    if(!useGmap())return apply(gp.name,'',null,null);
+    var once=false;function fin(r){if(once)return;once=true;if(r)apply(r.n||gp.name,r.a,r.x,r.y,r.t);else apply(q,'',null,null);}
+    setTimeout(function(){fin(0);},12000);gReady(function(){gSearchN(q,fin);});
+  });
+}
 function autoGeoPaste(sh){
   if(!sh||sh.addr||!sh.name||!useKakao()||!document.getElementById('f-geo-st'))return;
   var pid=(sh.url.match(/place\.map\.kakao\.com\/(?:m\/)?(\d+)/)||[])[1]||'',st=document.getElementById('f-geo-st');
@@ -1101,8 +1124,10 @@ function gReady(cb){
   sc.onerror=function(){gState=3;document.querySelectorAll('.mapc').forEach(function(m){m.style.display='none';});};
   document.head.appendChild(sc);
 }
+/* 구글 장소 종류(예: 라멘 전문점) → 대표 메뉴 칸에 넣을 짧은 말 (그냥 '음식점'·'카페'면 비워요) */
+function gKind(v){v=String(v||'').replace(/\s*(음식점|전문점|레스토랑|식당)$/,'').trim();return /^(음식점|레스토랑|식당|카페|술집|바|상점|가게)?$/.test(v)?'':v;}
 function gSearchN(q,cb){var done=false,t=setTimeout(function(){if(!done){done=true;cb(0);}},8000);
-  google.maps.places.Place.searchByText({textQuery:q,fields:['displayName','location','formattedAddress'],maxResultCount:1,language:'ko'}).then(function(r){var p=r&&r.places&&r.places[0];if(done)return;done=true;clearTimeout(t);cb(p&&p.location?{n:p.displayName||'',x:p.location.lng(),y:p.location.lat(),a:p.formattedAddress||''}:0);},function(){if(!done){done=true;clearTimeout(t);cb(0);}});}
+  google.maps.places.Place.searchByText({textQuery:q,fields:['displayName','location','formattedAddress','primaryTypeDisplayName'],maxResultCount:1,language:'ko'}).then(function(r){var p=r&&r.places&&r.places[0];if(done)return;done=true;clearTimeout(t);cb(p&&p.location?{n:p.displayName||'',x:p.location.lng(),y:p.location.lat(),a:p.formattedAddress||'',t:gKind(p.primaryTypeDisplayName)}:0);},function(){if(!done){done=true;clearTimeout(t);cb(0);}});}
 function gSearch(q,an,cb){
   var o={textQuery:q,fields:['location','formattedAddress'],maxResultCount:1,language:'ko'};
   if(an)o.locationBias={center:{lat:an.y,lng:an.x},radius:50000};
@@ -1711,7 +1736,7 @@ var saveItem=guarded(function(btn){
     if(id){var old=items.filter(function(x){return x.id===id;})[0];if(old&&safeUrl(old.link)!==safeUrl(data.link))data.closedSrc=null;}
     if(s.sched&&document.getElementById('f-day')){data.day=parseInt(v('f-day'),10)||0;data.time=v('f-time');}
   }
-  var pg=document.getElementById('f-geo-st')&&modal.dataset.geox?{x:+modal.dataset.geox,y:+modal.dataset.geoy}:null;
+  var pg=document.getElementById('f-geo-st')&&modal.dataset.geox?{x:+modal.dataset.geox,y:+modal.dataset.geoy,g:1}:null;
   closeModal();
   if(id&&'addr' in data){var o2=items.filter(function(x){return x.id===id;})[0];if(o2&&(o2.addr||'')!==data.addr)data.geo=null;}
   if(pg)data.geo=pg;
@@ -1742,7 +1767,7 @@ var quickAdd=guarded(function(sec,txt){
   if(sh&&isGmap(sh.url)){toast('구글 지도에서 불러오는 중…');gplace(sh.url,function(gp){
     /* 링크에 좌표가 없으면(주소+이름만 있는 공유) 구글 장소 검색으로 진짜 이름·위치를 찾아요 */
     if(gp&&gp.y==null&&useGmap()){var q=gp.name+(gp.addr?', '+gp.addr:'');
-      var once=false;function fin(r){if(once)return;once=true;if(r){gp.name=r.n||gp.name;gp.addr=r.a||'';gp.x=r.x;gp.y=r.y;}else{gp.name=q;gp.addr='';}quickSave(sec,txt,sh,gp);}
+      var once=false;function fin(r){if(once)return;once=true;if(r){gp.name=r.n||gp.name;gp.addr=r.a||'';gp.x=r.x;gp.y=r.y;gp.t=r.t||'';}else{gp.name=q;gp.addr='';}quickSave(sec,txt,sh,gp);}
       setTimeout(function(){fin(0);},12000);return gReady(function(){gSearchN(q,fin);});}
     quickSave(sec,txt,sh,gp);});return;}
   return quickSave(sec,txt,sh,null);
@@ -1753,7 +1778,7 @@ var quickSave=guarded(function(sec,txt,sh,gp){
   if(sh&&!sh.name){openItemForm({section:s.key,pre:{link:sh.url}});return;}
   if(sh){link=sh.url;addr=sh.addr||(gp&&gp.addr)||'';area=sh.area||(gp&&gp.addr?areaFromAddr(gp.addr):'');title=sh.name;}
   var data={tripId:tripId,section:s.key,title:title.slice(0,80),memo:'',desc:'',link:link,status:'idea',done:false,likes:{},createdBy:uid,createdAt:Date.now()};
-  if(DESC[s.key]){data.area=area;if(addr)data.addr=addr;if(gp&&gp.y!=null&&gp.x!=null){data.geo={x:+gp.x,y:+gp.y,g:1};addr=addr||'-';}}
+  if(DESC[s.key]){data.area=area;if(addr)data.addr=addr;if(gp&&gp.t)data.desc=gp.t;if(gp&&gp.y!=null&&gp.x!=null){data.geo={x:+gp.x,y:+gp.y,g:1};addr=addr||'-';}}
   if(s.sched){data.day=0;data.time='';}
   var ref=db.collection('items').doc();flashId=ref.id;
   toast(s.name+'에 넣었어요');
@@ -1989,6 +2014,7 @@ document.addEventListener('paste',function(e){
   var ad=document.getElementById('f-addr');if(ad&&sh.addr){ad.value=sh.addr;delete modal.dataset.geox;delete modal.dataset.geoy;geoFormStatus();}
   if(lk)toast('지도 링크를 넣었어요');
   autoGeoPaste(sh);
+  if(isGmap(sh.url))formGmap(sh);
 });
 document.addEventListener('change',function(e){var tg=e.target;if(tg&&tg.id==='f-link'&&/\s/.test(tg.value.trim()))tg.value=pickUrl(tg.value);});
 function openStayTime(key){
