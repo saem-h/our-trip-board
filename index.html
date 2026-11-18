@@ -1534,7 +1534,7 @@ function summaryHTML(t,its){
   if(t.startDate&&t.endDate){
     var now=new Date(),today=Date.UTC(now.getFullYear(),now.getMonth(),now.getDate());
     var toStart=Math.round((pd(t.startDate)-today)/86400000),toEnd=Math.round((pd(t.endDate)-today)/86400000);
-    if(toStart>0)big='d-'+toStart;else if(toEnd>=0)big='day '+(1-toStart);else big='done';
+    if(toStart>0)big='D-'+toStart;else if(toEnd>=0)big='day '+(1-toStart);else big='done';
   }else big=(t.days||2)+' days';
   var cand=0,conf=0,td=0,tt=0;
   its.forEach(function(i){var s=secOf(i.section);if(s.fixed)return;if(s.check){if(s.key==='must'){tt++;if(i.done)td++;}}else if(isConf(i))conf++;else cand++;});
