@@ -92,9 +92,10 @@ h1{font-family:var(--font-en);font-weight:400;font-size:30px;margin:0;letter-spa
 .pr-fv{font-weight:600;letter-spacing:.02em;font-variant-numeric:tabular-nums;overflow-wrap:anywhere;min-width:0}
 .cpy{flex:none;width:26px;height:26px;margin:-4px 0 -4px 2px;display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:6px;background:none;color:var(--muted);padding:0;vertical-align:middle}
 .cpy svg{width:14px!important;height:14px!important;flex:none}
+.pr-ew{font-size:12px;color:var(--danger);margin-top:2px}
+.pass-note{font-size:12px;color:var(--muted);margin:0;line-height:1.5}
 .pr-fno{color:var(--muted);font-weight:600;margin-left:8px;letter-spacing:.02em;white-space:nowrap}
 .cpy:active{background:var(--line)}
-.pr-m.pr-x{display:block}
 .lb{background:none;border:0;color:var(--muted);text-decoration:underline;text-underline-offset:3px;font-size:12px;padding:2px 0}
 .lb.add{color:var(--ink);font-weight:600;text-decoration:none;font-size:12px;border:1px solid var(--line);border-radius:999px;padding:1px 10px}
 .lb.warn{color:var(--danger)}
@@ -890,7 +891,7 @@ var CALOK_SVG='<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke
 var DRAG_SVG='<svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><circle cx="7.5" cy="5" r="1.4"/><circle cx="12.5" cy="5" r="1.4"/><circle cx="7.5" cy="10" r="1.4"/><circle cx="12.5" cy="10" r="1.4"/><circle cx="7.5" cy="15" r="1.4"/><circle cx="12.5" cy="15" r="1.4"/></svg>';
 var COPY_SVG='<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="7" width="9" height="9" rx="2"/><path d="M13 4.5V4a1.5 1.5 0 0 0-1.5-1.5h-6A1.5 1.5 0 0 0 4 4v6a1.5 1.5 0 0 0 1.5 1.5H6"/></svg>';
 function cpBtn(v,lab){return '<button type="button" class="cpy" data-act="copy" data-v="'+esc(v)+'" aria-label="'+esc((lab||'')+' 복사')+'" title="복사">'+COPY_SVG+'</button>';}
-function cpRow(lab,v){return '<div class="pr-f">'+(lab?'<span class="pr-fl">'+esc(lab)+'</span>':'')+'<span class="pr-fv">'+esc(v)+'</span>'+cpBtn(v,lab)+'</div>';}
+function cpRow(lab,v,al){return '<div class="pr-f">'+(lab?'<span class="pr-fl">'+esc(lab)+'</span>':'')+'<span class="pr-fv">'+esc(v)+'</span>'+cpBtn(v,lab||al)+'</div>';}
 var X_SVG='<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l8 8M14 6l-8 8"/></svg>';
 var CHECK_SVG='<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3.2L13 4.8"/></svg>';
 
@@ -1441,20 +1442,30 @@ function passHTML(){
   if(!ps.length)h+='<div class="pin-empty">같이 가는 사람의 영문 이름과 여권번호를 적어 두세요</div>';
   ps.forEach(function(it){
     h+='<article class="pr" data-id="'+esc(it.id)+'"><div class="pr-main"><div class="pr-n">'+esc(it.title||'이름 없음')+'</div>';
-    if(it.en)h+=cpRow('영문 이름',it.en);
-    if(it.no)h+=cpRow('여권번호',it.no);
-    if(it.exp)h+='<div class="pr-m pr-x">만료 '+esc(it.exp.replace(/-/g,'.'))+'</div>';
+    if(it.en)h+=cpRow('',it.en,'영문 이름');
+    if(it.no)h+=cpRow('',it.no,'여권번호');
+    var ew=passWarn(it.exp);if(ew)h+='<div class="pr-ew">'+esc(ew)+'</div>';
     h+='</div><div class="pr-act"><button class="lb" data-act="edit">수정</button><button class="lb'+(armed===it.id?' warn':'')+'" data-act="del">'+(armed===it.id?'정말 삭제':'삭제')+'</button></div></article>';
   });
   return h+'</div>';
 }
+/* 만료일은 평소엔 숨기고, 여행 시작 기준 6개월이 안 남았을 때만 알려요 */
+function passWarn(exp){
+  var t=trip();if(!exp||!t||!t.startDate)return '';
+  var e=exp.replace(/-/g,'.');
+  if(t.endDate&&exp<=t.endDate)return '여권이 여행 전에 만료돼요 ('+e+')';
+  if(exp<addMonths(t.startDate,6))return '만료 '+e+' · 6개월이 안 남았어요';
+  return '';
+}
+function addMonths(d,n){var p=d.split('-').map(Number),y=p[0],m=p[1]+n;y+=Math.floor((m-1)/12);m=(m-1)%12+1;return y+'-'+(m<10?'0':'')+m+'-'+(p[2]<10?'0':'')+p[2];}
 function openPassForm(it){
   var me=(uid&&members[uid]&&members[uid].name)||'',mine=passItems().some(function(p){return p.createdBy===uid;});
   var h='<div class="card"><h3>'+(it?'여권 수정':'여권 추가')+'</h3>';
-  h+='<label>이름<input id="f-title" maxlength="30" placeholder="예) 새미" value="'+esc(it?it.title:(mine?'':me))+'"></label>';
-  h+='<label>영문 이름 (여권과 똑같이)<input id="f-en" maxlength="60" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="예) HONG GILDONG" value="'+esc(it?it.en:'')+'"></label>';
-  h+='<div class="row"><label>여권번호<input id="f-no" maxlength="12" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="예) M12345678" value="'+esc(it?it.no:'')+'"></label><label>만료일<input id="f-exp" type="date" value="'+esc(it?it.exp:'')+'"></label></div>';
-  h+='<p class="mut" style="font-size:12px;margin:2px 0 0">이 보드에 들어온 사람만 볼 수 있어요.</p>';
+  h+='<label>이름<input id="f-title" maxlength="30" placeholder="같이 가는 사람 이름" value="'+esc(it?it.title:(mine?'':me))+'"></label>';
+  h+='<label>영문 이름<input id="f-en" maxlength="60" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="여권에 적힌 그대로" value="'+esc(it?it.en:'')+'"></label>';
+  h+='<label>여권번호<input id="f-no" maxlength="12" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="M12345678" value="'+esc(it?it.no:'')+'"></label>';
+  h+='<label>만료일 (선택)<input id="f-exp" type="date" value="'+esc(it?it.exp:'')+'"></label>';
+  h+='<p class="pass-note">이 보드 멤버만 볼 수 있어요.</p>';
   h+='<div class="foot"><button class="btn" data-act="close">취소</button><div class="r"><button class="btn pri" data-act="savepass" data-id="'+(it?esc(it.id):'')+'">저장</button></div></div></div>';
   modal.innerHTML=h;modal.className='on';
   setTimeout(function(){var f=document.getElementById(it||!me||mine?'f-title':'f-en');if(f)f.focus();},30);
