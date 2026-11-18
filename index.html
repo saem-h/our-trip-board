@@ -510,9 +510,9 @@ button:not(.dh):active,[role=button]:not(.dh):active,[role=tab]:active,[role=che
 .mkl{font-size:10px!important;margin-left:3px!important}
 /* 폰 상단: 설정 톱니바퀴가 아래로 내려가지 않게, 날짜 글자가 줄어들도록 */
 @media (max-width:640px){
-  .bar{flex-wrap:nowrap;gap:6px 8px;align-items:center}
+  .bar{flex-wrap:wrap;gap:6px 8px;align-items:center}
   .bar .dd{flex:none}
-  .bar .dt{flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .bar .dt{order:10;flex:1 0 100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:-4px}
   .bar .linkbtn{flex:none;max-width:40%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .bar .gear{flex:none}
 }
