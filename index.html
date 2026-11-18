@@ -1148,7 +1148,8 @@ function gHours(wd){
   if(!Array.isArray(wd)||!wd.length)return '';
   var D='월화수목금토일',rows=[];
   wd.forEach(function(l){var m=String(l).match(/^\s*([월화수목금토일])요일\s*:\s*(.*)$/);if(!m)return;
-    var v=m[2].replace(/(오전|오후)\s*(\d{1,2}):(\d{2})/g,function(_,ap,h,mm){h=+h%12;if(ap==='오후')h+=12;return (h<10?'0':'')+h+':'+mm;}).replace(/\s*[~–-]\s*/g,'–').replace(/\s+/g,' ').trim();
+    var lap='';/* "오후 6:30~10:30"처럼 뒤 시간에 오전·오후가 빠지면 앞의 것을 이어 써요 */
+    var v=m[2].replace(/(오전|오후)?\s*(\d{1,2}):(\d{2})/g,function(_,ap,h,mm){ap=ap||lap;lap=ap;h=+h;if(ap){h%=12;if(ap==='오후')h+=12;}return (h<10?'0':'')+h+':'+mm;}).replace(/\s*[~–-]\s*/g,'–').replace(/\s+/g,' ').trim();
     rows.push({d:m[1],v:/휴무|closed/i.test(v)?'':(/24시간/.test(v)?'24시간':v)});});
   if(!rows.length)return '';
   rows.sort(function(a,b){return D.indexOf(a.d)-D.indexOf(b.d);});
