@@ -64,6 +64,15 @@ h1{font-family:var(--font-en);font-weight:400;font-size:30px;margin:0;letter-spa
 .invite{flex:none;margin-left:auto;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:none;color:var(--ink);border-radius:999px;padding:5px 12px 5px 10px;min-height:34px;font-size:13px;font-weight:600;white-space:nowrap}
 .invite svg{width:16px;height:16px}
 .invite{position:relative}
+.brd{border:0;background:none;padding:0;margin:0;font:inherit;color:inherit;letter-spacing:inherit;text-transform:inherit;display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.brd svg{width:14px;height:14px;flex:none;color:var(--muted);margin-top:4px}
+.bl{display:flex;flex-direction:column;margin:4px 0 2px}
+.bl-r{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 2px;border-bottom:1px solid var(--line);color:var(--ink);text-decoration:none;min-height:48px}
+.bl-r:last-child{border-bottom:0}
+.bl-t{font-weight:600;font-size:15px;overflow-wrap:anywhere}
+.bl-c{flex:none;font-size:12px;font-weight:600;background:var(--lime,#C8FF2E);color:#0a0a0a;border-radius:999px;padding:2px 9px}
+.bl-a{flex:none;color:#C4C4C4;font-size:20px}
+.bl-n{font-size:12px;color:var(--muted);margin:0;line-height:1.5}
 .note{margin:10px 0 0;padding:10px 14px;border:1px solid var(--ink);border-radius:10px;font-size:13px}
 .bar{display:flex;align-items:center;gap:6px 14px;flex-wrap:wrap;padding:9px 14px;border:1px solid var(--line);border-radius:14px}
 .dd{background:var(--accent);color:var(--accent-ink);border:1px solid var(--ink);border-radius:999px;padding:1px 14px;font-family:var(--font-en);font-size:22px;line-height:1.4;text-transform:lowercase;white-space:nowrap}
@@ -422,7 +431,9 @@ button:not(.dh):active,[role=button]:not(.dh):active,[role=tab]:active,[role=che
   header.top .tabs{flex:1 1 100%;order:2}
   header.top .invite{order:1;width:36px;height:36px;padding:0;justify-content:center}
   header.top .inv-t{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
-  header.top h1{min-width:0}
+  header.top h1{min-width:0;font-size:24px}
+  header.top{column-gap:8px}
+  .brd svg{margin-top:2px}
 }
 .tmw{display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:13px;font-weight:500}
 .tmw .tm{min-width:104px}
@@ -1544,7 +1555,7 @@ function render(){
   if(act&&act.matches&&act.matches('[data-quick]'))keep={sec:act.dataset.quick,pos:act.selectionStart};
   var t=trip();
   if(scaleT==null)scaleT=Date.now();var sEl=Date.now()-scaleT;
-  var h='<header class="top"><h1'+(sEl<800?' class="scin" style="--d:-'+sEl+'ms"':'')+'>our trip board</h1><div class="tabs" role="tablist">';
+  var h='<header class="top"><h1'+(sEl<800?' class="scin" style="--d:-'+sEl+'ms"':'')+'>'+(window.TB_BOARD?'<button class="brd" data-act="boards" aria-label="내 보드 바꾸기" title="내 보드 바꾸기">our trip board<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4.5l3 3 3-3"/></svg></button>':'our trip board')+'</h1><div class="tabs" role="tablist">';
   var nArc=trips.filter(isArchived).length;
   trips.filter(function(x){return isArchived(x)===showArc;}).forEach(function(x){h+='<button class="tab'+(tOn('t:'+x.id)?' tabpop':'')+'"'+tOn('t:'+x.id,1)+' role="tab" data-act="tab" data-id="'+esc(x.id)+'" aria-selected="'+(x.id===tripId)+'">'+esc(x.name)+'</button>';});
   if(showArc)h+='<button class="tab-x" data-act="arcview">← 진행 중 여행</button>';
@@ -1596,6 +1607,17 @@ var hapEl=null;
 function haptic(){
   try{if(navigator.vibrate&&navigator.vibrate(12))return;}catch(e){}
   try{if(!hapEl){hapEl=document.createElement('label');hapEl.setAttribute('aria-hidden','true');hapEl.style.cssText='position:fixed;left:-9999px;width:1px;height:1px;overflow:hidden;opacity:0';var c=document.createElement('input');c.type='checkbox';c.setAttribute('switch','');c.tabIndex=-1;hapEl.appendChild(c);document.body.appendChild(hapEl);}hapEl.click();}catch(e){}
+}
+/* 로고를 누르면 내 보드 목록: 보드를 바로 바꾸거나 새 보드를 만들어요 */
+function openBoards(){
+  modal.innerHTML='<div class="card"><h3>내 보드</h3><div class="bl"><div class="mut">불러오는 중…</div></div><p class="bl-n">새 보드는 지금 보드와 따로예요. 나만의 다른 여행을 짜거나 다른 친구를 초대할 때 써요.</p><div class="foot"><button class="btn" data-act="close">닫기</button><div class="r"><button class="btn pri" data-act="newboard">+ 새 보드 만들기</button></div></div></div>';
+  modal.className='on';
+  firebase.firestore().collection('users').doc((firebase.auth().currentUser||{}).uid||'-').collection('boards').orderBy('at','desc').get().then(function(q){
+    var el=modal.querySelector('.bl');if(!el)return;var h='';
+    q.forEach(function(d){var x=d.data(),cur=d.id===window.TB_BOARD;
+      h+='<a class="bl-r'+(cur?' on':'')+'" href="/?b='+esc(d.id)+'"'+(cur?' aria-current="true"':'')+'><span class="bl-t">'+esc(x.name||'이름 없는 보드')+'</span>'+(cur?'<span class="bl-c">지금 보는 중</span>':'<span class="bl-a">›</span>')+'</a>';});
+    el.innerHTML=h||'<div class="mut">보드가 없어요.</div>';
+  },function(){var el=modal.querySelector('.bl');if(el)el.innerHTML='<div class="mut">목록을 불러오지 못했어요.</div>';});
 }
 function closeModal(){modal.className='';modal.innerHTML='';delete modal.dataset.geox;delete modal.dataset.geoy;}
 var MODES=[['plane','비행기'],['train','기차'],['car','자가용'],['rent','렌트카'],['bus','버스'],['ship','배'],['etc','기타']];
@@ -2087,6 +2109,7 @@ document.addEventListener('click',function(e){
   else if(a==='oldimpgo'){runImport();}
   else if(a==='mknewboard'){location.href='https://our-trip-board.web.app/?new=1';}
   else if(a==='home'){location.href='/?list=1';}
+  else if(a==='boards'){openBoards();}
   else if(a==='shareboard'){shareBoard();}
   else if(a==='settings'){openTripForm(false);}
   else if(a==='myname'){if(uid)openNameForm(false);}
