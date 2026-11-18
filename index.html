@@ -743,11 +743,10 @@ function formGmap(sh){
   }
   gplace(url,function(gp){
     if(!gp){geoFormStatus();return;}
-    if(gp.y!=null)return apply(gp.name,gp.addr,gp.x,gp.y);
-    var q=gp.name+(gp.addr?', '+gp.addr:'');
-    if(!useGmap())return apply(gp.name,'',null,null);
-    var once=false;function fin(r){if(once)return;once=true;if(r)apply(r.n||gp.name,r.a,r.x,r.y,r.t);else apply(q,'',null,null);}
-    setTimeout(function(){fin(0);},12000);gReady(function(){gSearchN(q,fin);});
+    var q=gp.name+(gp.addr?', '+gp.addr:''),near=gp.y!=null?{x:+gp.x,y:+gp.y}:null;
+    if(!useGmap()||!gp.name)return near?apply(gp.name,gp.addr,gp.x,gp.y):apply(gp.name,'',null,null);
+    var once=false;function fin(r){if(once)return;once=true;if(r)apply(r.n||gp.name,r.a||gp.addr,r.x,r.y,r.t);else if(near)apply(gp.name,gp.addr,gp.x,gp.y);else apply(q,'',null,null);}
+    setTimeout(function(){fin(0);},12000);gReady(function(){gSearchN(q,fin,near);});
   });
 }
 function autoGeoPaste(sh){
@@ -1126,8 +1125,9 @@ function gReady(cb){
 }
 /* 구글 장소 종류(예: 라멘 전문점) → 대표 메뉴 칸에 넣을 짧은 말 (그냥 '음식점'·'카페'면 비워요) */
 function gKind(v){v=String(v||'').replace(/\s*(음식점|전문점|레스토랑|식당)$/,'').trim();return /^(음식점|레스토랑|식당|카페|술집|바|상점|가게)?$/.test(v)?'':v;}
-function gSearchN(q,cb){var done=false,t=setTimeout(function(){if(!done){done=true;cb(0);}},8000);
-  google.maps.places.Place.searchByText({textQuery:q,fields:['displayName','location','formattedAddress','primaryTypeDisplayName'],maxResultCount:1,language:'ko'}).then(function(r){var p=r&&r.places&&r.places[0];if(done)return;done=true;clearTimeout(t);cb(p&&p.location?{n:p.displayName||'',x:p.location.lng(),y:p.location.lat(),a:p.formattedAddress||'',t:gKind(p.primaryTypeDisplayName)}:0);},function(){if(!done){done=true;clearTimeout(t);cb(0);}});}
+function gSearchN(q,cb,near){var done=false,t=setTimeout(function(){if(!done){done=true;cb(0);}},8000);
+  var o={textQuery:q,maxResultCount:1,language:'ko'};if(near)o.locationBias={center:{lat:near.y,lng:near.x},radius:300};
+  google.maps.places.Place.searchByText(Object.assign(o,{fields:['displayName','location','formattedAddress','primaryTypeDisplayName']})).then(function(r){var p=r&&r.places&&r.places[0];if(done)return;done=true;clearTimeout(t);cb(p&&p.location?{n:p.displayName||'',x:p.location.lng(),y:p.location.lat(),a:p.formattedAddress||'',t:gKind(p.primaryTypeDisplayName)}:0);},function(){if(!done){done=true;clearTimeout(t);cb(0);}});}
 function gSearch(q,an,cb){
   var o={textQuery:q,fields:['location','formattedAddress'],maxResultCount:1,language:'ko'};
   if(an)o.locationBias={center:{lat:an.y,lng:an.x},radius:50000};
@@ -1444,6 +1444,7 @@ function render(){
     if(ready&&seenFor!==tripId){seenFor=tripId;var sv=parseInt(lsGet('seen_'+tripId),10);seenAt=sv||Date.now();lsSet('seen_'+tripId,String(Date.now()));}
     if(ready&&!viewInit){viewInit=true;if(todayDayOf(t))view='plan';}
     if(activeSec==='all'||!secOf(activeSec)||secOf(activeSec).fixed)activeSec='food';
+    if(activeSec!=='all'&&secOf(activeSec)&&!secOf(activeSec).fixed)addSec=activeSec;
     if(!secOf(addSec)||secOf(addSec).fixed)addSec='food';
     h+=summaryHTML(t,its);
     h+=todayBand(t,its);
@@ -1766,9 +1767,9 @@ var quickAdd=guarded(function(sec,txt){
   var sh=parseShare(txt);
   if(sh&&isGmap(sh.url)){toast('구글 지도에서 불러오는 중…');gplace(sh.url,function(gp){
     /* 링크에 좌표가 없으면(주소+이름만 있는 공유) 구글 장소 검색으로 진짜 이름·위치를 찾아요 */
-    if(gp&&gp.y==null&&useGmap()){var q=gp.name+(gp.addr?', '+gp.addr:'');
-      var once=false;function fin(r){if(once)return;once=true;if(r){gp.name=r.n||gp.name;gp.addr=r.a||'';gp.x=r.x;gp.y=r.y;gp.t=r.t||'';}else{gp.name=q;gp.addr='';}quickSave(sec,txt,sh,gp);}
-      setTimeout(function(){fin(0);},12000);return gReady(function(){gSearchN(q,fin);});}
+    if(gp&&gp.name&&useGmap()){var q=gp.name+(gp.addr?', '+gp.addr:''),near=gp.y!=null?{x:+gp.x,y:+gp.y}:null;
+      var once=false;function fin(r){if(once)return;once=true;if(r){gp.name=r.n||gp.name;gp.addr=r.a||gp.addr||'';gp.x=r.x;gp.y=r.y;gp.t=r.t||'';}else if(!near){gp.name=q;gp.addr='';}quickSave(sec,txt,sh,gp);}
+      setTimeout(function(){fin(0);},12000);return gReady(function(){gSearchN(q,fin,near);});}
     quickSave(sec,txt,sh,gp);});return;}
   return quickSave(sec,txt,sh,null);
 });
