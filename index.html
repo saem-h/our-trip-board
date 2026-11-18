@@ -114,6 +114,8 @@ a.it-t:active,.ev-n a:active,.pr-n a:active{opacity:.55}
 .pr-go{flex:none;align-self:center;color:#C4C4C4;font-size:20px;line-height:1;padding-left:4px}
 .bar .gear{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border:0;background:none;color:var(--muted);padding:0;margin-left:2px}
 .bar .gear svg{width:19px;height:19px}
+.bar .bell{position:relative}
+.bar .bell.on::after{content:'';position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:#C8FF2E;border:1.5px solid var(--bg)}
 .mates{font-size:13px;color:var(--muted);margin-left:-9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:40vw}
 .pr-f{display:flex;align-items:center;gap:0;margin-top:1px;font-size:13px;min-height:26px}
 .pr-fl{color:var(--muted);font-size:12px;flex:none;width:60px}
@@ -1338,7 +1340,7 @@ var rcAdd=guarded(function(k){
   if(secOf('food').sched){data.day=0;data.time='';}
   var ref=db.collection('items').doc();flashId=ref.id;
   haptic();toast(x.place_name+' 담았어요');
-  return ref.set(data).then(function(){rcDraw();});
+  return ref.set(data).then(function(){rcDraw();notifyAct('add',ref.id);});
 });
 function openGeoFix(id,inQ){
   if(!inQ){gfQ=[];gfI=0;}
@@ -1538,7 +1540,7 @@ function summaryHTML(t,its){
   }else big=(t.days||2)+' days';
   var cand=0,conf=0,td=0,tt=0;
   its.forEach(function(i){var s=secOf(i.section);if(s.fixed)return;if(s.check){if(s.key==='must'){tt++;if(i.done)td++;}}else if(isConf(i))conf++;else cand++;});
-  return '<div class="bar"><span class="dd">'+esc(big)+'</span><span class="dt">'+esc(t.dates||'날짜 미정')+' · '+(t.days||2)+'일</span><span class="st">확정 <b>'+conf+'</b> · 후보 <b>'+cand+'</b> · 해야 할 일 <b>'+td+'/'+tt+'</b></span><span class="sp"></span><button class="linkbtn" data-act="myname">'+esc(uid?nameOf(uid):'이름')+'</button>'+mateHTML()+'<button class="gear" data-act="settings" aria-label="여행 설정" title="여행 설정"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button></div>';
+  return '<div class="bar"><span class="dd">'+esc(big)+'</span><span class="dt">'+esc(t.dates||'날짜 미정')+' · '+(t.days||2)+'일</span><span class="st">확정 <b>'+conf+'</b> · 후보 <b>'+cand+'</b> · 해야 할 일 <b>'+td+'/'+tt+'</b></span><span class="sp"></span><button class="linkbtn" data-act="myname">'+esc(uid?nameOf(uid):'이름')+'</button>'+mateHTML()+''+(window.TB_BOARD&&VAPID?'<button class="gear bell'+(pushOn()?' on':'')+'" data-act="push" aria-label="알림" title="알림">'+BELL_SVG+'</button>':'')+'<button class="gear" data-act="settings" aria-label="여행 설정" title="여행 설정"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button></div>';
 }
 /* 여행 중이면 맨 위에 얇은 한 줄: 오늘 다음 일정 + 길찾기 */
 function todayBand(t,its){
@@ -1635,6 +1637,58 @@ function delBoard(btn){
     .then(function(){return db0.collection('users').doc(uid0).collection('boards').doc(b).delete();})
     .then(function(){var n=w.parentNode&&w.parentNode.querySelector('.bl-x');if(n)n.remove();w.remove();toast('보드를 지웠어요');},function(){w.style.opacity='';btn.disabled=false;toast('지우지 못했어요. 잠시 후 다시 해 주세요.');});
 }
+/* ---------- 알림 (폰·PC 푸시) ----------
+   켜면 이 기기의 알림 토큰을 보드 멤버 정보(push)에 저장해요.
+   같이 쓰는 사람이 장소를 올리거나 좋아요·일정 확정을 하면 로그인 서버가 다른 멤버에게 알림을 보내요. */
+var PUSH_API='https://script.google.com/macros/s/AKfycbyd3LH41njN_Zv_qouDmCsbtBC8gcZ1hyiYSi4onFIfRcMG_n1LX9hxXI0n50aUFRh-Vg/exec';
+var VAPID='';/* Firebase 콘솔 → 프로젝트 설정 → 클라우드 메시징 → 웹 푸시 인증서의 '키 쌍' */
+function fbUser(){try{return window.firebase&&firebase.auth&&firebase.auth().currentUser;}catch(e){return null;}}
+function pushPost(o){var u=fbUser();if(!u)return Promise.resolve(null);
+  return u.getIdToken().then(function(t){o.idt=t;o.b=window.TB_BOARD;return fetch(PUSH_API,{method:'POST',body:JSON.stringify(o)});}).then(function(r){return r.json();});}
+function notifyAct(kind,id){if(!window.TB_BOARD||!id)return;try{pushPost({action:'notify',kind:kind,item:id}).catch(function(){});}catch(e){}}
+function pushOK(){return 'Notification' in window&&'serviceWorker' in navigator&&'PushManager' in window;}
+function isIOS(){return /iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);}
+function standalone(){return (window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true;}
+function pushOn(){return !!(g('push')&&pushOK()&&Notification.permission==='granted');}
+function msgReady(){if(msgReady.p)return msgReady.p;
+  msgReady.p=loadJs('https://www.gstatic.com/firebasejs/'+FBV+'/firebase-messaging-compat.js').then(function(){return navigator.serviceWorker.register('/firebase-messaging-sw.js');}).then(function(reg){
+    var m=firebase.messaging();m.onMessage(function(p){var n=(p&&p.notification)||{};toast((n.title?n.title+' · ':'')+(n.body||'새 알림'));});return {m:m,reg:reg};});
+  msgReady.p.catch(function(){msgReady.p=null;});return msgReady.p;}
+function pushToken(){return msgReady().then(function(x){return x.m.getToken({vapidKey:VAPID,serviceWorkerRegistration:x.reg});});}
+function savePushToken(tok){var u=fbUser();if(!u||!fsRoot||!tok)return Promise.resolve();var o={};o[tok]=Date.now();
+  var old=g('push');var d={push:o};
+  return fsRoot.collection('members').doc(u.uid).set(d,{merge:true}).then(function(){
+    if(old&&old!==tok){var del={};del['push.'+old]=firebase.firestore.FieldValue.delete();return fsRoot.collection('members').doc(u.uid).update(del).catch(function(){});}
+  }).then(function(){s('push',tok);});}
+function openPush(){
+  var on=pushOn(),h='<div class="card"><h3>알림</h3>';
+  if(!window.TB_BOARD){h+='<p class="mut">알림은 로그인해서 쓰는 보드에서만 쓸 수 있어요.</p><div class="foot"><button class="btn" data-act="close">닫기</button></div></div>';}
+  else if(!pushOK()){h+=isIOS()&&!standalone()?'<p class="pass-note" style="font-size:14px;color:var(--ink)">아이폰은 홈 화면에 추가한 앱에서 알림을 켤 수 있어요.</p><p class="pass-note">사파리 아래 공유 버튼 → <b>홈 화면에 추가</b> → 홈 화면의 앱으로 열고 여기서 다시 켜 주세요.</p>':'<p class="pass-note" style="font-size:14px">이 브라우저는 알림을 지원하지 않아요. 크롬이나 홈 화면 앱에서 켜 주세요.</p>';h+='<div class="foot"><button class="btn" data-act="close">닫기</button></div></div>';}
+  else{
+    h+='<p class="pass-note" style="font-size:14px;color:var(--ink);line-height:1.6">같이 쓰는 사람이 장소를 올리거나, 좋아요·일정 확정을 하면 알려 드려요.<br>출발 전날 저녁과 비행기 출발 3시간 전에도 알려 드려요.</p>';
+    if(Notification.permission==='denied')h+='<p class="pass-note" style="color:var(--danger)">이 기기에서 알림이 막혀 있어요. 설정 → 알림에서 Our Trip Board(또는 브라우저)를 허용해 주세요.</p>';
+    h+='<p class="pass-note">'+(on?'이 기기에서 알림이 켜져 있어요.':'이 기기에서는 아직 꺼져 있어요. 폰과 PC는 각각 켜야 해요.')+'</p>';
+    h+='<div class="foot"><button class="btn" data-act="close">닫기</button><div class="r">'+(on?'<button class="btn" data-act="pushtest">테스트 알림</button><button class="btn warn" data-act="pushoff">끄기</button>':'<button class="btn pri" data-act="pushon"'+(Notification.permission==='denied'?' disabled':'')+'>알림 켜기</button>')+'</div></div></div>';
+  }
+  modal.innerHTML=h;modal.className='on';
+}
+function enablePush(btn){
+  if(!VAPID){toast('알림 준비 중이에요. 조금만 기다려 주세요.');return;}
+  if(btn){btn.disabled=true;btn.textContent='켜는 중…';}
+  Promise.resolve(Notification.requestPermission()).then(function(p){
+    if(p!=='granted')throw new Error('denied');return pushToken();
+  }).then(function(tok){if(!tok)throw new Error('token');return savePushToken(tok);}).then(function(){
+    closeModal();render();toast('알림을 켰어요');pushPost({action:'test'}).catch(function(){});
+  }).catch(function(e){if(btn){btn.disabled=false;btn.textContent='알림 켜기';}toast(String(e&&e.message)==='denied'?'알림이 허용되지 않았어요.':'알림을 켜지 못했어요. 잠시 후 다시 해 주세요.');});
+}
+function disablePush(){var tok=g('push'),u=fbUser();s('push','');
+  if(tok&&u&&fsRoot){var del={};del['push.'+tok]=firebase.firestore.FieldValue.delete();fsRoot.collection('members').doc(u.uid).update(del).catch(function(){});}
+  msgReady().then(function(x){return x.m.deleteToken();}).catch(function(){});
+  closeModal();render();toast('이 기기 알림을 껐어요');}
+/* 앱을 열 때 켜져 있으면 토큰을 새로 확인해 둬요 (바뀌면 다시 저장) */
+function pushRefresh(){if(!window.TB_BOARD||!VAPID||!pushOn())return;
+  pushToken().then(function(tok){if(tok&&tok!==g('push'))return savePushToken(tok);}).catch(function(){});}
+var BELL_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/></svg>';
 function closeModal(){modal.className='';modal.innerHTML='';delete modal.dataset.geox;delete modal.dataset.geoy;}
 var MODES=[['plane','비행기'],['train','기차'],['car','자가용'],['rent','렌트카'],['bus','버스'],['ship','배'],['etc','기타']];
 var MODE_HINT={
@@ -1901,7 +1955,7 @@ var saveItem=guarded(function(btn){
   if(pg)data.geo=pg;
   if(id){var was=items.filter(function(x){return x.id===id;})[0];if(was&&was.section!==s.key&&!s.fixed)data.section=s.key;return db.doc('items/'+id).update(data);}
   data.tripId=tripId;data.section=s.key;data.status=s.fixed?'confirmed':'idea';data.done=false;data.likes={};data.createdBy=uid;data.createdAt=Date.now();
-  return db.collection('items').add(data);
+  return db.collection('items').add(data).then(function(r){if(r&&r.id)notifyAct('add',r.id);return r;});
 });
 function doQuick(raw,blur){
   var n=document.querySelector('[data-quick=q]');
@@ -1941,7 +1995,7 @@ var quickSave=guarded(function(sec,txt,sh,gp){
   if(s.sched){data.day=0;data.time='';}
   var ref=db.collection('items').doc();flashId=ref.id;
   toast(s.name+'에 넣었어요');
-  return ref.set(data).then(function(){if(sh&&sh.name&&!addr&&DESC[s.key])quickGeo(ref.id,sh);});
+  return ref.set(data).then(function(){notifyAct('add',ref.id);if(sh&&sh.name&&!addr&&DESC[s.key])quickGeo(ref.id,sh);});
 });
 /* 카카오맵 공유처럼 주소가 없으면, 저장한 뒤 조용히 위치를 찾아 채워요 */
 function quickGeo(id,sh){
@@ -1992,9 +2046,9 @@ var toggleLike=guarded(function(it){
   if(!uid){toast('로그인 정보를 확인할 수 없어요.');return;}
   var on=likeIds(it).indexOf(uid)>-1,p={};p[uid]=!on;
   var pv=likeIds(it).length;pulse={id:it.id,on:!on,t:Date.now(),prev:pv,next:pv+(on?-1:1)};
-  return db.doc('items/'+it.id).update({likes:p});
+  return db.doc('items/'+it.id).update({likes:p}).then(function(){if(!on)notifyAct('like',it.id);});
 });
-var confirmWith=guarded(function(it,d,sl,tm){var t=trip();if(d&&closedOn(it,t,d))toast(dayLabel(t,d)+'은 '+closedTxt(it)+'인 곳이에요. 확인해 주세요.');var data={status:'confirmed',ord:null,day:d,time:tm||'',slot:it.section==='food'?sl:''};if(!d)data.date='';return db.doc('items/'+it.id).update(data);});
+var confirmWith=guarded(function(it,d,sl,tm){var t=trip();if(d&&closedOn(it,t,d))toast(dayLabel(t,d)+'은 '+closedTxt(it)+'인 곳이에요. 확인해 주세요.');var data={status:'confirmed',ord:null,day:d,time:tm||'',slot:it.section==='food'?sl:''};if(!d)data.date='';return db.doc('items/'+it.id).update(data).then(function(){notifyAct('conf',it.id);});});
 var unconfirm=guarded(function(it){return db.doc('items/'+it.id).update({status:'idea',ord:null,day:0,time:'',slot:''});});
 var toggleConfirm=guarded(function(it){return db.doc('items/'+it.id).update({status:isConf(it)?'idea':'confirmed'});});
 /* 같은 보드에 들어온 사람(같이 가는 친구) 이름을 내 이름 옆에 보여 줘요 */
@@ -2126,6 +2180,10 @@ document.addEventListener('click',function(e){
   else if(a==='mknewboard'){location.href='https://our-trip-board.web.app/?new=1';}
   else if(a==='home'){location.href='/?list=1';}
   else if(a==='boards'){openBoards();}
+  else if(a==='push'){openPush();}
+  else if(a==='pushon'){enablePush(el);}
+  else if(a==='pushoff'){disablePush();}
+  else if(a==='pushtest'){pushPost({action:'test'}).then(function(j){toast(j&&j.ok?'테스트 알림을 보냈어요':'보내지 못했어요'+(j&&j.error?' ('+j.error+')':''));}).catch(function(){toast('보내지 못했어요');});closeModal();}
   else if(a==='bdel'){delBoard(el);}
   else if(a==='shareboard'){shareBoard();}
   else if(a==='settings'){openTripForm(false);}
@@ -2258,6 +2316,7 @@ async function init(){
   },function(){offline=true;ready=true;render();});
   db.collection('members').onSnapshot(function(s){
     var m={};s.docs.forEach(function(d){m[d.id]=Object.assign({},d.data());});members=m;render();
+    if(!pushRefresh.done){pushRefresh.done=1;setTimeout(pushRefresh,1500);}
     if(uid&&canWrite&&!members[uid]&&!nameAsked&&!modal.className){nameAsked=true;openNameForm(true);}
   },function(){});
   db.collection('items').onSnapshot(function(s){
