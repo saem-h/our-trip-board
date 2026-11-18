@@ -508,6 +508,14 @@ button:not(.dh):active,[role=button]:not(.dh):active,[role=tab]:active,[role=che
 .mk.h{width:10px!important;height:10px!important;min-width:10px!important;min-height:10px!important;max-width:10px!important;max-height:10px!important;background:#0A0A0A!important;border:1px solid #0A0A0A!important}
 .mkw{line-height:0}
 .mkl{font-size:10px!important;margin-left:3px!important}
+/* 폰 상단: 설정 톱니바퀴가 아래로 내려가지 않게, 날짜 글자가 줄어들도록 */
+@media (max-width:640px){
+  .bar{flex-wrap:nowrap;gap:6px 8px;align-items:center}
+  .bar .dd{flex:none}
+  .bar .dt{flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .bar .linkbtn{flex:none;max-width:40%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .bar .gear{flex:none}
+}
 /* 영업시간: 데스크톱은 기존처럼 한 줄, 펼치면 상세에서는 숨김 */
 .it-hr::before{content:' · '}
 .it.op .it-hr{display:none}
@@ -997,7 +1005,8 @@ function itemHTML(it,s,t,tag){
   if(conf&&!s.check&&s.key!=='transport'){var ed=effDay(it,t),lab=(ed?dayLabel(t,ed):'날짜 미정')+(it.time?' '+it.time:'')+(it.slot?' '+slotName(it.slot):'');var bad=ed&&closedOn(it,t,ed);sp.push('<span class="lb2'+(bad?' w':'')+'">'+esc(lab)+(bad?' · 휴무일!':'')+'</span>');}
   if(s.check){if(it.who)sp.push('<span class="who'+(it.who===uid?' me':'')+'">'+esc(nameOf(it.who))+' 담당</span>');else sp.push(memberIds().map(function(m){var on=it.doneBy&&it.doneBy[m];return '<span class="who'+(on?' ok':'')+'">'+esc(nameOf(m))+(on?' ✓':' ·')+'</span>';}).join(' '));}
   if(it.desc)sp.push(esc(it.desc));
-  var hrs=(!s.check&&firstMemo.indexOf('영업')===0)?firstMemo:'';/* 영업시간 줄은 대표 메뉴 줄 오른쪽에 따로 둬요 (폰) */
+  /* 영업시간이 짧으면 원래처럼 한 줄에, 길면 따로 한 줄 (폰) */
+  var hrs=(!s.check&&firstMemo.indexOf('영업')===0&&(sp.join(' · ')+' · '+firstMemo).length>28)?firstMemo:'';
   if(firstMemo&&!hrs&&!open)sp.push(esc(firstMemo));/* 펼치면 메모 전체를 아래에 보여 줘요 */
   var ct=closedTxt(it);if(ct&&it.closed&&it.closed.length)sp.push('<span class="cl">'+esc(ct)+'</span>');
   var first=sp.join(' · ');
