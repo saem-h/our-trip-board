@@ -65,6 +65,7 @@ h1{font-family:var(--font-en);font-weight:400;font-size:30px;margin:0;letter-spa
 .invite svg{width:16px;height:16px}
 .invite{position:relative}
 .invite.bell{margin-left:0;order:2;padding:0;width:34px;justify-content:center}
+.tabs>.invite.bell{margin-left:auto;flex:none;position:sticky;right:0;background:var(--bg)}
 .invite.bell.on::after{content:'';position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;background:#C8FF2E;border:1.5px solid var(--bg)}
 .brd{border:0;background:none;padding:0;margin:0;font:inherit;color:inherit;letter-spacing:inherit;text-transform:inherit;display:inline-flex;align-items:center;gap:6px;cursor:pointer}
 .brd svg{width:14px;height:14px;flex:none;color:var(--muted);margin-top:4px}
@@ -1718,7 +1719,7 @@ function render(){
   trips.filter(function(x){return isArchived(x)===showArc;}).forEach(function(x){h+='<button class="tab'+(tOn('t:'+x.id)?' tabpop':'')+'"'+tOn('t:'+x.id,1)+' role="tab" data-act="tab" data-id="'+esc(x.id)+'" aria-selected="'+(x.id===tripId)+'">'+esc(x.name)+'</button>';});
   if(showArc)h+='<button class="tab-x" data-act="arcview">← 진행 중 여행</button>';
   else h+='<button class="tab-x" data-act="newtrip"'+(canWrite?'':' disabled')+'>+ 새 여행</button>'+(nArc?'<button class="tab-x" data-act="arcview">지난 여행 '+nArc+'</button>':'');
-  h+='</div>'+(window.TB_BOARD&&!showArc?'<button class="invite" data-act="shareboard"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="7" r="3"/><path d="M2.5 16c.6-2.8 2.8-4.5 5.5-4.5s4.9 1.7 5.5 4.5M15.5 6.5v5M13 9h5"/></svg><span class="inv-t">친구 초대</span></button>':'')+(window.TB_BOARD&&VAPID?'<button class="invite bell'+(pushOn()?' on':'')+'" data-act="push" aria-label="알림" title="알림">'+BELL_SVG+'</button>':'')+'</header>';
+  h+=(window.TB_BOARD&&VAPID?'<button class="invite bell'+(pushOn()?' on':'')+'" data-act="push" aria-label="알림" title="알림">'+BELL_SVG+'</button>':'')+'</div>'+(window.TB_BOARD&&!showArc?'<button class="invite" data-act="shareboard"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="7" r="3"/><path d="M2.5 16c.6-2.8 2.8-4.5 5.5-4.5s4.9 1.7 5.5 4.5M15.5 6.5v5M13 9h5"/></svg><span class="inv-t">친구 초대</span></button>':'')+'</header>';
   if(!canWrite)h+='<div class="note">지금은 보기 전용이에요. 같이 편집하려면 공유 설정에서 상대방을 편집 가능(기여자 이상)으로 초대해 주세요.</div>';
   if(offline)h+='<div class="note">저장소에 연결하지 못했어요. 새로고침하거나 로그인 상태를 확인해 주세요.</div>';
   if(!ready&&!offline){
