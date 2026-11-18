@@ -211,6 +211,9 @@ a.it-t:active,.ev-n a:active,.pr-n a:active{opacity:.55}
 @media (min-width:900px){.tl-map{height:320px}}
 .tl-big{position:absolute;left:8px;bottom:8px;z-index:3;width:30px;height:30px;min-height:0;padding:0;border-radius:8px;background:#fff;color:#0A0A0A;border:1px solid rgba(0,0,0,.25);box-shadow:0 1px 4px rgba(0,0,0,.2);display:flex;align-items:center;justify-content:center;cursor:pointer}
 .tl-big svg{width:16px;height:16px}
+.tl-home{position:absolute;left:44px;bottom:8px;z-index:3;width:30px;height:30px;min-height:0;padding:0;border-radius:8px;background:#fff;color:#0A0A0A;border:1px solid rgba(0,0,0,.25);box-shadow:0 1px 4px rgba(0,0,0,.2);display:flex;align-items:center;justify-content:center;cursor:pointer}.tl-home svg,.tl-big svg{width:16px;height:16px}
+.tl-mapw.big .tl-home{left:12px;bottom:calc(12px + env(safe-area-inset-bottom));width:40px;height:40px;border-radius:999px}
+.tl-mapw.has-sheet .tl-home{display:none}
 .tl-mapw.big{position:fixed;inset:0;z-index:80;background:var(--bg)}
 .tl-mapw.big .tl-map{height:100%;border:0;border-radius:0}
 .tl-mapw.big .tl-big{left:auto;right:12px;top:calc(12px + env(safe-area-inset-top));bottom:auto;width:auto;padding:0 14px;height:36px;border-radius:999px;background:#0A0A0A;color:#fff;border:0;font-family:inherit;font-weight:700;font-size:13px}
@@ -963,6 +966,7 @@ function itemHTML(it,s,t,tag){
   var go=s.check?'':evLink(it);
   h+='<div class="it-m" data-act="row" role="button" tabindex="0" aria-expanded="'+open+'">'+(go?'<a class="it-t" data-act="go" href="'+esc(go)+'" target="_blank" rel="noopener noreferrer">':'<span class="it-t">')+(tag?'<em class="tg" data-s="'+s.key+'">'+esc(s.name)+'</em>':'')+esc(it.title)+(it.area&&!groupedNow?'<em class="loc">'+esc(areaLabel(it.area))+'</em>':'')+(both?'<em class="both">둘 다</em>':'')+(isNew?'<em class="new">new</em>':'')+(go?'</a>':'</span>')+(first?'<span class="it-s">'+first+'</span>':'')+'</div>';
   h+='<span class="it-ed"><button class="ib ed" data-act="edit" aria-label="수정" title="수정">'+EDIT_SVG+'</button><button class="ib ed'+(armed===it.id?' warn':'')+'" data-act="del" aria-label="'+(armed===it.id?'한 번 더 누르면 삭제':'삭제')+'" title="삭제">'+(armed===it.id?'<b>삭제</b>':TRASH_SVG)+'</button></span>';
+  if(!s.check&&DESC[s.key]&&useMap())h+='<button class="ib mpin" data-act="mappin" aria-label="앱 지도에서 보기" title="앱 지도에서 보기">'+PIN_SVG+'</button>';
   if(!s.check)h+='<button class="ib cf'+(conf?' on':'')+'" data-act="confirm" aria-pressed="'+conf+'" aria-label="'+(conf?'확정 취소':'일정에 넣기')+'" title="'+(conf?'일정에 넣음 (누르면 취소)':'일정에 넣기')+'">'+(conf?CALOK_SVG:CALADD_SVG)+'</button>';
   if(!s.check)h+='<button class="ib more'+(open?' on':'')+'" data-act="row" aria-expanded="'+open+'" aria-label="'+(open?'접기':'메모·상세 보기')+'" title="'+(open?'접기':'메모·상세 보기')+'"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4.5l3 3 3-3"/></svg></button>';
   h+='</div>';
@@ -1040,12 +1044,14 @@ function byTime(a,b){var x=a.time||'99:99',y=b.time||'99:99';if(x!==y)return x<y
 var CATC={food:'#FF8A5B',cafe:'#C49A6C',play:'#5BA8FF',spot:'#4CC38A',shop:'#B57BEA'};
 var mapDays=[],kakaoState=0,kakaoWait=[],mapObjs={};
 var DAYC=['#C8FF2E','#7FD4FF','#FFB86B','#E2A8FF','#FF8FA3','#9BF0C8','#FFE066'];
+var HOME_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>';
+var PIN_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.4"/></svg>';
 var BIG_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>';
 function mapFolded(k){return lsGet('mapfold:'+k)==='1';}
 function candOn(k){var v=lsGet('mapcand:'+k);return v==null?k==='c':v==='1';}
 function mapBlock(id,fk,leg){
   var nq=0,f=mapFolded(fk),h='<div class="mapc" data-d="'+id+'"><div class="mapc-h"><b>지도</b><span class="mapc-leg">'+(f?'':(leg.indexOf('mseg')>-1?'<span class="mrow">'+leg.slice(0,leg.indexOf('</span>')+7)+(!f?'<button class="lb ct" data-act="mapcand" data-k="'+fk+'" aria-pressed="'+candOn(fk)+'">후보 '+(candOn(fk)?'켜짐':'꺼짐')+'</button>':'')+'<button class="lb" data-act="mapfold" data-k="'+fk+'">'+(f?'펼치기':'접기')+'</button>'+'</span>'+leg.slice(leg.indexOf('</span>')+7):leg+(!f?'<button class="lb ct" data-act="mapcand" data-k="'+fk+'" aria-pressed="'+candOn(fk)+'">후보 '+(candOn(fk)?'켜짐':'꺼짐')+'</button>':'')+'<button class="lb" data-act="mapfold" data-k="'+fk+'">'+(f?'펼치기':'접기')+'</button>'))+'</span>'+(f?'<button class="lb" data-act="mapfold" data-k="'+fk+'">'+(f?'펼치기':'접기')+'</button>':'')+(canWrite&&!f&&!useGmap()&&(nq=needGeo().length)?'<button class="lb gc" data-act="geocheck">위치 확인 '+nq+'곳</button>':'')+'</div>';
-  if(!f)h+='<div class="tl-mapw" data-d="'+id+'"><div class="tl-map" data-d="'+id+'"></div><button type="button" class="tl-big" data-act="mapbig" data-d="'+id+'" aria-label="크게 보기">'+BIG_SVG+'</button></div><div class="tl-mapn" data-d="'+id+'"></div>';
+  if(!f)h+='<div class="tl-mapw" data-d="'+id+'"><div class="tl-map" data-d="'+id+'"></div><button type="button" class="tl-big" data-act="mapbig" data-d="'+id+'" aria-label="크게 보기">'+BIG_SVG+'</button><button type="button" class="tl-home" data-act="maphome" data-d="'+id+'" aria-label="원래 위치로" title="원래 위치로">'+HOME_SVG+'</button></div><div class="tl-mapn" data-d="'+id+'"></div>';
   return h+'</div>';
 }
 function kakaoReady(cb){
@@ -1177,6 +1183,7 @@ function paint(box,note,md,pts){
   sh.onclick=function(ev){ev.stopPropagation();var t=ev.target.closest&&ev.target.closest('[data-m]'),m=t&&t.dataset.m;if(!m)return;var cur=null;
     if(m==='x')closeSheet();else if(m==='ok'){var fid=sh.dataset.fid,gx=+sh.dataset.x,gy=+sh.dataset.y,ga=sh.dataset.a;closeSheet();geoOk(fid,gx,gy,ga);}else if(m==='n'||m==='j'||m==='f'){var id=sh.dataset.id;if(m==='n')window.open(sh.dataset.link,'_blank','noopener');else if(m==='j'){closeSheet();jumpTo(id);}else{closeSheet();openGeoFix(sh.dataset.fid);}}};
   var mo={box:box,map:map,bd:bd,n:ok.length,c:c0,note:note?note.textContent:'',byId:byId};mapObjs[box.dataset.d]=mo;fitMap(mo);syncLbl();
+  try{map.setMaxLevel(11);}catch(e){}kakao.maps.event.addListener(map,'dragend',function(){mapBack(mo);});
 }
 /* ---------- 구글 지도 (해외 여행) ---------- */
 var gState=0,gWait=[];
@@ -1267,6 +1274,7 @@ function gDraw(md){
       sh.onclick=function(ev){ev.stopPropagation();var t=ev.target.closest&&ev.target.closest('[data-m]'),m=t&&t.dataset.m;if(!m)return;
         if(m==='x')closeSheet();else if(m==='n')window.open(sh.dataset.link,'_blank','noopener');else if(m==='j'){var id=sh.dataset.id;closeSheet();jumpTo(id);}};
       var mo={g:1,box:box,map:map,bd:bd,n:ok.length,c:c0,note:note?note.textContent:'',byId:byId};mapObjs[box.dataset.d]=mo;gFit(mo);syncLbl();
+      map.setOptions({minZoom:7});map.addListener('dragend',function(){mapBack(mo);});
     });
   }
   if(!left)return go();
@@ -1400,6 +1408,19 @@ function pickFormGeo(k){var x=gfRes[k];if(!x)return;modal.dataset.geox=x.x;modal
   var b=document.getElementById('f-geo-box');if(b)b.innerHTML='<p class="geo-ok">'+esc(x.place_name)+' · '+esc(x.road_address_name||x.address_name||'')+'</p>';geoFormStatus();}
 var pickGeo=guarded(function(id,k){if(!id)return pickFormGeo(k);var x=gfRes[k];if(!x)return;if(gfQ.length)gfNext();else{closeModal();toast('위치를 고쳤어요');}return db.doc('items/'+id).update({geo:{x:+x.x,y:+x.y},addr:x.road_address_name||x.address_name||''});});
 var geoOk=guarded(function(id,x,y,a){toast('위치를 확인했어요');return db.doc('items/'+id).update({geo:{x:x,y:y},addr:a});});
+/* 지도를 끌다가 여행 지역을 한참 벗어나면 원래 자리로 돌려놔요 */
+function mapAway(o){try{if(!o.n)return false;var c=o.map.getCenter(),sw=o.bd.getSouthWest(),ne=o.bd.getNorthEast(),G=!!o.g;
+  var la=G?c.lat():c.getLat(),ln=G?c.lng():c.getLng(),s=G?sw.lat():sw.getLat(),w=G?sw.lng():sw.getLng(),n=G?ne.lat():ne.getLat(),e=G?ne.lng():ne.getLng();
+  var py=Math.max(.25,n-s),px=Math.max(.3,e-w);return la<s-py||la>n+py||ln<w-px||ln>e+px;}catch(x){return false;}}
+function mapHome(o){if(!o)return;if(o.g)gFit(o);else{try{o.map.relayout();}catch(e){}fitMap(o);}}
+function mapBack(o){if(!mapAway(o))return;setTimeout(function(){mapHome(o);toast('원래 지역으로 돌아왔어요');},250);}
+/* 줄의 핀 버튼: 앱 안 지도를 크게 열고 그 장소를 바로 보여 줘요 */
+function mapShow(id){
+  var ch=false;if(mapFolded('c')){lsSet('mapfold:c','0');ch=true;}if(!candOn('c')){lsSet('mapcand:c','1');ch=true;}if(ch)render();
+  var tries=0;(function go(){var o=mapObjs.c,w=document.querySelector('.tl-mapw[data-d="c"]');
+    if(w&&o&&o.box&&o.box.isConnected&&o.byId&&o.byId[id]){if(!w.classList.contains('big'))mapBig('c');setTimeout(function(){o.byId[id](true);},180);return;}
+    if(++tries<28)setTimeout(go,250);else toast('이 장소 위치를 아직 못 찾았어요');})();
+}
 function mapFocus(id){var o=mapObjs.c;if(!o||!o.byId||!o.byId[id])return;var w=document.querySelector('.tl-mapw[data-d="c"]');if(!w||!w.isConnected)return;o.byId[id](true);}
 function jumpTo(id){
   var a=document.querySelector('article.it[data-id="'+id+'"]');if(!a)return false;
@@ -2205,6 +2226,8 @@ document.addEventListener('click',function(e){
   else if(a==='myname'){if(uid)openNameForm(false);}
   else if(a==='savename'){saveName();}
   else if(a==='mapbig'){mapBig(el.dataset.d);}
+  else if(a==='maphome'){mapHome(mapObjs[el.dataset.d]);}
+  else if(a==='mappin'){it=itemFrom(el);if(it)mapShow(it.id);}
   else if(a==='gfsearch'){geoSearch(el.dataset.id);}
   else if(a==='rcopen'){openRec();}
   else if(a==='rcarea'){rcPickArea(el.dataset.v);}
