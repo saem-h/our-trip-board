@@ -73,7 +73,11 @@ function doPost(e) {
   }
 }
 
+/* 알림·DB 접근은 이 스크립트 주인(프로젝트 소유자) 권한으로 해요 */
 function gtoken_() {
+  return ScriptApp.getOAuthToken();
+}
+function gtokenSA_() {
   const c = CacheService.getScriptCache(), hit = c.get('gat');
   if (hit) return hit;
   const sa = JSON.parse(PropertiesService.getScriptProperties().getProperty('SA_JSON'));
@@ -92,7 +96,7 @@ function gtoken_() {
 
 const FS = 'https://firestore.googleapis.com/v1/projects/' + PROJECT + '/databases/(default)/documents/';
 function fsReq_(method, path, body) {
-  const o = { method: method, muteHttpExceptions: true, headers: { Authorization: 'Bearer ' + gtoken_() }, contentType: 'application/json' };
+  const o = { method: method, muteHttpExceptions: true, headers: { Authorization: 'Bearer ' + gtoken_(), 'x-goog-user-project': PROJECT }, contentType: 'application/json' };
   if (body) o.payload = JSON.stringify(body);
   const r = UrlFetchApp.fetch(FS + path, o), code = r.getResponseCode();
   if (code === 404) return null;
@@ -144,7 +148,7 @@ function sendBoard_(b, skipUid, title, body, onlyUid) {
     const push = m.push || {}, bad = [];
     Object.keys(push).forEach(function (tok) {
       const r = UrlFetchApp.fetch('https://fcm.googleapis.com/v1/projects/' + PROJECT + '/messages:send', {
-        method: 'post', contentType: 'application/json', muteHttpExceptions: true, headers: { Authorization: 'Bearer ' + gtoken_() },
+        method: 'post', contentType: 'application/json', muteHttpExceptions: true, headers: { Authorization: 'Bearer ' + gtoken_(), 'x-goog-user-project': PROJECT },
         payload: JSON.stringify({ message: { token: tok, webpush: {
           notification: { title: title, body: body, icon: SITE + 'icon-192.png', badge: SITE + 'icon-192.png' },
           fcm_options: { link: SITE + '?b=' + b } } } }) });
@@ -231,7 +235,7 @@ function diag_() {
   try { o.boards = fsList_('boards').length; } catch (e) { o.firestore = String(e); }
   try {
     const r = UrlFetchApp.fetch('https://fcm.googleapis.com/v1/projects/' + PROJECT + '/messages:send', { method: 'post', contentType: 'application/json', muteHttpExceptions: true,
-      headers: { Authorization: 'Bearer ' + gtoken_() }, payload: JSON.stringify({ validate_only: true, message: { topic: 'diag', notification: { title: 't', body: 'b' } } }) });
+      headers: { Authorization: 'Bearer ' + gtoken_(), 'x-goog-user-project': PROJECT }, payload: JSON.stringify({ validate_only: true, message: { topic: 'diag', notification: { title: 't', body: 'b' } } }) });
     o.fcm = r.getResponseCode() + ' ' + r.getContentText().slice(0, 160);
   } catch (e) { o.fcm = String(e); }
   o.triggers = ScriptApp.getProjectTriggers().map(function (t) { return t.getHandlerFunction(); });
