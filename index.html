@@ -59,6 +59,11 @@ h1{font-family:var(--font-en);font-weight:400;font-size:30px;margin:0;letter-spa
 .tab{flex:none;border:1px solid var(--line);background:transparent;border-radius:999px;padding:5px 14px;min-height:34px;white-space:nowrap;font-weight:600;font-size:14px}
 .tab[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .tab.ghost{border-style:dashed;color:var(--muted);font-weight:500}
+.tab-x{flex:none;border:0;background:none;color:var(--muted);font-size:13px;font-weight:500;padding:5px 6px;min-height:34px;white-space:nowrap}
+.tab-x:disabled{opacity:.4}
+.invite{flex:none;margin-left:auto;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:none;color:var(--ink);border-radius:999px;padding:5px 12px 5px 10px;min-height:34px;font-size:13px;font-weight:600;white-space:nowrap}
+.invite svg{width:16px;height:16px}
+.invite{position:relative}
 .note{margin:10px 0 0;padding:10px 14px;border:1px solid var(--ink);border-radius:10px;font-size:13px}
 .bar{display:flex;align-items:center;gap:6px 14px;flex-wrap:wrap;padding:9px 14px;border:1px solid var(--line);border-radius:14px}
 .dd{background:var(--accent);color:var(--accent-ink);border:1px solid var(--ink);border-radius:999px;padding:1px 14px;font-family:var(--font-en);font-size:22px;line-height:1.4;text-transform:lowercase;white-space:nowrap}
@@ -414,7 +419,10 @@ button:not(.dh):active,[role=button]:not(.dh):active,[role=tab]:active,[role=che
   .chip{padding:4px 6px;min-height:38px;font-size:13.5px;display:flex;align-items:center;justify-content:center;white-space:nowrap}
   .chip i{margin-left:4px;font-size:11.5px}
   header.top{gap:6px 18px}
-  header.top .tabs{flex:1 1 100%}
+  header.top .tabs{flex:1 1 100%;order:2}
+  header.top .invite{order:1;width:36px;height:36px;padding:0;justify-content:center}
+  header.top .inv-t{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  header.top h1{min-width:0}
 }
 .tmw{display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:13px;font-weight:500}
 .tmw .tm{min-width:104px}
@@ -1539,8 +1547,9 @@ function render(){
   var h='<header class="top"><h1'+(sEl<800?' class="scin" style="--d:-'+sEl+'ms"':'')+'>our trip board</h1><div class="tabs" role="tablist">';
   var nArc=trips.filter(isArchived).length;
   trips.filter(function(x){return isArchived(x)===showArc;}).forEach(function(x){h+='<button class="tab'+(tOn('t:'+x.id)?' tabpop':'')+'"'+tOn('t:'+x.id,1)+' role="tab" data-act="tab" data-id="'+esc(x.id)+'" aria-selected="'+(x.id===tripId)+'">'+esc(x.name)+'</button>';});
-  if(showArc)h+='<button class="tab ghost" data-act="arcview">← 진행 중 여행</button></div></header>';
-  else h+='<button class="tab ghost" data-act="newtrip"'+(canWrite?'':' disabled')+'>+ 새 여행</button>'+(nArc?'<button class="tab ghost" data-act="arcview">지난 여행 '+nArc+'</button>':'')+(window.TB_BOARD?'<button class="tab ghost" data-act="shareboard">친구 초대</button>':'')+'</div></header>';
+  if(showArc)h+='<button class="tab-x" data-act="arcview">← 진행 중 여행</button>';
+  else h+='<button class="tab-x" data-act="newtrip"'+(canWrite?'':' disabled')+'>+ 새 여행</button>'+(nArc?'<button class="tab-x" data-act="arcview">지난 여행 '+nArc+'</button>':'');
+  h+='</div>'+(window.TB_BOARD&&!showArc?'<button class="invite" data-act="shareboard"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="7" r="3"/><path d="M2.5 16c.6-2.8 2.8-4.5 5.5-4.5s4.9 1.7 5.5 4.5M15.5 6.5v5M13 9h5"/></svg><span class="inv-t">친구 초대</span></button>':'')+'</header>';
   if(!canWrite)h+='<div class="note">지금은 보기 전용이에요. 같이 편집하려면 공유 설정에서 상대방을 편집 가능(기여자 이상)으로 초대해 주세요.</div>';
   if(offline)h+='<div class="note">저장소에 연결하지 못했어요. 새로고침하거나 로그인 상태를 확인해 주세요.</div>';
   if(!ready&&!offline){
