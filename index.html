@@ -714,9 +714,11 @@ function parseShare(txt){
   return {url:url,name:name,area:areaFromAddr(addr),addr:addr};
 }
 /* 구글 주소가 영어·일본어로 오면 동네 이름을 한글 버튼 이름으로 바꿔서 찾아요 */
-var AREA_ALIAS={'Hakata':'하카타','博多':'하카타','Tenjin':'텐진','天神':'텐진','Nakasu':'나카스','中洲':'나카스','Ohori':'오호리공원','大濠':'오호리공원','Momochi':'모모치','百道':'모모치','Dazaifu':'다자이후','太宰府':'다자이후','Itoshima':'이토시마','糸島':'이토시마','Yanagawa':'야나가와','柳川':'야나가와','Hita':'히타','日田':'히타','Yufu':'유후인','由布':'유후인','Beppu':'벳푸','別府':'벳푸'};
+var AREA_ALIAS=[['Nakasu','中洲','나카스'],['Ohori','大濠','오호리공원'],['Momochi','百道','모모치'],['Tenjin','天神','Watanabe','渡辺通','Daimyo','Daimyō','大名','Imaizumi','今泉','Haruyoshi','春吉','텐진'],['Hakata','博多','Gion','祇園','Sumiyoshi','住吉','하카타'],
+  ['Dazaifu','太宰府','다자이후'],['Itoshima','糸島','이토시마'],['Yanagawa','柳川','야나가와'],['Hita','日田','히타'],['Yufu','由布','유후인'],['Beppu','別府','벳푸'],['Chuo Ward','Chūō','中央区','텐진']];
 function areaFromAddr(addr){
-  var area='';addr=addr||'';Object.keys(AREA_ALIAS).forEach(function(k){if(addr.indexOf(k)>-1)addr+=' '+AREA_ALIAS[k];});
+  var area='';addr=addr||'';
+  if(!/[가-힣]{2}/.test(addr.replace(/일본|대한민국/g,''))||/Fukuoka|福岡/.test(addr))for(var ai=0;ai<AREA_ALIAS.length;ai++){var al=AREA_ALIAS[ai],hit=al.slice(0,-1).some(function(k){return addr.indexOf(k)>-1;});if(hit){addr+=' '+al[al.length-1];break;}}
   if(regionG()===AREA_G){
     Object.keys(JEJU_EUP).forEach(function(k){if(!area&&addr.indexOf(k)>-1)area=JEJU_EUP[k];});
     if(!area&&addr.indexOf('중문')>-1)area='중문';
@@ -1127,6 +1129,8 @@ function gReady(cb){
   document.head.appendChild(sc);
 }
 /* 구글 장소 종류(예: 라멘 전문점) → 대표 메뉴 칸에 넣을 짧은 말 (그냥 '음식점'·'카페'면 비워요) */
+var GTYPE={yakiniku_restaurant:'야키니쿠',ramen_restaurant:'라멘',sushi_restaurant:'스시',japanese_izakaya_restaurant:'이자카야',izakaya_restaurant:'이자카야',udon_noodle_shop:'우동',soba_noodle_shop:'소바',tonkatsu_restaurant:'돈카츠',tempura_restaurant:'텐푸라',yakitori_restaurant:'야키토리',okonomiyaki_restaurant:'오코노미야키',japanese_curry_restaurant:'카레',curry_restaurant:'카레',gyudon_restaurant:'규동',shabu_shabu_restaurant:'샤부샤부',sukiyaki_restaurant:'스키야키',motsunabe_restaurant:'모츠나베',hot_pot_restaurant:'나베',teppanyaki_restaurant:'철판구이',unagi_restaurant:'장어',kaiseki_restaurant:'가이세키',korean_barbecue_restaurant:'고기구이',barbecue_restaurant:'바비큐',steak_house:'스테이크',seafood_restaurant:'해산물',chinese_restaurant:'중식',dim_sum_restaurant:'딤섬',korean_restaurant:'한식',italian_restaurant:'이탈리안',pizza_restaurant:'피자',french_restaurant:'프렌치',thai_restaurant:'태국 음식',vietnamese_restaurant:'베트남 음식',indian_restaurant:'인도 음식',hamburger_restaurant:'버거',chicken_restaurant:'치킨',brunch_restaurant:'브런치',breakfast_restaurant:'브런치',noodle_shop:'면',bakery:'베이커리',ice_cream_shop:'아이스크림',dessert_shop:'디저트',dessert_restaurant:'디저트',cake_shop:'케이크',donut_shop:'도넛',chocolate_shop:'초콜릿',tea_house:'차',juice_shop:'주스',wine_bar:'와인바',pub:'펍',cocktail_bar:'칵테일바'};
+function gKindT(types,ptd){var o=[];(types||[]).forEach(function(t){var k=GTYPE[t];if(k&&o.indexOf(k)<0&&o.length<2)o.push(k);});return o.length?o.join('·'):gKind(ptd);}
 function gKind(v){v=String(v||'').replace(/\s*(음식점|전문점|레스토랑|식당)$/,'').trim();return /^(음식점|레스토랑|식당|카페|술집|바|상점|가게)?$/.test(v)?'':v;}
 /* 구글 영업시간(요일별 글) → 메모에 넣을 짧은 글. 예) "영업 월–금 11:00–22:00 · 토·일 10:00–23:00" + 다음 줄 "수 휴무" */
 function gHours(wd){
@@ -1145,7 +1149,7 @@ function gHours(wd){
 }
 function gSearchN(q,cb,near){var done=false,t=setTimeout(function(){if(!done){done=true;cb(0);}},8000);
   var o={textQuery:q,maxResultCount:1,language:'ko'};if(near)o.locationBias={center:{lat:near.y,lng:near.x},radius:300};
-  google.maps.places.Place.searchByText(Object.assign(o,{fields:['displayName','location','formattedAddress','primaryTypeDisplayName','regularOpeningHours']})).then(function(r){var p=r&&r.places&&r.places[0];if(done)return;done=true;clearTimeout(t);cb(p&&p.location?{n:p.displayName||'',x:p.location.lng(),y:p.location.lat(),a:p.formattedAddress||'',t:gKind(p.primaryTypeDisplayName),h:gHours(p.regularOpeningHours&&p.regularOpeningHours.weekdayDescriptions)}:0);},function(){if(!done){done=true;clearTimeout(t);cb(0);}});}
+  google.maps.places.Place.searchByText(Object.assign(o,{fields:['displayName','location','formattedAddress','primaryTypeDisplayName','types','regularOpeningHours']})).then(function(r){var p=r&&r.places&&r.places[0];if(done)return;done=true;clearTimeout(t);cb(p&&p.location?{n:p.displayName||'',x:p.location.lng(),y:p.location.lat(),a:p.formattedAddress||'',t:gKindT(p.types,p.primaryTypeDisplayName),h:gHours(p.regularOpeningHours&&p.regularOpeningHours.weekdayDescriptions)}:0);},function(){if(!done){done=true;clearTimeout(t);cb(0);}});}
 function gSearch(q,an,cb){
   var o={textQuery:q,fields:['location','formattedAddress'],maxResultCount:1,language:'ko'};
   if(an)o.locationBias={center:{lat:an.y,lng:an.x},radius:50000};
