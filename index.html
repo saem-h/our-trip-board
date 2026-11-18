@@ -733,12 +733,13 @@ function areaFromAddr(addr){
 function formGmap(sh){
   var st=document.getElementById('f-geo-st');if(st)st.innerHTML='<span class="mut">구글 지도에서 불러오는 중…</span>';
   var url=sh.url;
-  function apply(name,addr,x,y,kind){
+  function apply(name,addr,x,y,kind,hrs){
     var lk=document.getElementById('f-link');if(!lk||lk.value.trim()!==url)return;
     var ti=document.getElementById('f-title'),ad=document.getElementById('f-addr'),ar=document.getElementById('f-area');
     if(ti&&name&&(!ti.value.trim()||ti.value.trim()===sh.name||/〒|\d{3}-\d{4}/.test(ti.value)))ti.value=name;
     if(ad&&addr)ad.value=addr;
     var de=document.getElementById('f-desc');if(de&&kind&&!de.value.trim())de.value=kind;
+    var me=document.getElementById('f-memo');if(me&&hrs&&me.value.indexOf('영업 ')<0&&me.value.indexOf(' 휴무')<0)me.value=hrs+(me.value.trim()?'\n'+me.value:'');
     if(ar&&addr&&!ar.value.trim()){var a=areaFromAddr(addr);if(a){ar.value=a;syncArea();}}
     if(y!=null&&x!=null){modal.dataset.geox=x;modal.dataset.geoy=y;var b=document.getElementById('f-geo-box');if(b)b.innerHTML='<p class="geo-ok">'+esc(name||'')+(addr?' · '+esc(addr):'')+'</p>';}
     geoFormStatus();
@@ -747,7 +748,7 @@ function formGmap(sh){
     if(!gp){geoFormStatus();return;}
     var q=gp.name+(gp.addr?', '+gp.addr:''),near=gp.y!=null?{x:+gp.x,y:+gp.y}:null;
     if(!useGmap()||!gp.name)return near?apply(gp.name,gp.addr,gp.x,gp.y):apply(gp.name,'',null,null);
-    var once=false;function fin(r){if(once)return;once=true;if(r)apply(r.n||gp.name,r.a||gp.addr,r.x,r.y,r.t);else if(near)apply(gp.name,gp.addr,gp.x,gp.y);else apply(q,'',null,null);}
+    var once=false;function fin(r){if(once)return;once=true;if(r)apply(r.n||gp.name,r.a||gp.addr,r.x,r.y,r.t,r.h);else if(near)apply(gp.name,gp.addr,gp.x,gp.y);else apply(q,'',null,null);}
     setTimeout(function(){fin(0);},12000);gReady(function(){gSearchN(q,fin,near);});
   });
 }
@@ -1127,9 +1128,24 @@ function gReady(cb){
 }
 /* 구글 장소 종류(예: 라멘 전문점) → 대표 메뉴 칸에 넣을 짧은 말 (그냥 '음식점'·'카페'면 비워요) */
 function gKind(v){v=String(v||'').replace(/\s*(음식점|전문점|레스토랑|식당)$/,'').trim();return /^(음식점|레스토랑|식당|카페|술집|바|상점|가게)?$/.test(v)?'':v;}
+/* 구글 영업시간(요일별 글) → 메모에 넣을 짧은 글. 예) "영업 월–금 11:00–22:00 · 토·일 10:00–23:00" + 다음 줄 "수 휴무" */
+function gHours(wd){
+  if(!Array.isArray(wd)||!wd.length)return '';
+  var D='월화수목금토일',rows=[];
+  wd.forEach(function(l){var m=String(l).match(/^\s*([월화수목금토일])요일\s*:\s*(.*)$/);if(!m)return;
+    var v=m[2].replace(/(오전|오후)\s*(\d{1,2}):(\d{2})/g,function(_,ap,h,mm){h=+h%12;if(ap==='오후')h+=12;return (h<10?'0':'')+h+':'+mm;}).replace(/\s*[~–-]\s*/g,'–').replace(/\s+/g,' ').trim();
+    rows.push({d:m[1],v:/휴무|closed/i.test(v)?'':(/24시간/.test(v)?'24시간':v)});});
+  if(!rows.length)return '';
+  rows.sort(function(a,b){return D.indexOf(a.d)-D.indexOf(b.d);});
+  var vs=[],by={},off=[];
+  rows.forEach(function(r){if(!r.v)return off.push(r.d);if(!by[r.v]){by[r.v]=[];vs.push(r.v);}by[r.v].push(r.d);});
+  function days(ds){if(ds.length===7)return '매일';var o=[],i=0;while(i<ds.length){var j=i;while(j+1<ds.length&&D.indexOf(ds[j+1])===D.indexOf(ds[j])+1)j++;o.push(j-i>=2?ds[i]+'–'+ds[j]:ds.slice(i,j+1).join('·'));i=j+1;}return o.join('·');}
+  var t=vs.map(function(v){return days(by[v])+' '+v;});
+  return (t.length?'영업 '+t.join(' · '):'')+(off.length?(t.length?'\n':'')+off.join('·')+' 휴무':'');
+}
 function gSearchN(q,cb,near){var done=false,t=setTimeout(function(){if(!done){done=true;cb(0);}},8000);
   var o={textQuery:q,maxResultCount:1,language:'ko'};if(near)o.locationBias={center:{lat:near.y,lng:near.x},radius:300};
-  google.maps.places.Place.searchByText(Object.assign(o,{fields:['displayName','location','formattedAddress','primaryTypeDisplayName']})).then(function(r){var p=r&&r.places&&r.places[0];if(done)return;done=true;clearTimeout(t);cb(p&&p.location?{n:p.displayName||'',x:p.location.lng(),y:p.location.lat(),a:p.formattedAddress||'',t:gKind(p.primaryTypeDisplayName)}:0);},function(){if(!done){done=true;clearTimeout(t);cb(0);}});}
+  google.maps.places.Place.searchByText(Object.assign(o,{fields:['displayName','location','formattedAddress','primaryTypeDisplayName','regularOpeningHours']})).then(function(r){var p=r&&r.places&&r.places[0];if(done)return;done=true;clearTimeout(t);cb(p&&p.location?{n:p.displayName||'',x:p.location.lng(),y:p.location.lat(),a:p.formattedAddress||'',t:gKind(p.primaryTypeDisplayName),h:gHours(p.regularOpeningHours&&p.regularOpeningHours.weekdayDescriptions)}:0);},function(){if(!done){done=true;clearTimeout(t);cb(0);}});}
 function gSearch(q,an,cb){
   var o={textQuery:q,fields:['location','formattedAddress'],maxResultCount:1,language:'ko'};
   if(an)o.locationBias={center:{lat:an.y,lng:an.x},radius:50000};
@@ -1770,7 +1786,7 @@ var quickAdd=guarded(function(sec,txt){
   if(sh&&isGmap(sh.url)){toast('구글 지도에서 불러오는 중…');gplace(sh.url,function(gp){
     /* 링크에 좌표가 없으면(주소+이름만 있는 공유) 구글 장소 검색으로 진짜 이름·위치를 찾아요 */
     if(gp&&gp.name&&useGmap()){var q=gp.name+(gp.addr?', '+gp.addr:''),near=gp.y!=null?{x:+gp.x,y:+gp.y}:null;
-      var once=false;function fin(r){if(once)return;once=true;if(r){gp.name=r.n||gp.name;gp.addr=r.a||gp.addr||'';gp.x=r.x;gp.y=r.y;gp.t=r.t||'';}else if(!near){gp.name=q;gp.addr='';}quickSave(sec,txt,sh,gp);}
+      var once=false;function fin(r){if(once)return;once=true;if(r){gp.name=r.n||gp.name;gp.addr=r.a||gp.addr||'';gp.x=r.x;gp.y=r.y;gp.t=r.t||'';gp.h=r.h||'';}else if(!near){gp.name=q;gp.addr='';}quickSave(sec,txt,sh,gp);}
       setTimeout(function(){fin(0);},12000);return gReady(function(){gSearchN(q,fin,near);});}
     quickSave(sec,txt,sh,gp);});return;}
   return quickSave(sec,txt,sh,null);
@@ -1781,7 +1797,7 @@ var quickSave=guarded(function(sec,txt,sh,gp){
   if(sh&&!sh.name){openItemForm({section:s.key,pre:{link:sh.url}});return;}
   if(sh){link=sh.url;addr=sh.addr||(gp&&gp.addr)||'';area=sh.area||(gp&&gp.addr?areaFromAddr(gp.addr):'');title=sh.name;}
   var data={tripId:tripId,section:s.key,title:title.slice(0,80),memo:'',desc:'',link:link,status:'idea',done:false,likes:{},createdBy:uid,createdAt:Date.now()};
-  if(DESC[s.key]){data.area=area;if(addr)data.addr=addr;if(gp&&gp.t)data.desc=gp.t;if(gp&&gp.y!=null&&gp.x!=null){data.geo={x:+gp.x,y:+gp.y,g:1};addr=addr||'-';}}
+  if(DESC[s.key]){data.area=area;if(addr)data.addr=addr;if(gp&&gp.t)data.desc=gp.t;if(gp&&gp.h)data.memo=gp.h;if(gp&&gp.y!=null&&gp.x!=null){data.geo={x:+gp.x,y:+gp.y,g:1};addr=addr||'-';}}
   if(s.sched){data.day=0;data.time='';}
   var ref=db.collection('items').doc();flashId=ref.id;
   toast(s.name+'에 넣었어요');
