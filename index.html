@@ -1426,8 +1426,8 @@ function renderFixed(t,its){
       h+='</div><div class="pr-act">'+(ml?'<a class="ib sm" href="'+esc(ml)+'" target="_blank" rel="noopener noreferrer" aria-label="지도 열기" title="지도 열기">'+LINK_SVG+'</a>':'')+'<button class="lb" data-act="edit">수정</button><button class="lb'+(armed===it.id?' warn':'')+'" data-act="del">'+(armed===it.id?'정말 삭제':'삭제')+'</button></div></article>';
     });
     h+='</div>';
+    if(sc.key==='transport'&&abroad())h+=passHTML();
   });
-  if(abroad())h+=passHTML();
   return h+'</div></section>';
 }
 /* 여권: 여행이 아니라 보드에 저장돼서, 같은 보드 사람들끼리 다음 여행에도 같이 봐요 */
