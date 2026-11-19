@@ -1502,7 +1502,7 @@ function sugPlace(){var a=sugAnchor(),b=sugBox();if(!a||!a.offsetParent||!sugLis
   b.style.left=Math.max(8,l)+'px';b.style.width=w+'px';b.style.top=(r.bottom+4)+'px';b.style.display='block';}
 function sugOn(){return useKakao()||useGmap();}
 function sugInput(el){
-  var sel=el.id==='f-title'?'#f-title':'[data-quick=q]',q=String(el.value||'').trim();sugFor=sel;clearTimeout(sugT);
+  var sel=el.id==='f-title'?'#f-title':el.id==='ms-q'?'#ms-q':'[data-quick=q]',q=String(el.value||'').trim();sugFor=sel;clearTimeout(sugT);
   if(q.length<2||/https?:\/\//i.test(q)||!sugOn()||(sel==='#f-title'&&!document.getElementById('f-area'))){sugHide();return;}
   sugT=setTimeout(function(){sugFetch(q);},250);
 }
@@ -1531,6 +1531,7 @@ function sugPick(k){var r=sugList[k],sel=sugFor;if(!r)return;sugHide();
   if(r.pp&&sel==='[data-quick=q]')toast('불러오는 중…');
   sugResolve(r,function(v){if(!v){toast('장소 정보를 못 가져왔어요');return;}
     if(sel==='[data-quick=q]')return addPlace(v,addSec);
+    if(sel==='#ms-q'){var mi=document.getElementById('ms-q');if(mi)mi.value=v.n;msLast=v.n;msBusy=false;msRes=[v];render();msShow();return;}
     sugForm(v);});}
 /* 등록 창에 채우기 */
 function sugForm(r){var ti=document.getElementById('f-title');if(!ti)return;
@@ -1541,8 +1542,8 @@ function sugForm(r){var ti=document.getElementById('f-title');if(!ti)return;
   var ar=document.getElementById('f-area');if(ar&&r.a&&!ar.value.trim()){var g=areaFromAddr(r.a);if(g){ar.value=g;syncArea();}}
   if(r.y!=null&&r.x!=null){modal.dataset.geox=r.x;modal.dataset.geoy=r.y;var b=document.getElementById('f-geo-box');if(b)b.innerHTML='<p class="geo-ok">'+esc(r.n)+(r.a?' · '+esc(r.a):'')+'</p>';}
   geoFormStatus();}
-document.addEventListener('input',function(e){var t=e.target;if(t&&t.matches&&(t.matches('[data-quick=q]')||t.id==='f-title'))sugInput(t);});
-document.addEventListener('focusout',function(e){var t=e.target;if(t&&t.matches&&(t.matches('[data-quick=q]')||t.id==='f-title'))setTimeout(function(){var a=sugAnchor();if(!a||document.activeElement!==a)sugHide();},150);});
+document.addEventListener('input',function(e){var t=e.target;if(t&&t.matches&&(t.matches('[data-quick=q]')||t.id==='f-title'||t.id==='ms-q'))sugInput(t);});
+document.addEventListener('focusout',function(e){var t=e.target;if(t&&t.matches&&(t.matches('[data-quick=q]')||t.id==='f-title'||t.id==='ms-q'))setTimeout(function(){var a=sugAnchor();if(!a||document.activeElement!==a)sugHide();},150);});
 window.addEventListener('resize',function(){if(sugList.length)sugPlace();});
 document.addEventListener('scroll',function(){if(sugList.length)sugPlace();},true);
 /* 구글 지도에서 가게를 누르면 고른 칸(아니면 종류에 맞는 칸)에 바로 담아요 */
