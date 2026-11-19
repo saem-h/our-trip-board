@@ -891,8 +891,8 @@ function formGmap(sh){
   }
   gplace(url,function(gp){
     if(!gp){geoFormStatus();return;}
-    var q=gp.name+(gp.addr?', '+gp.addr:''),near=gp.y!=null?{x:+gp.x,y:+gp.y}:null;
-    if(!useGmap()||!gp.name)return near?apply(gp.name,gp.addr,gp.x,gp.y):apply(gp.name,'',null,null);
+    var q=(gp.name?gp.name+(gp.addr?', ':''):'')+(gp.addr||''),near=gp.y!=null?{x:+gp.x,y:+gp.y}:null;
+    if(!useGmap()||!(gp.name||gp.addr))return near?apply(gp.name,gp.addr,gp.x,gp.y):apply(gp.name,'',null,null);
     var once=false;function fin(r){if(once)return;once=true;if(r)apply(r.n||gp.name,r.a||gp.addr,r.x,r.y,r.t,r.h);else if(near)apply(gp.name,gp.addr,gp.x,gp.y);else apply(q,'',null,null);}
     setTimeout(function(){fin(0);},12000);gReady(function(){gSearchN(q,fin,near);});
   });
@@ -2165,7 +2165,7 @@ var quickAdd=guarded(function(sec,txt){
   var sh=parseShare(txt);
   if(sh&&isGmap(sh.url)){toast('구글 지도에서 불러오는 중…');gplace(sh.url,function(gp){
     /* 링크에 좌표가 없으면(주소+이름만 있는 공유) 구글 장소 검색으로 진짜 이름·위치를 찾아요 */
-    if(gp&&gp.name&&useGmap()){var q=gp.name+(gp.addr?', '+gp.addr:''),near=gp.y!=null?{x:+gp.x,y:+gp.y}:null;
+    if(gp&&(gp.name||gp.addr)&&useGmap()){var q=(gp.name?gp.name+(gp.addr?', ':''):'')+(gp.addr||''),near=gp.y!=null?{x:+gp.x,y:+gp.y}:null;
       var once=false;function fin(r){if(once)return;once=true;if(r){gp.name=r.n||gp.name;gp.addr=r.a||gp.addr||'';gp.x=r.x;gp.y=r.y;gp.t=r.t||'';gp.h=r.h||'';}else if(!near){gp.name=q;gp.addr='';}quickSave(sec,txt,sh,gp);}
       setTimeout(function(){fin(0);},12000);return gReady(function(){gSearchN(q,fin,near);});}
     quickSave(sec,txt,sh,gp);});return;}
