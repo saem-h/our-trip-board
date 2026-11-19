@@ -19,6 +19,7 @@ service cloud.firestore {
     }
     match /boards/{b}/trips/{id} { allow read, write: if isMember(b); }
     match /boards/{b}/items/{id} { allow read, write: if isMember(b); }
+    match /boards/{b}/notifs/{id} { allow read: if isMember(b); }
     match /users/{uid}/boards/{b} { allow read, write: if signedIn() && request.auth.uid == uid; }
   }
 }
