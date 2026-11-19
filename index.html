@@ -219,6 +219,10 @@ a.it-t:active,.ev-n a:active,.pr-n a:active{opacity:.55}
 .msq{position:absolute;left:8px;right:8px;top:8px;z-index:4;margin:0}
 .msq input{width:100%;height:38px;min-height:0;padding:0 12px 0 34px;border-radius:999px;border:1px solid rgba(0,0,0,.18);background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='6.5'/%3E%3Cpath d='M16 16l4.5 4.5'/%3E%3C/svg%3E") no-repeat 12px center/16px;color:#0A0A0A;font:inherit;font-size:15px;box-shadow:0 1px 6px rgba(0,0,0,.15);-webkit-appearance:none;appearance:none}
 .tl-mapw.big .msq{top:calc(12px + env(safe-area-inset-top));right:84px;left:12px}
+#sug{position:fixed;z-index:70;display:none;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.14);padding:4px;max-height:50vh;overflow:auto}
+.sg-i{display:flex;flex-direction:column;align-items:flex-start;gap:1px;width:100%;text-align:left;background:none;border:0;border-radius:10px;padding:9px 10px;color:var(--ink);font:inherit;cursor:pointer;min-height:0}
+.sg-i:hover,.sg-i:focus{background:var(--soft)}.sg-i b{font-size:15px;font-weight:600}.sg-i small{color:var(--muted);font-size:12.5px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ms-i.pri.add{width:auto;padding:0 11px 0 8px;gap:2px;border-radius:999px;background:#0A0A0A;color:#fff;font:700 12.5px/1 inherit;font-family:inherit}.ms-i.pri.add svg{width:15px;height:15px}.ms-i.on{color:#0A0A0A}
 .msr{margin-top:8px;border:1px solid var(--line);border-radius:14px;padding:6px 6px 8px}
 .msr-h{display:flex;align-items:center;justify-content:space-between;padding:4px 8px 6px}.msr-h b{font-size:14px}
 .msr-i{display:flex;align-items:center;gap:4px}
@@ -1337,11 +1341,21 @@ function gDraw(md){
     if(note)note.textContent=miss.length?'못 찾은 곳: '+miss.join(', '):'';
     gAnchor(function(an){
       var c0=ok.length?ok[0].p:an?{lat:an.y,lng:an.x}:{lat:33.59,lng:130.40};
-      var map=new google.maps.Map(box,{center:c0,zoom:12,disableDefaultUI:true,zoomControl:true,clickableIcons:false,gestureHandling:'greedy'});
-      var bd=new google.maps.LatLngBounds(),sel=null,byId={};
+      var map=new google.maps.Map(box,{center:c0,zoom:12,disableDefaultUI:true,zoomControl:true,clickableIcons:canWrite,gestureHandling:'greedy'});
+      var bd=new google.maps.LatLngBounds(),sel=null,byId={},poiR=null;
       var sh=w.querySelector('.msheet');if(!sh){sh=document.createElement('div');sh.className='msheet';w.appendChild(sh);}
       function closeSheet(){if(sel){sel.classList.remove('sel');sel.parentNode.style.zIndex='';}sel=null;sh.innerHTML='';w.classList.remove('has-sheet');}
-      closeSheet();map.addListener('click',closeSheet);
+      closeSheet();map.addListener('click',function(e){if(e&&e.placeId&&canWrite){e.stop();openPoi(e.placeId);}else closeSheet();});
+      /* 지도 위 가게를 누르면: 이름·종류·주소 + 담기 버튼 */
+      function openPoi(pid){closeSheet();var my=poiR={};w.classList.add('has-sheet');sh.innerHTML='<div class="ms-r"><div class="ms-t"><b>불러오는 중…</b></div><button class="ms-i" data-m="x" aria-label="닫기">'+X_SVG+'</button></div>';
+        var pl=new google.maps.places.Place({id:pid});
+        pl.fetchFields({fields:['id','displayName','location','formattedAddress','primaryTypeDisplayName','types','regularOpeningHours']}).then(function(){if(poiR!==my)return;var r=gPlaceR(pl);if(!r){closeSheet();return;}poiR=r;
+          var sk=secOf(guessSec(r.types)||addSec);if(!sk||sk.fixed||sk.check)sk=secOf('food');r.sec=sk.key;
+          var have=dupItem({section:sk.key,title:r.n,link:r.link,geo:{x:r.x,y:r.y}}),meta=[r.t,r.a].filter(Boolean).join(' · ');
+          sh.innerHTML='<div class="ms-r"><div class="ms-t"><b>'+esc(r.n)+'</b><small>'+esc(meta)+'</small></div>'
+            +(have?'<span class="ms-i on" aria-label="담겨 있어요" title="담겨 있어요">'+CHECK_SVG+'</span>':'<button class="ms-i pri add" data-m="a" aria-label="'+esc(sk.name)+'에 담기" title="'+esc(sk.name)+'에 담기">'+PLUS_SVG+'<span>'+esc(sk.name)+'</span></button>')
+            +'<button class="ms-i pri g" data-m="n" aria-label="구글 지도" title="구글 지도">G</button><button class="ms-i" data-m="x" aria-label="닫기">'+X_SVG+'</button></div>';
+          sh.dataset.link=r.link;},function(){if(poiR===my)closeSheet();});}
       function syncLbl(){w.classList.toggle('zl',map.getZoom()>=13||ok.length<=4&&md.line);}
       map.addListener('zoom_changed',syncLbl);
       var groups={};ok.forEach(function(o){if(md.line&&o.pn.g!=null)(groups[o.pn.g]=groups[o.pn.g]||[]).push(o.p);});
@@ -1367,7 +1381,7 @@ function gDraw(md){
         el.addEventListener('click',function(e){e.stopPropagation();open(false);});
         new Ov(o.p,el,pn.c==='h'?20:pn.c?8:12);});
       sh.onclick=function(ev){ev.stopPropagation();var t=ev.target.closest&&ev.target.closest('[data-m]'),m=t&&t.dataset.m;if(!m)return;
-        if(m==='x')closeSheet();else if(m==='n')window.open(sh.dataset.link,'_blank','noopener');else if(m==='j'){var id=sh.dataset.id;closeSheet();jumpTo(id);}};
+        if(m==='x')closeSheet();else if(m==='a'){var r=poiR;closeSheet();if(r&&r.n)addPlace(r,r.sec);}else if(m==='n')window.open(sh.dataset.link,'_blank','noopener');else if(m==='j'){var id=sh.dataset.id;closeSheet();jumpTo(id);}};
       var mo={g:1,box:box,map:map,bd:bd,n:ok.length,c:c0,note:note?note.textContent:'',byId:byId};mapObjs[box.dataset.d]=mo;gFit(mo);syncLbl();
       map.setOptions({minZoom:7});map.addListener('dragend',function(){mapBack(mo);});
     });
@@ -1382,7 +1396,7 @@ function startGeoCheck(){gfQ=needGeo();gfI=0;if(!gfQ.length){toast('모든 장�
 var PLUS_SVG='<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M10 4.5v11M4.5 10h11"/></svg>';
 var rcRes=[],rcArea='';
 function normNm(v){return String(v||'').replace(/\s|<[^>]*>/g,'').toLowerCase();}
-function normUrl(u){return String(u||'').trim().replace(/^https?:\/\//,'').replace(/[?#].*$/,'').replace(/\/+$/,'').toLowerCase();}
+function normUrl(u){u=String(u||'').trim();/* 구글 지도 검색 링크는 주소가 다 같아서, 장소 번호(query_place_id)나 검색어로 구분해요 */var gq=u.match(/google\.[a-z.]+\/maps\/search\/?\?(.*)$/i);if(gq){var pid=(gq[1].match(/query_place_id=([^&#]+)/)||[])[1];return 'gmap:'+(pid||(gq[1].match(/query=([^&#]+)/)||[])[1]||'').toLowerCase();}return u.replace(/^https?:\/\//,'').replace(/[?#].*$/,'').replace(/\/+$/,'').toLowerCase();}
 function geoM(a,b){if(!a||!b||a.x==null||b.x==null)return 1e9;var dy=(a.y-b.y)*111000,dx=(a.x-b.x)*111000*Math.cos(a.y*Math.PI/180);return Math.sqrt(dx*dx+dy*dy);}
 /* 같은 여행에 이미 담긴 같은 장소 찾기: 이름이 같거나, 링크가 같거나, 거의 같은 위치에 이름도 비슷하면 */
 function dupItem(d){if(!DESC[d.section])return null;var n=normNm(d.title),l=normUrl(d.link);
@@ -1464,16 +1478,81 @@ function msSearch(q){
 }
 function msGo(k){var r=msRes[k],o=mapObjs.c;if(!r||!o)return;if(o.g){o.map.setCenter({lat:r.y,lng:r.x});o.map.setZoom(16);}else{o.map.setLevel(3);o.map.setCenter(new kakao.maps.LatLng(r.y,r.x));}
   var w=document.querySelector('.tl-mapw[data-d="c"]');if(w){var b=w.getBoundingClientRect();if(b.top<0)w.scrollIntoView({behavior:'smooth',block:'center'});}}
-var msAdd=guarded(function(k){
-  var r=msRes[k];if(!r)return;var sk=secOf(addSec);
+var msAdd=function(k){var r=msRes[k];if(!r)return;msRes=[];msLast='';msClearPins();var qi=document.getElementById('ms-q');if(qi)qi.value='';addPlace(r,addSec);};
+/* 찾은 장소(이름·주소·위치·종류) 하나를 후보로 담기 */
+var addPlace=guarded(function(r,sec){
+  var sk=secOf(sec);if(!sk||sk.fixed||sk.check)sk=secOf('food');
   var data={tripId:tripId,section:sk.key,title:String(r.n).slice(0,80),memo:r.h||'',desc:r.t||'',link:r.link,status:'idea',done:false,likes:{},createdBy:uid,createdAt:Date.now(),addr:r.a||'',area:areaFromAddr(r.a||'')};
   data.geo=r.g?{x:r.x,y:r.y,g:1}:{x:r.x,y:r.y};
   if(dupStop(data))return;
   if(sk.sched){data.day=0;data.time='';}
   var ref=db.collection('items').doc();flashId=ref.id;haptic();toast(sk.name+'에 담았어요 · '+r.n);
-  msRes=[];msLast='';msClearPins();var qi=document.getElementById('ms-q');if(qi)qi.value='';
   return ref.set(data).then(function(){notifyAct('add',ref.id);});
 });
+/* 자동 검색어: 빠른 등록 칸·등록 창 이름 칸에 글자를 치면 밑에 장소 추천을 띄워요.
+   국내는 카카오 장소 검색, 해외는 구글 자동완성. 고르면 이름·주소·위치가 한 번에 들어가요 */
+var sugEl=null,sugFor='',sugList=[],sugQ='',sugT=null,sugSeq=0,sugTok=null;
+function sugBox(){if(!sugEl){sugEl=document.createElement('div');sugEl.id='sug';sugEl.setAttribute('role','listbox');document.body.appendChild(sugEl);
+  sugEl.addEventListener('mousedown',function(e){e.preventDefault();});
+  sugEl.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-sg]');if(b)sugPick(+b.dataset.sg);});}return sugEl;}
+function sugAnchor(){return sugFor?document.querySelector(sugFor):null;}
+function sugHide(){if(sugEl){sugEl.style.display='none';sugEl.innerHTML='';}sugList=[];sugQ='';sugSeq++;}
+function sugPlace(){var a=sugAnchor(),b=sugBox();if(!a||!a.offsetParent||!sugList.length){sugHide();return;}
+  var r=a.getBoundingClientRect(),w=Math.max(r.width,Math.min(320,window.innerWidth-16)),l=Math.min(r.left,window.innerWidth-w-8);
+  b.style.left=Math.max(8,l)+'px';b.style.width=w+'px';b.style.top=(r.bottom+4)+'px';b.style.display='block';}
+function sugOn(){return useKakao()||useGmap();}
+function sugInput(el){
+  var sel=el.id==='f-title'?'#f-title':'[data-quick=q]',q=String(el.value||'').trim();sugFor=sel;clearTimeout(sugT);
+  if(q.length<2||/https?:\/\//i.test(q)||!sugOn()||(sel==='#f-title'&&!document.getElementById('f-area'))){sugHide();return;}
+  sugT=setTimeout(function(){sugFetch(q);},250);
+}
+function sugFetch(q){
+  var my=++sugSeq;function done(list){if(my!==sugSeq)return;sugQ=q;sugList=list.slice(0,5);sugDraw();}
+  if(useGmap()){gReady(function(){
+    var P=google.maps.places;if(!P||!P.AutocompleteSuggestion)return done([]);
+    if(!sugTok)sugTok=new P.AutocompleteSessionToken();
+    gAnchor(function(an){var o={input:q,language:'ko',sessionToken:sugTok};if(an)o.locationBias={center:{lat:an.y,lng:an.x},radius:50000};
+      P.AutocompleteSuggestion.fetchAutocompleteSuggestions(o).then(function(r){done(((r&&r.suggestions)||[]).filter(function(s){return s.placePrediction;}).map(function(s){var p=s.placePrediction;
+        return {n:(p.mainText&&p.mainText.text)||p.text.text,a:(p.secondaryText&&p.secondaryText.text)||'',pp:p,g:1};}));},function(){done([]);});});});return;}
+  kakaoReady(function(){geoAnchor(function(an){var opt={size:5};if(an&&an.x)opt.location=new kakao.maps.LatLng(an.y,an.x);
+    kwAll(q,opt,function(r){done(r.map(function(x){var ad=x.road_address_name||x.address_name||'';return {n:x.place_name,x:+x.x,y:+x.y,a:ad,t:rcCat(x),h:'',g:0,link:mapUrl(x.place_name+' '+rcWhere(x))};}));});});});
+}
+function sugDraw(){var a=sugAnchor();if(!a||document.activeElement!==a||!sugList.length){sugHide();return;}
+  sugBox().innerHTML=sugList.map(function(r,k){return '<button type="button" class="sg-i" role="option" data-sg="'+k+'"><b>'+esc(r.n)+'</b>'+(r.a||r.t?'<small>'+esc([r.t,r.a].filter(Boolean).join(' · '))+'</small>':'')+'</button>';}).join('');
+  sugPlace();}
+/* 구글은 고른 뒤에 장소 정보를 한 번 가져와요 (자동완성 세션이 여기서 끝나요) */
+function sugResolve(r,cb){if(!r.pp)return cb(r);var pl=r.pp.toPlace();sugTok=null;
+  pl.fetchFields({fields:['id','displayName','location','formattedAddress','primaryTypeDisplayName','types','regularOpeningHours']}).then(function(){cb(gPlaceR(pl,r.n));},function(){cb(null);});}
+function gPlaceR(p,fb){var n=p.displayName||fb||'';if(!p.location)return null;
+  return {n:n,x:p.location.lng(),y:p.location.lat(),a:p.formattedAddress||'',t:gKindT(p.types,p.primaryTypeDisplayName),h:gHours(p.regularOpeningHours&&p.regularOpeningHours.weekdayDescriptions),g:1,types:p.types||[],
+    link:'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(n)+(p.id?'&query_place_id='+encodeURIComponent(p.id):'')};}
+function sugPick(k){var r=sugList[k],sel=sugFor;if(!r)return;sugHide();
+  var a=sugAnchor();if(sel==='[data-quick=q]'){quickVals.q='';if(a){a.value='';a.blur();}}
+  if(r.pp&&sel==='[data-quick=q]')toast('불러오는 중…');
+  sugResolve(r,function(v){if(!v){toast('장소 정보를 못 가져왔어요');return;}
+    if(sel==='[data-quick=q]')return addPlace(v,addSec);
+    sugForm(v);});}
+/* 등록 창에 채우기 */
+function sugForm(r){var ti=document.getElementById('f-title');if(!ti)return;
+  ti.value=r.n;var ad=document.getElementById('f-addr');if(ad&&r.a)ad.value=r.a;
+  var lk=document.getElementById('f-link');if(lk&&!lk.value.trim())lk.value=r.link||'';
+  var de=document.getElementById('f-desc');if(de&&r.t&&!de.value.trim())de.value=r.t;
+  var me=document.getElementById('f-memo');if(me&&r.h&&me.value.indexOf('영업 ')<0)me.value=r.h+(me.value.trim()?'\n'+me.value:'');
+  var ar=document.getElementById('f-area');if(ar&&r.a&&!ar.value.trim()){var g=areaFromAddr(r.a);if(g){ar.value=g;syncArea();}}
+  if(r.y!=null&&r.x!=null){modal.dataset.geox=r.x;modal.dataset.geoy=r.y;var b=document.getElementById('f-geo-box');if(b)b.innerHTML='<p class="geo-ok">'+esc(r.n)+(r.a?' · '+esc(r.a):'')+'</p>';}
+  geoFormStatus();}
+document.addEventListener('input',function(e){var t=e.target;if(t&&t.matches&&(t.matches('[data-quick=q]')||t.id==='f-title'))sugInput(t);});
+document.addEventListener('focusout',function(e){var t=e.target;if(t&&t.matches&&(t.matches('[data-quick=q]')||t.id==='f-title'))setTimeout(function(){var a=sugAnchor();if(!a||document.activeElement!==a)sugHide();},150);});
+window.addEventListener('resize',function(){if(sugList.length)sugPlace();});
+document.addEventListener('scroll',function(){if(sugList.length)sugPlace();},true);
+/* 구글 지도에서 가게를 누르면 고른 칸(아니면 종류에 맞는 칸)에 바로 담아요 */
+function guessSec(types){types=types||[];
+  if(types.some(function(t){return /cafe|coffee|bakery|dessert|ice_cream|tea_house|confectionery|pastry/.test(t);}))return 'cafe';
+  if(types.some(function(t){return /restaurant|food|bar$|izakaya|meal_|pub/.test(t);}))return 'food';
+  if(types.some(function(t){return /museum|art_gallery|amusement|aquarium|zoo|bowling|spa|onsen|cultural_center/.test(t);}))return 'play';
+  if(types.some(function(t){return /store|shop|market|mall/.test(t);}))return 'shop';
+  if(types.some(function(t){return /tourist|park|shrine|temple|church|landmark|beach|garden|hiking|observation|castle|historical/.test(t);}))return 'spot';
+  return '';}
 function rcDraw(){
   var box=document.getElementById('rc-r');if(!box)return;
   if(!rcRes.length){box.innerHTML='<p class="mut">찾은 곳이 없어요. 동네 이름을 바꿔 보세요.</p>';return;}
@@ -2149,7 +2228,7 @@ var saveItem=guarded(function(btn){
 function doQuick(raw,blur){
   var n=document.querySelector('[data-quick=q]');
   var v=String(raw!=null?raw:(n?n.value:'')).trim();if(!v){if(n)n.focus();return;}
-  quickVals.q='';if(n){n.value='';if(blur)n.blur();}
+  quickVals.q='';if(n){n.value='';if(blur)n.blur();}sugHide();
   quickAdd(addSec,v);
 }
 /* 빠른 등록: 지도 공유 내용을 붙여넣으면 이름·주소·위치를 채워서 바로 저장, 이름만 쓰면 이름만 저장 */
