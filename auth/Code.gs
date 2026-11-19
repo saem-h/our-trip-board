@@ -140,16 +140,17 @@ function verify_(idt) {
 
 /* 보드 멤버들 토큰으로 알림 보내기. skipUid는 빼고. 없어진 토큰은 지워요. */
 /* 알림 기록 한 줄 저장 (보드 안 notifs). 실패해도 알림 발송은 계속해요. */
-function logNotif_(b, title, body) {
+function logNotif_(b, title, body, by) {
   try {
     const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
     fsReq_('patch', 'boards/' + b + '/notifs/' + id, { fields: {
       title: { stringValue: String(title || '') }, body: { stringValue: String(body || '') },
+      by: { stringValue: String(by || '') },
       t: { integerValue: String(Date.now()) } } });
   } catch (e) {}
 }
 function sendBoard_(b, skipUid, title, body, onlyUid) {
-  logNotif_(b, title, body);
+  logNotif_(b, title, body, skipUid);
   const ms = fsList_('boards/' + b + '/members');
   let sent = 0;
   ms.forEach(function (m) {
