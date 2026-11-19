@@ -1730,7 +1730,7 @@ function render(){
   trips.filter(function(x){return isArchived(x)===showArc;}).forEach(function(x){h+='<button class="tab'+(tOn('t:'+x.id)?' tabpop':'')+'"'+tOn('t:'+x.id,1)+' role="tab" data-act="tab" data-id="'+esc(x.id)+'" aria-selected="'+(x.id===tripId)+'">'+esc(x.name)+'</button>';});
   if(showArc)h+='<button class="tab-x" data-act="arcview">← 진행 중 여행</button>';
   else h+='<button class="tab-x" data-act="newtrip"'+(canWrite?'':' disabled')+'>+ 새 여행</button>'+(nArc?'<button class="tab-x" data-act="arcview">지난 여행 '+nArc+'</button>':'');
-  h+='</div>'+(window.TB_BOARD&&!showArc?'<button class="invite" data-act="shareboard"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="7" r="3"/><path d="M2.5 16c.6-2.8 2.8-4.5 5.5-4.5s4.9 1.7 5.5 4.5M15.5 6.5v5M13 9h5"/></svg><span class="inv-t">친구 초대</span></button>':'')+(window.TB_BOARD&&VAPID?'<button class="invite bell'+(pushOn()?' on':'')+'" data-act="push" aria-label="알림" title="알림">'+BELL_SVG+'</button>':'')+'</header>';
+  h+='</div>'+(window.TB_BOARD&&!showArc?'<button class="invite" data-act="shareboard"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="7" r="3"/><path d="M2.5 16c.6-2.8 2.8-4.5 5.5-4.5s4.9 1.7 5.5 4.5M15.5 6.5v5M13 9h5"/></svg><span class="inv-t">친구 초대</span></button>':'')+(window.TB_BOARD&&VAPID?'<button class="invite bell" data-act="push" aria-label="알림" title="알림">'+BELL_SVG+'</button>':'')+'</header>';
   if(!canWrite)h+='<div class="note">지금은 보기 전용이에요. 같이 편집하려면 공유 설정에서 상대방을 편집 가능(기여자 이상)으로 초대해 주세요.</div>';
   if(offline)h+='<div class="note">저장소에 연결하지 못했어요. 새로고침하거나 로그인 상태를 확인해 주세요.</div>';
   if(!ready&&!offline){
@@ -1819,7 +1819,7 @@ function pRoot(){return window.TB_BOARD&&window.firebase&&firebase.apps.length?f
 function pLoad(u){return new Promise(function(ok,no){var x=document.createElement('script');x.src=u;x.onload=ok;x.onerror=no;document.head.appendChild(x);});}
 function msgReady(){if(msgReady.p)return msgReady.p;
   msgReady.p=(window.firebase&&firebase.messaging?Promise.resolve():pLoad('https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js')).then(function(){return navigator.serviceWorker.register('/firebase-messaging-sw.js');}).then(function(reg){
-    var m=firebase.messaging();m.onMessage(function(p){var n=(p&&p.notification)||{};toast((n.title?n.title+' · ':'')+(n.body||'새 알림'));});return {m:m,reg:reg};});
+    var m=firebase.messaging();m.onMessage(function(p){var n=(p&&p.notification)||{};toast((n.title?n.title+' · ':'')+(n.body||'새 알림'));refreshBellDot();});return {m:m,reg:reg};});
   msgReady.p.catch(function(){msgReady.p=null;});return msgReady.p;}
 function pushToken(){return msgReady().then(function(x){return x.m.getToken({vapidKey:VAPID,serviceWorkerRegistration:x.reg});});}
 function savePushToken(tok){var u=fbUser();if(!u||!pRoot()||!tok)return Promise.resolve();var o={};o[tok]=Date.now();
@@ -1832,12 +1832,22 @@ function openPush(){
   if(!window.TB_BOARD){h+='<p class="mut">알림은 로그인해서 쓰는 보드에서만 쓸 수 있어요.</p><div class="foot"><button class="btn" data-act="close">닫기</button></div></div>';}
   else if(!pushOK()){h+=isIOS()&&!standalone()?'<p class="pass-note" style="font-size:14px;color:var(--ink)">아이폰은 홈 화면에 추가한 앱에서 알림을 켤 수 있어요.</p><p class="pass-note">사파리 아래 공유 버튼 → <b>홈 화면에 추가</b> → 홈 화면의 앱으로 열고 여기서 다시 켜 주세요.</p>':'<p class="pass-note" style="font-size:14px">이 브라우저는 알림을 지원하지 않아요. 크롬이나 홈 화면 앱에서 켜 주세요.</p>';h+='<div class="foot"><button class="btn" data-act="close">닫기</button></div></div>';}
   else{
-    h+='<p class="pass-note" style="font-size:14px;color:var(--ink);line-height:1.6">같이 쓰는 사람이 장소를 올리거나, 좋아요·일정 확정을 하면 알려 드려요.<br>출발 전날 저녁과 비행기 출발 3시간 전에도 알려 드려요.</p>';
     if(Notification.permission==='denied')h+='<p class="pass-note" style="color:var(--danger)">이 기기에서 알림이 막혀 있어요. 설정 → 알림에서 Our Trip Board(또는 브라우저)를 허용해 주세요.</p>';
     h+='<p class="pass-note">'+(on?'이 기기에서 알림이 켜져 있어요.':'이 기기에서는 아직 꺼져 있어요. 폰과 PC는 각각 켜야 해요.')+'</p>';
-    h+='<div id="phHist" class="phh"></div><div class="foot"><button class="btn" data-act="close">닫기</button><div class="r">'+(on?'<button class="btn" data-act="pushtest">테스트 알림</button><button class="btn warn" data-act="pushoff">끄기</button>':'<button class="btn pri" data-act="pushon"'+(Notification.permission==='denied'?' disabled':'')+'>알림 켜기</button>')+'</div></div></div>';
+    h+='<div id="phHist" class="phh"></div><div class="foot"><button class="btn" data-act="close">닫기</button><div class="r">'+(on?'<button class="btn warn" data-act="pushoff">끄기</button>':'<button class="btn pri" data-act="pushon"'+(Notification.permission==='denied'?' disabled':'')+'>켜기</button>')+'</div></div></div>';
   }
-  modal.innerHTML=h;modal.className='on';loadPushHist();
+  modal.innerHTML=h;modal.className='on';loadPushHist();markNotifSeen();
+}
+function seenKey(){return (window.TB_LSP||'')+'notifSeen';}
+function markNotifSeen(){try{localStorage.setItem(seenKey(),String(Date.now()));}catch(e){}refreshBellDot();}
+function refreshBellDot(){
+  if(!window.TB_BOARD||!pushOn()||!pRoot())return;
+  pRoot().collection('notifs').orderBy('t','desc').limit(1).get().then(function(snap){
+    var t=0;snap.forEach(function(d){t=Number((d.data()||{}).t)||0;});
+    var seen=0;try{seen=Number(localStorage.getItem(seenKey()))||0;}catch(e){}
+    var unread=t>seen;
+    document.querySelectorAll('.invite.bell').forEach(function(b){b.classList.toggle('on',unread);});
+  }).catch(function(){});
 }
 function loadPushHist(){
   var el=document.getElementById('phHist'),r=pRoot();if(!el||!r)return;
@@ -2499,7 +2509,7 @@ async function init(){
   },function(){offline=true;ready=true;render();});
   db.collection('members').onSnapshot(function(s){
     var m={};s.docs.forEach(function(d){m[d.id]=Object.assign({},d.data());});members=m;render();
-    if(!pushRefresh.done){pushRefresh.done=1;setTimeout(pushRefresh,1500);}
+    if(!pushRefresh.done){pushRefresh.done=1;setTimeout(pushRefresh,1500);setTimeout(refreshBellDot,2000);}
     if(uid&&canWrite&&!members[uid]&&!nameAsked&&!modal.className){nameAsked=true;openNameForm(true);}
   },function(){});
   db.collection('items').onSnapshot(function(s){
