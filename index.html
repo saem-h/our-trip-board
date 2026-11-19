@@ -1009,6 +1009,9 @@ function areaGroups(){
   if(mine.length)g.push(['직접 쓴 곳'].concat(mine));
   return g;
 }
+/* 등록 창 예시: 이 여행 지역의 동네 이름으로 보여 줘요 (제주 여행이면 애월·성산·서귀포) */
+function areaEx(n){if(regionG()===AREA_G)return ['애월','성산','서귀포'].slice(0,n);var o=[];areaGroups().forEach(function(g){if(g[0]!=='직접 쓴 곳'&&g[1])o.push(g[1]);});if(o.length<n)areaGroups().forEach(function(g){g.slice(1).forEach(function(a){if(o.indexOf(a)<0)o.push(a);});});if(!o.length&&anchorName())o.push(anchorName());return o.slice(0,n);}
+function addrEx(){if(regionG()===AREA_G)return '예) 제주 제주시 애월읍 ○○로 12';if(abroad())return '지도 공유 내용을 붙여넣으면 자동으로 들어가요';var a=anchorName();return a?'예) '+a+' ○○로 12':'지도 공유 내용을 붙여넣으면 자동으로 들어가요';}
 function areaDir(a){var g=regionG()||[];for(var i=0;i<g.length;i++)if(g[i].indexOf(a,1)>0)return g[i][0];return '';}
 function areaRank(it){if(!it.area)return 9999;var o=[];(regionG()||[]).forEach(function(g){o=o.concat(g.slice(1));});var i=o.indexOf(it.area);return i<0?500:i;}
 function areaLabel(a){var d=areaDir(a);return d&&d!==a?d+'/'+a:a;}
@@ -1403,7 +1406,7 @@ function openRec(){
   var h='<div class="card rc"><h3>맛집 추천</h3><div class="areas rc-a">';
   if(an)h+='<div class="ag"><span class="agl">전체</span><button type="button" class="cp" data-act="rcarea" data-v="" aria-pressed="'+(rcArea==='')+'">'+esc(an)+'</button></div>';
   AG.forEach(function(g){h+='<div class="ag"><span class="agl">'+esc(g[0])+'</span>';g.slice(1).forEach(function(a){h+='<button type="button" class="cp" data-act="rcarea" data-v="'+esc(a)+'" aria-pressed="'+(rcArea===a)+'">'+esc(a)+'</button>';});h+='</div>';});
-  h+='</div><div class="gf-s"><input id="f-rq" maxlength="40" enterkeyhint="search" autocomplete="off" placeholder="동네나 메뉴 (예: 성산 흑돼지)" value="'+esc(rcArea||an)+'"><button class="btn sm" data-act="rcgo">찾기</button></div>'
+  h+='</div><div class="gf-s"><input id="f-rq" maxlength="40" enterkeyhint="search" autocomplete="off" placeholder="'+esc(regionG()===AREA_G?'동네나 메뉴 (예: 성산 흑돼지)':'동네나 메뉴'+(areaEx(1)[0]?' (예: '+areaEx(1)[0]+')':''))+'" value="'+esc(rcArea||an)+'"><button class="btn sm" data-act="rcgo">찾기</button></div>'
     +'<p class="mut rc-tip">+ 누르면 맛집 후보에 바로 담겨요.</p><div id="rc-r" class="rc-r"></div>'
     +'<div class="foot"><button class="btn" data-act="close">닫기</button></div></div>';
   modal.innerHTML=h;modal.className='on';rcSearch();
@@ -1938,7 +1941,7 @@ function openStayForm(it){
   h+='<div class="row"><label>체크아웃 날짜<input id="f-cout" type="date" value="'+esc(co)+'"></label><label>체크아웃 시간<input id="f-coutt" type="time" value="'+esc(it?it.coutTime:'')+'"></label></div>';
   h+='<label>메모 (예약번호, 주소, 주차 등)<textarea id="f-memo" maxlength="400">'+esc(it?it.memo:'')+'</textarea></label>';
   h+='<label>링크<input id="f-link" inputmode="url" maxlength="300" value="'+esc(it?it.link:'')+'"></label>';
-  h+='<label>주소 <small class="mut">지도 위치에 써요. 지도 공유 내용을 붙여넣으면 자동으로 들어가요</small><input id="f-addr" maxlength="120" placeholder="예) 제주 제주시 애월읍 ○○로 12" value="'+esc(it?it.addr:'')+'"></label>';
+  h+='<label>주소 <small class="mut">지도 위치에 써요. 지도 공유 내용을 붙여넣으면 자동으로 들어가요</small><input id="f-addr" maxlength="120" placeholder="'+esc(addrEx())+'" value="'+esc(it?it.addr:'')+'"></label>';
   h+='<div class="geo-f"><span id="f-geo-st"></span><button type="button" class="lb" data-act="fgeo">지도에서 위치 고르기</button></div><div id="f-geo-box"></div>';
   h+='<div class="foot"><button class="btn" data-act="close">취소</button><div class="r">'+(it?'<button class="btn warn" data-act="fdel" data-id="'+esc(it.id)+'">삭제</button>':'')+'<button class="btn pri" data-act="saveitem" data-sec="stay" data-id="'+(it?esc(it.id):'')+'">저장</button></div></div></div>';
   modal.innerHTML=h;modal.className='on';
@@ -1973,12 +1976,12 @@ function openItemForm(opts){
   h+='<label>'+LAB[sec][0]+'<input id="f-title" maxlength="80" placeholder="'+esc(LAB[sec][1])+'" value="'+esc(val('title'))+'"></label>';
   if(DESC[sec])h+='<label>'+DESC[sec][0]+'<input id="f-desc" maxlength="80" placeholder="'+esc(DESC[sec][1])+'" value="'+esc(val('desc'))+'"></label>';
   if(DESC[sec]){
-    h+='<label>위치<input id="f-area" maxlength="30" placeholder="예) 애월, 성산, 서귀포" value="'+esc(val('area'))+'"></label>';
+    h+='<label>위치<input id="f-area" maxlength="30" placeholder="'+esc(areaEx(3).length?'예) '+areaEx(3).join(', '):'예) 동네 이름')+'" value="'+esc(val('area'))+'"></label>';
     var AG=areaGroups();if(AG.length){h+='<div class="areas">';AG.forEach(function(g){h+='<div class="ag"><span class="agl">'+g[0]+'</span>';g.slice(1).forEach(function(a){h+='<button type="button" class="cp" data-area="'+esc(a)+'">'+esc(a)+'</button>';});h+='</div>';});h+='</div>';}
   }
   if(isMust){var cw=it?(it.who||''):(pre.who||'');h+='<div><div class="lab2">누가 할까요?</div><div class="pk-c" id="f-who"><button type="button" class="cp" data-who="" aria-pressed="'+(!cw)+'">같이 (각자 체크)</button>';memberIds().forEach(function(m){h+='<button type="button" class="cp" data-who="'+esc(m)+'" aria-pressed="'+(cw===m)+'">'+esc(nameOf(m))+'</button>';});h+='</div></div>';}
   if(!isMust)h+='<label>지도 주소 (링크)<input id="f-link" inputmode="url" maxlength="300" placeholder="지도 공유 내용 붙여넣기" value="'+esc(val('link'))+'"></label>';
-  if(!isMust)h+='<label>주소 <small class="mut">지도 위치에 써요. 지도 공유 내용을 붙여넣으면 자동으로 들어가요</small><input id="f-addr" maxlength="120" placeholder="예) 제주 제주시 애월읍 ○○로 12" value="'+esc(val('addr'))+'"></label>';
+  if(!isMust)h+='<label>주소 <small class="mut">지도 위치에 써요. 지도 공유 내용을 붙여넣으면 자동으로 들어가요</small><input id="f-addr" maxlength="120" placeholder="'+esc(addrEx())+'" value="'+esc(val('addr'))+'"></label>';
   if(!isMust)h+='<div class="geo-f"><span id="f-geo-st"></span><button type="button" class="lb" data-act="fgeo">지도에서 위치 고르기</button></div><div id="f-geo-box"></div>';
   h+='<label>메모<textarea id="f-memo" maxlength="400" placeholder="영업시간, 가격, 예약 여부, 가고 싶은 이유">'+esc(val('memo'))+'</textarea></label>';
   if(it&&s.sched)h+='<div class="row"><label>일차<select id="f-day">'+dayOptions(t,it.day||0)+'</select></label><label>시간<input id="f-time" type="time" value="'+esc(it.time||'')+'"></label></div>';
