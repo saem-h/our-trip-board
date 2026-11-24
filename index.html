@@ -567,6 +567,14 @@ button:not(.dh):active,[role=button]:not(.dh):active,[role=tab]:active,[role=che
 .mk.s{width:14px!important;height:14px!important;min-width:14px!important;min-height:14px!important;max-width:14px!important;max-height:14px!important;border-width:2px!important}
 .mk.h{width:15px!important;height:15px!important;min-width:15px!important;min-height:15px!important;max-width:15px!important;max-height:15px!important}
 .mk.ap{opacity:.75}
+/* 지도 보기 쉽게: 일정 이름표는 또렷하게, 후보 이름표는 작고 흐리게, 겹치는 이름표는 숨김 */
+.mkl{font:600 11px/1.3 Pretendard,sans-serif!important;text-shadow:0 0 2px #fff,0 0 3px #fff,0 0 4px #fff,0 0 5px #fff!important;max-width:96px!important}
+.mkw:not(.nb) .mkl{font-weight:500!important;font-size:10px!important;color:#3A3A3A!important}
+.mkl.hid{visibility:hidden!important}
+.mkw .mk.sel{transform:scale(1.3);box-shadow:0 0 0 2.5px #fff,0 0 0 4px #0A0A0A,0 2px 6px rgba(0,0,0,.35)!important;opacity:1!important}
+.mkw .mk.sel~.mkl{visibility:visible!important;font-weight:700!important;margin-left:7px!important}
+.mkw{transition:opacity .15s}
+.tl-mapw.has-sel .mkw:not(.on){opacity:.4}
 /* 빠른 등록 칸 */
 .addbar.qa{gap:12px;align-items:center;margin:0 0 10px}
 .qa .quick{min-height:40px;padding:8px 16px;font-size:14px}
@@ -1171,6 +1179,23 @@ var DAYC=['#C8FF2E','#7FD4FF','#FFB86B','#E2A8FF','#FF8FA3','#9BF0C8','#FFE066']
 var HOME_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>';
 var PIN_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.4"/></svg>';
 var BIG_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>';
+/* 동선 선: 그날 핀과 같은 색 + 얇은 검은 테두리 (날짜끼리 선이 겹쳐도 구분돼요) */
+function lineCol(g,ok){for(var k=0;k<ok.length;k++){var pn=ok[k].pn;if(String(pn.g)===String(g)&&!pn.c)return pn.col||'#C8FF2E';}return '#C8FF2E';}
+/* 이름표 정리: 서로 겹치거나 다른 핀을 가리는 이름표는 숨겨요. 고른 곳 > 일정 순서 > 숙소 > 후보 순으로 먼저 자리를 잡아요 */
+function mapDeclutter(w){if(!w||!w.isConnected)return;
+  var all=[].slice.call(w.querySelectorAll('.mkw')),its=[],dots=[],bx=(w.querySelector('.tl-map')||w).getBoundingClientRect();
+  all.forEach(function(el){var l=el.querySelector('.mkl'),m=el.querySelector('.mk');if(!m)return;var mr=m.getBoundingClientRect();if(!mr.width)return;var pr=(m.classList.contains('sel')?1e4:0)+(+el.dataset.p||0);mr.p=pr;dots.push(mr);
+    if(l){l.classList.remove('hid');its.push({l:l,mr:mr,p:pr});}});
+  its.forEach(function(o){o.r=o.l.getBoundingClientRect();});
+  its.sort(function(a,b){return b.p-a.p;});
+  function hit(a,b){return a.left<b.right-1&&b.left<a.right-1&&a.top<b.bottom-1&&b.top<a.bottom-1;}
+  var placed=[];its.forEach(function(o){if(!o.r.width)return;
+    if(o.r.right>bx.right-2||o.r.left<bx.left||o.r.top<bx.top||o.r.bottom>bx.bottom||placed.some(function(q){return hit(o.r,q);})||dots.some(function(d){return d!==o.mr&&(hit(o.r,d)||d.p>o.p&&Math.abs(d.left+d.right-o.mr.left-o.mr.right)<18&&Math.abs(d.top+d.bottom-o.mr.top-o.mr.bottom)<18);}))o.l.classList.add('hid');else placed.push(o.r);});
+}
+function mapDeclutterSoon(w){clearTimeout(w._dc);w._dc=setTimeout(function(){mapDeclutter(w);},60);}
+/* 겹치면 앞 순서 핀이 위로 (이름표와 번호가 어긋나지 않게) */
+function mkZ(pn,nb){return nb?30+Math.max(0,99-(+pn.t||0)):pn.c==='h'?20:pn.c?8:12;}
+function mkPri(pn,nb){return nb?1000-(+pn.t||0):pn.c==='h'?300:pn.c==='s'?200:pn.c==='c'?50:100;}
 function mapFolded(k){return lsGet('mapfold:'+k)==='1';}
 function candOn(k){var v=lsGet('mapcand:'+k);return v==null?k==='c':v==='1';}
 function mapBlock(id,fk,leg){
@@ -1261,13 +1286,15 @@ function drawMaps(keep){
     md.pins.forEach(function(pn,k){locate(pn.i,function(v){pts[k]=v;if(--left===0)paint(box,note,md,pts);});});
   });});
 }
-/* 핀이 지도 칸에 꽉 차게: 한 단계 더 확대해도 가장자리가 조금만 잘리면 확대해요 */
+var MPAD={t:30,r:60,b:26,l:26};
+/* 핀이 지도 칸에 꽉 차게: 한 단계 더 확대해도 핀이 칸 안에 다 들어오면 확대해요 (잘리는 이름표는 숨겨요) */
 function fitMap(o){
   if(o.n<=1){if(o.n){o.map.setCenter(o.c);o.map.setLevel(6);}return;}
-  o.map.setBounds(o.bd,8,8,8,8);
+  /* 가장자리에 여백을 둬서 핀과 이름이 잘리지 않게 (오른쪽은 이름 글자 자리) */
+  o.map.setBounds(o.bd,MPAD.t,MPAD.r,MPAD.b,MPAD.l);
   try{var el=o.map.getNode?o.map.getNode():null,W=o.box.offsetWidth,H=o.box.offsetHeight,pr=o.map.getProjection(),a=pr.pointFromCoords(o.bd.getSouthWest()),b=pr.pointFromCoords(o.bd.getNorthEast());
     var bw=Math.abs(b.x-a.x),bh=Math.abs(b.y-a.y),L=o.map.getLevel();
-    if(L>1&&bw*2<=W*1.12&&bh*2<=H*1.12){var c=pr.coordsFromPoint(new kakao.maps.Point((a.x+b.x)/2,(a.y+b.y)/2));o.map.setLevel(L-1);o.map.setCenter(c);}}catch(e){}
+    if(L>1&&bw*2<=W-28&&bh*2<=H-24){var c=pr.coordsFromPoint(new kakao.maps.Point((a.x+b.x)/2,(a.y+b.y)/2));o.map.setLevel(L-1);o.map.setCenter(c);}}catch(e){}
 }
 function paint(box,note,md,pts){
   if(!box.isConnected)return;
@@ -1277,22 +1304,22 @@ function paint(box,note,md,pts){
   if(note)note.textContent=(miss.length?'못 찾은 곳: '+miss.join(', ')+(approx?' · ':''):'')+(approx?'흐린 핀은 위치 확인이 필요해요':'');
   var an=geoMem['geoa:'+anchorName()],c0=ok.length?ok[0].p:an?new kakao.maps.LatLng(an.y,an.x):new kakao.maps.LatLng(33.38,126.55);
   var map=new kakao.maps.Map(box,{center:c0,level:ok.length?9:10}),bd=new kakao.maps.LatLngBounds(),sel=null,byId={};
-  map.addControl(new kakao.maps.ZoomControl(),kakao.maps.ControlPosition.RIGHT);
+  if(fineMouse())map.addControl(new kakao.maps.ZoomControl(),kakao.maps.ControlPosition.RIGHT);
   /* 핀을 누르면 지도 아래쪽 카드에 정보를 보여 줘요 (지도 밖으로 잘리지 않게) */
   var sh=w.querySelector('.msheet');if(!sh){sh=document.createElement('div');sh.className='msheet';w.appendChild(sh);}
-  function closeSheet(){if(sel){sel.classList.remove('sel');sel.parentNode.style.zIndex='';}tlMark(box.dataset.d,null);var had=w.classList.contains('has-sheet');sel=null;sh.innerHTML='';w.classList.remove('has-sheet');if(had&&mapObjs[box.dataset.d])fitMap(mapObjs[box.dataset.d]);}
+  function closeSheet(){if(sel){sel.classList.remove('sel');sel.parentNode.classList.remove('on');sel.parentNode.style.zIndex='';}tlMark(box.dataset.d,null);var had=w.classList.contains('has-sheet');sel=null;sh.innerHTML='';w.classList.remove('has-sheet','has-sel');mapDeclutterSoon(w);if(had&&mapObjs[box.dataset.d])fitMap(mapObjs[box.dataset.d]);}
   closeSheet();
   kakao.maps.event.addListener(map,'click',closeSheet);
   function syncLbl(){w.classList.toggle('zl',map.getLevel()<=7||ok.length<=4&&md.line);}
   kakao.maps.event.addListener(map,'zoom_changed',syncLbl);
   var groups={};ok.forEach(function(o){if(md.line&&o.pn.g!=null)(groups[o.pn.g]=groups[o.pn.g]||[]).push(o.p);});
   Object.keys(groups).forEach(function(g){var path=groups[g];if(path.length<2)return;
-    new kakao.maps.Polyline({map:map,path:path,strokeWeight:3.5,strokeColor:'#FFFFFF',strokeOpacity:.9});
-    new kakao.maps.Polyline({map:map,path:path,strokeWeight:1.5,strokeColor:'#0A0A0A',strokeOpacity:.6});});
+    var lc=lineCol(g,ok);new kakao.maps.Polyline({map:map,path:path,strokeWeight:6,strokeColor:'#0A0A0A',strokeOpacity:.55});
+    new kakao.maps.Polyline({map:map,path:path,strokeWeight:3.5,strokeColor:lc,strokeOpacity:1});});
   ok.forEach(function(o){var pn=o.pn,i=pn.i;bd.extend(o.p);var nm=i.pseudo?i.place:i.title,el=document.createElement('div');el.className='mkw';
-    var nb=!pn.c&&/^\d+$/.test(pn.t||''),dz=nb?18:pn.c==='h'?10:pn.c==='s'?9:pn.c==='c'?6:8;el.innerHTML='<div class="mk'+(pn.c?' '+pn.c:'')+(nb?' n':'')+(o.src==='name'?' ap':'')+'" style="width:'+dz+'px!important;height:'+dz+'px!important;'+(pn.col?'background:'+pn.col+'!important':'')+'">'+esc(pn.t)+'</div><div class="mkl">'+esc(nm)+'</div>';
+    var nb=!pn.c&&/^\d+$/.test(pn.t||''),dz=nb?18:pn.c==='h'?10:pn.c==='s'?9:pn.c==='c'?6:8;el.dataset.p=mkPri(pn,nb);if(nb)el.classList.add('nb');el.innerHTML='<div class="mk'+(pn.c?' '+pn.c:'')+(nb?' n':'')+(o.src==='name'?' ap':'')+'" style="width:'+dz+'px!important;height:'+dz+'px!important;'+(pn.col?'background:'+pn.col+'!important':'')+'">'+esc(pn.t)+'</div><div class="mkl">'+esc(nm)+'</div>';
     function open(fromList){
-      closeSheet();tlMark(box.dataset.d,i.id);sel=el.querySelector('.mk');sel.classList.add('sel');el.parentNode.style.zIndex='60';
+      closeSheet();tlMark(box.dataset.d,i.id);sel=el.querySelector('.mk');sel.classList.add('sel');el.classList.add('on');w.classList.add('has-sel');el.parentNode.style.zIndex='200';
       var hasRow=pn.j&&i.id&&document.querySelector('article.it[data-id="'+i.id+'"]');
       var fx=canWrite&&(i.sid||i.id),meta=[pn.sub,o.a].filter(Boolean).join(' · ');
       sh.innerHTML='<div class="ms-r"><div class="ms-t"'+(hasRow&&!fromList?' data-m="j" role="button"':'')+'><b>'+esc(nm)+'</b>'+(meta?'<small>'+esc(meta)+'</small>':'')+'</div>'
@@ -1303,11 +1330,12 @@ function paint(box,note,md,pts){
     }
     if(i.id)byId[i.id]=open;
     el.addEventListener('click',function(e){e.stopPropagation();open(false);});
-    new kakao.maps.CustomOverlay({map:map,position:o.p,content:el,xAnchor:0,yAnchor:0,zIndex:pn.c==='h'?20:pn.c?8:12});});
+    new kakao.maps.CustomOverlay({map:map,position:o.p,content:el,xAnchor:0,yAnchor:0,zIndex:mkZ(pn,nb)});});
   sh.onclick=function(ev){ev.stopPropagation();var t=ev.target.closest&&ev.target.closest('[data-m]'),m=t&&t.dataset.m;if(!m)return;var cur=null;
     if(m==='x')closeSheet();else if(m==='ok'){var fid=sh.dataset.fid,gx=+sh.dataset.x,gy=+sh.dataset.y,ga=sh.dataset.a;closeSheet();geoOk(fid,gx,gy,ga);}else if(m==='n'||m==='j'||m==='f'){var id=sh.dataset.id;if(m==='n')window.open(sh.dataset.link,'_blank','noopener');else if(m==='j'){closeSheet();jumpTo(id);}else{closeSheet();openGeoFix(sh.dataset.fid);}}};
   var mo={box:box,map:map,bd:bd,n:ok.length,c:c0,note:note?note.textContent:'',byId:byId};mapObjs[box.dataset.d]=mo;fitMap(mo);syncLbl();
   try{map.setMaxLevel(11);}catch(e){}kakao.maps.event.addListener(map,'dragend',function(){mapBack(mo);});
+  kakao.maps.event.addListener(map,'idle',function(){mapDeclutterSoon(w);});mapDeclutterSoon(w);setTimeout(function(){mapDeclutter(w);},400);
 }
 /* ---------- 구글 지도 (해외 여행) ---------- */
 var gState=0,gWait=[];
@@ -1355,7 +1383,7 @@ function gLocate(i,cb){
       var fid=i.pseudo?i.sid:i.id;if(v&&fid&&db&&canWrite&&!i.rent&&i.section!=='transport'){var o={geo:{x:v.x,y:v.y,g:1}};if(!i.addr&&v.a)o.addr=v.a;db.doc('items/'+fid).update(o).catch(function(){});}
     });});
 }
-function gFit(o){if(!o.n)return;if(o.n===1){o.map.setCenter(o.c);o.map.setZoom(15);return;}o.map.fitBounds(o.bd,24);}
+function gFit(o){if(!o.n)return;if(o.n===1){o.map.setCenter(o.c);o.map.setZoom(15);return;}o.map.fitBounds(o.bd,{top:MPAD.t,right:MPAD.r,bottom:MPAD.b,left:MPAD.l});}
 function gDraw(md){
   var box=document.querySelector('.tl-map[data-d="'+md.d+'"]');if(!box||!box.offsetParent)return;
   var note=document.querySelector('.tl-mapn[data-d="'+md.d+'"]'),left=md.pins.length,pts=[];
@@ -1366,10 +1394,10 @@ function gDraw(md){
     if(note)note.textContent=miss.length?'못 찾은 곳: '+miss.join(', '):'';
     gAnchor(function(an){
       var c0=ok.length?ok[0].p:an?{lat:an.y,lng:an.x}:{lat:33.59,lng:130.40};
-      var map=new google.maps.Map(box,{center:c0,zoom:12,disableDefaultUI:true,zoomControl:true,clickableIcons:canWrite,gestureHandling:'greedy'});
+      var map=new google.maps.Map(box,{center:c0,zoom:12,disableDefaultUI:true,zoomControl:fineMouse(),clickableIcons:canWrite,gestureHandling:'greedy'});
       var bd=new google.maps.LatLngBounds(),sel=null,byId={},poiR=null;
       var sh=w.querySelector('.msheet');if(!sh){sh=document.createElement('div');sh.className='msheet';w.appendChild(sh);}
-      function closeSheet(){if(sel){sel.classList.remove('sel');sel.parentNode.style.zIndex='';}tlMark(box.dataset.d,null);sel=null;sh.innerHTML='';w.classList.remove('has-sheet');}
+      function closeSheet(){if(sel){sel.classList.remove('sel');sel.parentNode.classList.remove('on');sel.parentNode.style.zIndex='';}tlMark(box.dataset.d,null);sel=null;sh.innerHTML='';w.classList.remove('has-sheet','has-sel');mapDeclutterSoon(w);}
       closeSheet();map.addListener('click',function(e){if(e&&e.placeId&&canWrite){e.stop();openPoi(e.placeId);}else closeSheet();});
       /* 지도 위 가게를 누르면: 이름·종류·주소 + 담기 버튼 */
       function openPoi(pid){closeSheet();var my=poiR={};w.classList.add('has-sheet');sh.innerHTML='<div class="ms-r"><div class="ms-t"><b>불러오는 중…</b></div><button class="ms-i" data-m="x" aria-label="닫기">'+X_SVG+'</button></div>';
@@ -1385,17 +1413,17 @@ function gDraw(md){
       map.addListener('zoom_changed',syncLbl);
       var groups={};ok.forEach(function(o){if(md.line&&o.pn.g!=null)(groups[o.pn.g]=groups[o.pn.g]||[]).push(o.p);});
       Object.keys(groups).forEach(function(g){var path=groups[g];if(path.length<2)return;
-        new google.maps.Polyline({map:map,path:path,strokeWeight:3.5,strokeColor:'#FFFFFF',strokeOpacity:.9});
-        new google.maps.Polyline({map:map,path:path,strokeWeight:1.5,strokeColor:'#0A0A0A',strokeOpacity:.6});});
+        var lc=lineCol(g,ok);new google.maps.Polyline({map:map,path:path,strokeWeight:6,strokeColor:'#0A0A0A',strokeOpacity:.55});
+        new google.maps.Polyline({map:map,path:path,strokeWeight:3.5,strokeColor:lc,strokeOpacity:1});});
       function Ov(pos,el,z){this.pos=pos;this.el=el;this.z=z;this.setMap(map);}
       Ov.prototype=new google.maps.OverlayView();
       Ov.prototype.onAdd=function(){this.el.style.position='absolute';this.el.style.zIndex=this.z;this.getPanes().overlayMouseTarget.appendChild(this.el);};
       Ov.prototype.draw=function(){var pt=this.getProjection().fromLatLngToDivPixel(new google.maps.LatLng(this.pos));if(pt){this.el.style.left=pt.x+'px';this.el.style.top=pt.y+'px';}};
       Ov.prototype.onRemove=function(){if(this.el.parentNode)this.el.parentNode.removeChild(this.el);};
       ok.forEach(function(o){var pn=o.pn,i=pn.i;bd.extend(o.p);var nm=i.pseudo?i.place:i.title,el=document.createElement('div');el.className='mkw';
-        var nb=!pn.c&&/^\d+$/.test(pn.t||''),dz=nb?18:pn.c==='h'?10:pn.c==='s'?9:pn.c==='c'?6:8;el.innerHTML='<div class="mk'+(pn.c?' '+pn.c:'')+(nb?' n':'')+'" style="width:'+dz+'px!important;height:'+dz+'px!important;'+(pn.col?'background:'+pn.col+'!important':'')+'">'+esc(pn.t)+'</div><div class="mkl">'+esc(nm)+'</div>';
+        var nb=!pn.c&&/^\d+$/.test(pn.t||''),dz=nb?18:pn.c==='h'?10:pn.c==='s'?9:pn.c==='c'?6:8;el.dataset.p=mkPri(pn,nb);if(nb)el.classList.add('nb');el.innerHTML='<div class="mk'+(pn.c?' '+pn.c:'')+(nb?' n':'')+'" style="width:'+dz+'px!important;height:'+dz+'px!important;'+(pn.col?'background:'+pn.col+'!important':'')+'">'+esc(pn.t)+'</div><div class="mkl">'+esc(nm)+'</div>';
         function open(fromList){
-          closeSheet();tlMark(box.dataset.d,i.id);sel=el.querySelector('.mk');sel.classList.add('sel');el.style.zIndex='60';
+          closeSheet();tlMark(box.dataset.d,i.id);sel=el.querySelector('.mk');sel.classList.add('sel');el.classList.add('on');w.classList.add('has-sel');el.style.zIndex='200';
           var hasRow=pn.j&&i.id&&document.querySelector('article.it[data-id="'+i.id+'"]'),meta=[pn.sub,o.a].filter(Boolean).join(' · ');
           sh.innerHTML='<div class="ms-r"><div class="ms-t"'+(hasRow&&!fromList?' data-m="j" role="button"':'')+'><b>'+esc(nm)+'</b>'+(meta?'<small>'+esc(meta)+'</small>':'')+'</div>'
             +'<button class="ms-i pri g" data-m="n" aria-label="구글 지도" title="구글 지도">G</button><button class="ms-i" data-m="x" aria-label="닫기">'+X_SVG+'</button></div>';
@@ -1404,11 +1432,12 @@ function gDraw(md){
         }
         if(i.id)byId[i.id]=open;
         el.addEventListener('click',function(e){e.stopPropagation();open(false);});
-        new Ov(o.p,el,pn.c==='h'?20:pn.c?8:12);});
+        new Ov(o.p,el,mkZ(pn,nb));});
       sh.onclick=function(ev){ev.stopPropagation();var t=ev.target.closest&&ev.target.closest('[data-m]'),m=t&&t.dataset.m;if(!m)return;
         if(m==='x')closeSheet();else if(m==='a'){var r=poiR;closeSheet();if(r&&r.n)addPlace(r,r.sec);}else if(m==='n')window.open(sh.dataset.link,'_blank','noopener');else if(m==='j'){var id=sh.dataset.id;closeSheet();jumpTo(id);}};
       var mo={g:1,box:box,map:map,bd:bd,n:ok.length,c:c0,note:note?note.textContent:'',byId:byId};mapObjs[box.dataset.d]=mo;gFit(mo);syncLbl();
       map.setOptions({minZoom:7});map.addListener('dragend',function(){mapBack(mo);});
+      map.addListener('idle',function(){mapDeclutterSoon(w);});
     });
   }
   if(!left)return go();
