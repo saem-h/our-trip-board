@@ -389,7 +389,7 @@ h1.scin{transform-origin:center;will-change:transform,opacity;animation:tbscale 
 .tm{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:4px 12px;min-height:32px;font-size:13px}
 .seg2{display:flex;gap:4px;margin:-4px 0 10px}.seg2 button{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;padding:3px 12px;font-size:12px;font-weight:600}.seg2 button[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .tl-dh{display:flex;align-items:center;justify-content:space-between}
-.tl-dh>span{display:inline-flex;align-items:center;gap:2px}.wx{display:inline-flex;align-items:center;gap:4px;border:0;background:none;color:var(--ink);padding:4px 6px;margin:-4px 0;font:inherit;font-weight:600;font-size:12px;cursor:pointer;border-radius:999px;-webkit-tap-highlight-color:transparent}.wx svg{width:17px;height:17px;display:block}.wxi{display:inline-flex;vertical-align:-3px;margin-left:4px}.wxi svg{width:15px;height:15px}.wx .wt{color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;animation:wxIn .18s ease-out}@keyframes wxIn{from{opacity:0;transform:translateX(-3px)}to{opacity:1;transform:none}}
+.tl-dh>span{display:inline-flex;align-items:center;gap:2px}.wx{display:inline-flex;align-items:center;gap:4px;border:0;background:none;color:var(--ink);padding:4px 6px;margin:-4px 0;font:inherit;font-weight:600;font-size:12px;border-radius:999px}.wx svg{width:17px;height:17px;display:block}.wxi{display:inline-flex;vertical-align:-3px;margin-left:4px}.wxi svg{width:15px;height:15px}.wx .wt{color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
 .route{list-style:decimal;margin:8px 0 4px 5px;padding:0 0 0 28px;font-size:13px;display:flex;flex-direction:column;gap:6px}.route li{display:flex;align-items:center;gap:8px;justify-content:space-between}
 .route-go{display:inline-block;margin:4px 0 8px 5px;font-size:12px;font-weight:600;color:var(--ink);text-underline-offset:3px}
 .ar{color:var(--ink);font-weight:600}.lb2{font-weight:600;color:var(--ink)}
@@ -1705,13 +1705,12 @@ function wxGeocode(name){if(!name||wxGeoName[name]!==undefined)return wxGeoName[
   return null;}
 var wxSpots={};
 function wxHtml(date,p){
-  if(!p)return '<button type="button" class="wx" data-act="wx" data-date="'+date+'" hidden></button>';
+  if(!p)return '<span class="wx" data-date="'+date+'" hidden></span>';
   var k=wxKey(p),c=wxCache[k],v=c&&c.d[date];
   if(!c)wxFetch(p);else if(!v)wxArch(k,date);
-  if(!v)return '<button type="button" class="wx" data-act="wx" data-date="'+date+'" data-k="'+k+'" hidden></button>';
+  if(!v)return '<span class="wx" data-date="'+date+'" data-k="'+k+'" hidden></span>';
   var kd=wxKind(v[0]),lab=(v[4]?'작년 이맘때 ':'')+WX_NAME[kd]+', 최저 '+v[1]+'도 최고 '+v[2]+'도'+(v[3]!=null&&v[3]>=30?', 비 올 확률 '+v[3]+'%':'');
-  var on=wxOpen[date];
-  return '<button type="button" class="wx" data-act="wx" data-date="'+date+'" data-k="'+k+'" aria-label="'+lab+'" aria-expanded="'+(!!on)+'" title="'+WX_NAME[kd]+'">'+WX_SVG[kd]+(on?'<span class="wt">'+(v[4]?'작년 ':'')+v[1]+'° / '+v[2]+'°'+(v[3]!=null&&v[3]>=30?' · '+v[3]+'%':'')+'</span>':'')+'</button>';
+  return '<span class="wx" data-date="'+date+'" data-k="'+k+'" role="img" aria-label="'+lab+'" title="'+lab+'">'+WX_SVG[kd]+'<span class="wt">'+(v[4]?'작년 ':'')+v[1]+'° / '+v[2]+'°'+(v[3]!=null&&v[3]>=30?' · '+v[3]+'%':'')+'</span></span>';
 }
 function wxIcon(date){var p=wxSpots[date],c=p&&wxCache[wxKey(p)],v=c&&c.d[date];if(p&&!c)wxFetch(p);else if(c&&!v)wxArch(wxKey(p),date);return '<i class="wxi" data-date="'+date+'"'+(v?' title="'+WX_NAME[wxKind(v[0])]+'">'+WX_SVG[wxKind(v[0])]:' hidden>')+'</i>';}
 function wxPaint(){document.querySelectorAll('.wxi[data-date]').forEach(function(b){var t=document.createElement('div');t.innerHTML=wxIcon(b.dataset.date);var n=t.firstChild;if(n.outerHTML!==b.outerHTML)b.replaceWith(n);});document.querySelectorAll('.wx[data-date]').forEach(function(b){var d=b.dataset.date,p=wxSpots[d];if(!p&&wxSpots._name){p=wxGeocode(wxSpots._name);}var t=document.createElement('div');t.innerHTML=wxHtml(d,p);var n=t.firstChild;if(n.outerHTML!==b.outerHTML)b.replaceWith(n);});}
@@ -2664,7 +2663,6 @@ document.addEventListener('click',function(e){
   else if(a==='areaf'){areaFilter=el.dataset.v;render();}
   else if(a==='unconf'){it=itemFrom(el);if(it)unconfirm(it);}
   else if(a==='tlm'){tlMode=el.dataset.v;render();}
-  else if(a==='wx'){var wdt=el.dataset.date;wxOpen[wdt]=!wxOpen[wdt];wxPaint();}
   else if(a==='route'){var rd=el.dataset.d;routeOpen[rd]=!routeOpen[rd];render();}
   else if(a==='qadd'){doQuick();}
   else if(a==='addsec'){addSec=el.dataset.sec;if(activeSec!=='all')activeSec=addSec;render();var q=document.querySelector('[data-quick=q]');if(q)q.focus();}
