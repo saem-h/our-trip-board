@@ -96,6 +96,9 @@ h1{font-family:var(--font-en);font-weight:400;font-size:30px;margin:0;letter-spa
 .pg{min-width:0;padding-bottom:6px}
 .pg-h{display:flex;align-items:center;justify-content:space-between;font-weight:800;font-size:13px;letter-spacing:-0.02em;padding:4px 0;border-bottom:1.5px solid var(--ink)}
 .pin-empty{color:var(--muted);font-size:13px;padding:8px 0}
+.tf{display:flex;flex-wrap:wrap;gap:6px;padding:8px 0 2px}
+.tf .chip{min-height:28px!important;padding:2px 10px!important;font-size:12.5px!important}
+.tf .chip i{margin-left:5px;font-size:11px!important}
 .pr{display:flex;gap:10px;justify-content:space-between;align-items:flex-start;padding:7px 0;border-bottom:1px solid var(--line)}
 .pr:last-child{border-bottom:0}
 .pr-main{min-width:0;flex:1}
@@ -858,7 +861,7 @@ var SECTIONS=[
   {key:'must',en:'to do',name:'해야 할 일',hint:'예약, 챙길 것, 놓치면 안 되는 것',check:true,doneWord:'완료',ph:'예) 체험 프로그램 예약하기'}
 ];
 var db=null,user=null,uid=null,canWrite=true;
-var groupedNow=false,dragActive=false,renderPending=false,members={},nameAsked=false,areaFilter='',seenAt=0,seenFor=null,viewInit=false,tlMode=null,routeOpen={},pickTime='',pickId=null,pickDay=0,pickSlot='',addSec='food',trips=[],items=[],tripId=null,view='board',activeSec=(function(){try{var v=localStorage.getItem(window.TB_LSP+'sec');return (v&&v!=='all')?v:'food';}catch(e){return 'food';}})(),openId=null,infoOpen=false,profs={},armed=null,ready=false,offline=false,quickVals={},flashId=null;
+var groupedNow=false,dragActive=false,renderPending=false,members={},nameAsked=false,areaFilter='',seenAt=0,seenFor=null,viewInit=false,tlMode=null,routeOpen={},pickTime='',pickId=null,pickDay=0,pickSlot='',addSec='food',trips=[],items=[],tripId=null,view='board',activeSec=(function(){try{var v=localStorage.getItem(window.TB_LSP+'sec');return (v&&v!=='all')?v:'food';}catch(e){return 'food';}})(),openId=null,infoOpen=false,transMode='',profs={},armed=null,ready=false,offline=false,quickVals={},flashId=null;
 try{Object.defineProperty(window,'dragActive',{configurable:true,get:function(){return dragActive;}});}catch(e){}
 var scaleT=null,fadedIn=false,API_URL=window.TB_API||'',app=document.getElementById('app'),modal=document.getElementById('modal'),toastEl=document.getElementById('toast');
 
@@ -1797,9 +1800,20 @@ function renderFixed(t,its){
   if(!infoOpen)return h+'</section>';
   h+='<div class="pin-grid">';
   SECTIONS.filter(function(x){return x.fixed;}).forEach(function(sc){
-    var mine=its.filter(function(i){return i.section===sc.key;}).sort(sc.key==='transport'?function(a,b){var da=a.day||99,db2=b.day||99;return da!==db2?da-db2:byTime(a,b);}:function(a,b){return (a.createdAt||0)-(b.createdAt||0);});
+    var mine=its.filter(function(i){return i.section===sc.key;}).sort(sc.key==='transport'?function(a,b){var x=transKey(a,t),y=transKey(b,t);return x!==y?(x<y?-1:1):byTime(a,b);}:function(a,b){return (a.createdAt||0)-(b.createdAt||0);});
     h+='<div class="pg"><div class="pg-h"><span>'+esc(sc.name)+'</span><button class="lb add" data-act="add" data-sec="'+sc.key+'"'+(canWrite?'':' disabled')+'>+ 추가</button></div>';
     if(!mine.length)h+='<div class="pin-empty">'+esc(sc.emptyHint)+'</div>';
+    if(sc.key==='transport'){
+      var cnt={},ms=[];mine.forEach(function(i){var k=i.mode||'etc';if(!cnt[k]){cnt[k]=0;ms.push(k);}cnt[k]++;});
+      ms.sort(function(a,b){return modeIdx(a)-modeIdx(b);});
+      if(transMode&&!cnt[transMode])transMode='';
+      if(ms.length>1){
+        h+='<div class="tf" role="tablist" aria-label="이동 수단">'+'<button class="chip" role="tab" data-act="tmode" data-m="" aria-selected="'+(!transMode)+'">전체<i>'+mine.length+'</i></button>';
+        ms.forEach(function(k){h+='<button class="chip" role="tab" data-act="tmode" data-m="'+k+'" aria-selected="'+(transMode===k)+'">'+esc(modeName(k)||'기타')+'<i>'+cnt[k]+'</i></button>';});
+        h+='</div>';
+        if(transMode)mine=mine.filter(function(i){return (i.mode||'etc')===transMode;});
+      }
+    }
     mine.forEach(function(it){
       var when='';
       var tm=it.time?(it.time+(it.arrive?' → '+it.arrive:'')):'';
@@ -2063,6 +2077,9 @@ var MODE_HINT={
   etc:{lab:'이름',ph:'예) 이동 수단 이름',from:'예) 출발지',to:'예) 도착지'}
 };
 var DIRS=[['out','갈 때'],['local','여행지'],['back','올 때']];
+function modeIdx(k){for(var n=0;n<MODES.length;n++)if(MODES[n][0]===k)return n;return 99;}
+/* 교통 정렬 키: 실제 날짜(없으면 여행 시작일 + N일차) + 출발 시간. 날짜 모르는 건 맨 뒤 */
+function transKey(it,t){var d=it.date||(it.day&&t&&t.startDate?addDays(t.startDate,it.day-1):'');return (d||'9999-99-99')+' '+(it.time||'99:99');}
 function modeName(k){var m=MODES.filter(function(x){return x[0]===k;})[0];return m?m[1]:'';}
 function dirName(k){var m=DIRS.filter(function(x){return x[0]===k;})[0];return m?m[1]:'';}
 function timeStr(it){return it.time?(it.time+(it.arrive?' → '+it.arrive:'')):'시간 미정';}
@@ -2674,7 +2691,7 @@ document.addEventListener('click',function(e){
   if(a==='arcview'){var nv=!showArc,lst=trips.filter(function(x){return isArchived(x)===nv;});if(nv)lastLive=tripId;showArc=nv;if(lst.length){var pk=(!nv&&lst.filter(function(x){return x.id===lastLive;})[0])||(nv?lst[lst.length-1]:lst[0]);tripId=pk.id;lsSet('tripId',tripId);}openId=null;render();return;}
   if(a==='arctrip'){arcTrip();return;}
   if(a==='mustf'){mustMine=el.dataset.v==='1';render();return;}
-  if(a==='tab'){tabPop={k:'t:'+el.dataset.id,t:Date.now()};tripId=el.dataset.id;lsSet('tripId',tripId);armed=null;render();}
+  if(a==='tab'){tabPop={k:'t:'+el.dataset.id,t:Date.now()};tripId=el.dataset.id;transMode='';lsSet('tripId',tripId);armed=null;render();}
   else if(a==='view'){tabPop={k:'v:'+el.dataset.v,t:Date.now()};var sg=document.querySelector('.seg'),y0=sg?sg.getBoundingClientRect().top:null;view=el.dataset.v;render();var sg2=document.querySelector('.seg');if(sg2&&y0!==null){var dy=sg2.getBoundingClientRect().top-y0;if(dy)window.scrollBy(0,dy);}}
   else if(a==='areaf'){areaFilter=el.dataset.v;render();}
   else if(a==='unconf'){it=itemFrom(el);if(it)unconfirm(it);}
@@ -2685,6 +2702,7 @@ document.addEventListener('click',function(e){
   else if(a==='sec'){tabPop={k:'s:'+el.dataset.sec,t:Date.now()};activeSec=el.dataset.sec;if(activeSec!=='all')addSec=activeSec;openId=null;if(activeSec!=='all')try{localStorage.setItem(window.TB_LSP+'sec',activeSec);}catch(e){}render();}
   else if(a==='row'){it=itemFrom(el);if(it){openId=openId===it.id?null:it.id;render();if(openId)mapFocus(it.id);}}
   else if(a==='info'){infoOpen=!infoOpen;render();}
+  else if(a==='tmode'){transMode=el.getAttribute('data-m')||'';render();}
   else if(a==='add'){if(canWrite)openItemForm({section:el.dataset.sec});}
   else if(a==='newtrip'){if(canWrite)openTripForm(true);}
   else if(a==='newboard'){openNewBoard();}
