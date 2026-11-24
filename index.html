@@ -324,14 +324,15 @@ body.cdrag,body.cdrag *{cursor:grabbing!important;-webkit-user-select:none;user-
 .ev-tb{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;min-height:0;cursor:pointer}.ev-tb.empty{text-decoration:underline;text-underline-offset:3px}.ev-tb:disabled{cursor:default}.ev-t .ev-tp{position:absolute;left:0;top:0;pointer-events:none;background:var(--surface);padding-right:8px;text-decoration:underline;text-underline-offset:3px}
 .ev-n{font-weight:700;font-size:14px;overflow-wrap:anywhere}
 .ev-m{display:flex;gap:6px 10px;flex-wrap:wrap;align-items:center;margin-top:3px;font-size:12px}
-.ev-m .tpin{margin-left:-4px}
+.ev-m .ib.sm{margin-left:-4px}
+.ev-go{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;min-height:0;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent}.ev-go:active{opacity:.55}
 .ev{transition:background .2s}
 .ev.on{background:color-mix(in srgb,var(--accent) 28%,transparent);border-radius:10px;margin:0 -8px 12px -8px;padding:6px 70px 6px 8px}
 .ev.on:last-child{margin-bottom:0}
 .ev.on::before{left:-18px;top:10px}
 .tl-list.num .ev.on[data-n]::before{left:-22px;top:6px}
 .ev.on .rm{right:38px;top:2px}.ev.on .dh{right:4px;top:2px}
-.ev.on .tpin{background:var(--accent)!important;color:var(--accent-ink)!important;border-color:var(--ink)!important}
+
 .ev-m .tag{border:1px solid var(--line);border-radius:999px;padding:0 8px;color:var(--muted)}
 .ev-m a{color:var(--ink);text-underline-offset:3px}
 .ev-m select{background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:1px 8px;min-height:26px;font-size:12px}
@@ -1751,15 +1752,17 @@ function renderTimeline(t,its){
   for(var k=1;k<=nDays;k++)h+='<button data-act="tlm" data-v="'+k+'" aria-pressed="'+(sel===String(k))+'">'+esc(dayLabel(t,k))+(t.startDate?wxIcon(wxDatesOf(t,k)):'')+(k===tdn?' <i class="tdot"></i>':'')+'</button>';
   h+='</div>';
   function ev(it,num,col){var dn=num?' data-n="'+num+'"'+(col?' style="--dc:'+col+'"':''):'';
-    /* 핀 버튼: 위쪽 타임라인 미리보기 지도로 올라가서 이 장소를 바로 보여 줘요 */
-    var pin=num&&useMap()?'<button type="button" class="ib sm tpin" data-act="tlpin" data-key="'+esc(it.id)+'" aria-label="지도에서 보기" title="지도에서 보기">'+PIN_SVG+'</button>':'';
-    if(it.rent)return '<div class="ev'+(tlSel&&it.id===tlSel?' on':'')+'" data-key="'+esc(it.id)+'"'+dn+'>'+(it.time?'<div class="ev-t">'+esc(it.time)+'</div>':'')+'<div class="ev-n">'+esc(it.title)+'</div><div class="ev-m"><span class="tag">렌터카</span>'+(it.base?'<span class="ar2">'+esc(it.base)+'</span>':'')+pin+'<a href="'+esc(mapUrl(it.place))+'" target="_blank" rel="noopener noreferrer" class="ib sm" aria-label="지도 열기">'+LINK_SVG+'</a></div></div>';
-    if(it.pseudo)return '<div class="ev'+(tlSel&&it.id===tlSel?' on':'')+'" data-key="'+esc(it.id)+'"'+dn+'>'+(canWrite?'<span class="dh" role="button" tabindex="0" aria-label="순서 바꾸기 (끌어서 이동)">'+DRAG_SVG+'</span>':'')+'<div class="ev-t"><button type="button" class="ev-tb'+(it.plan?'':' empty')+'" data-act="pstime" data-key="'+esc(it.id)+'" aria-label="시간 정하기"'+(canWrite?'':' disabled')+'>'+esc(it.plan||'시간 정하기')+'</button></div><div class="ev-n">'+esc(it.title)+'</div><div class="ev-m"><span class="tag">숙소</span>'+(it.base?'<span class="ar2">'+esc(it.base)+'</span>':'')+pin+'<a href="'+esc(mapUrl(it.place))+'" target="_blank" rel="noopener noreferrer" class="ib sm" aria-label="지도 열기">'+LINK_SVG+'</a></div></div>';
+    /* 이름을 누르면 위쪽 타임라인 지도에서 이 장소를 보여 주고, 바깥 지도 링크는 옆 아이콘으로 열어요 */
+    var onMap=!!(num&&useMap());
+    function nm(txt,href){return onMap?'<button type="button" class="ev-go" data-act="tlpin" data-key="'+esc(it.id)+'">'+esc(txt)+'</button>':href?'<a data-act="go" href="'+esc(href)+'" target="_blank" rel="noopener noreferrer">'+esc(txt)+'</a>':esc(txt);}
+    function lk(href){return '<a href="'+esc(href)+'" target="_blank" rel="noopener noreferrer" class="ib sm" aria-label="지도 열기" title="지도 열기">'+LINK_SVG+'</a>';}
+    if(it.rent)return '<div class="ev'+(tlSel&&it.id===tlSel?' on':'')+'" data-key="'+esc(it.id)+'"'+dn+'>'+(it.time?'<div class="ev-t">'+esc(it.time)+'</div>':'')+'<div class="ev-n">'+nm(it.title)+'</div><div class="ev-m"><span class="tag">렌터카</span>'+(it.base?'<span class="ar2">'+esc(it.base)+'</span>':'')+lk(mapUrl(it.place))+'</div></div>';
+    if(it.pseudo)return '<div class="ev'+(tlSel&&it.id===tlSel?' on':'')+'" data-key="'+esc(it.id)+'"'+dn+'>'+(canWrite?'<span class="dh" role="button" tabindex="0" aria-label="순서 바꾸기 (끌어서 이동)">'+DRAG_SVG+'</span>':'')+'<div class="ev-t"><button type="button" class="ev-tb'+(it.plan?'':' empty')+'" data-act="pstime" data-key="'+esc(it.id)+'" aria-label="시간 정하기"'+(canWrite?'':' disabled')+'>'+esc(it.plan||'시간 정하기')+'</button></div><div class="ev-n">'+nm(it.title)+'</div><div class="ev-m"><span class="tag">숙소</span>'+(it.base?'<span class="ar2">'+esc(it.base)+'</span>':'')+lk(mapUrl(it.place))+'</div></div>';
     var sc=secOf(it.section);
     var m='<span class="tag">'+esc(sc.key==='transport'&&it.mode?modeName(it.mode)+(it.name&&it.mode!=='rent'?' '+it.name:''):sc.name)+'</span>'+(closedOn(it,t,effDay(it,t))?'<span class="tag w">휴무일</span>':'')+(it.area?'<span class="ar2">'+esc(areaLabel(it.area))+'</span>':'');
     var evl=(sc.key!=='transport'&&safeUrl(it.link))||mapUrl(routePlace(it));
     var tt=it.mode==='rent'?(it.time||''):it.time?timeStr(it):(it.slot?slotName(it.slot):'');
-    return '<div class="ev'+(tlSel&&it.id===tlSel?' on':'')+'" data-id="'+esc(it.id)+'" data-key="'+esc(it.id)+'"'+dn+'>'+(sc.key!=='transport'&&canWrite?'<button class="rm" data-act="unconf" aria-label="일정에서 빼기" title="일정에서 빼기">'+X_SVG+'</button><span class="dh" role="button" tabindex="0" aria-label="순서 바꾸기 (끌어서 이동)">'+DRAG_SVG+'</span>':'')+(tt?'<div class="ev-t">'+esc(tt)+(it.time&&it.slot?' · '+esc(slotName(it.slot)):'')+'</div>':'')+'<div class="ev-n"><a data-act="go" href="'+esc(evl)+'" target="_blank" rel="noopener noreferrer">'+esc(it.mode==='rent'?'렌터카 픽업'+(it.name?' · '+it.name:''):it.title)+'</a></div><div class="ev-m">'+m+pin+'</div></div>';
+    return '<div class="ev'+(tlSel&&it.id===tlSel?' on':'')+'" data-id="'+esc(it.id)+'" data-key="'+esc(it.id)+'"'+dn+'>'+(sc.key!=='transport'&&canWrite?'<button class="rm" data-act="unconf" aria-label="일정에서 빼기" title="일정에서 빼기">'+X_SVG+'</button><span class="dh" role="button" tabindex="0" aria-label="순서 바꾸기 (끌어서 이동)">'+DRAG_SVG+'</span>':'')+(tt?'<div class="ev-t">'+esc(tt)+(it.time&&it.slot?' · '+esc(slotName(it.slot)):'')+'</div>':'')+'<div class="ev-n">'+nm(it.mode==='rent'?'렌터카 픽업'+(it.name?' · '+it.name:''):it.title,evl)+'</div><div class="ev-m">'+m+(onMap?lk(evl):'')+'</div></div>';
   }
   var n=t.days||2,tp=[],tleg='';h+='%%TLMAP%%';wxSpots._name='';
   for(var d=1;d<=n;d++){
