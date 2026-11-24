@@ -1662,18 +1662,33 @@ var WX_SVG={
 function wxKind(c){c=+c;if(c<=1)return 'sun';if(c===2)return 'part';if(c===3||c===45||c===48)return 'cloud';if((c>=71&&c<=77)||c===85||c===86)return 'snow';return 'rain';}
 var WX_NAME={sun:'맑음',part:'구름 조금',cloud:'흐림',rain:'비',snow:'눈'};
 var wxCache={},wxBusy={},wxOpen={},wxGeoName={};
-try{var _w=JSON.parse(localStorage.getItem('tb_wx')||'{}');Object.keys(_w).forEach(function(k){if(Date.now()-_w[k].at<3*3600000)wxCache[k]=_w[k];});}catch(e){}
-function wxSave(){try{localStorage.setItem('tb_wx',JSON.stringify(wxCache));}catch(e){}}
+try{var _w=JSON.parse(localStorage.getItem('tb_wx2')||'{}');Object.keys(_w).forEach(function(k){if(Date.now()-_w[k].at<3*3600000)wxCache[k]=_w[k];});}catch(e){}
+function wxSave(){try{localStorage.setItem('tb_wx2',JSON.stringify(wxCache));}catch(e){}}
 function wxKey(p){return (Math.round(p.y*4)/4).toFixed(2)+','+(Math.round(p.x*4)/4).toFixed(2);}
+function wxRow(dy,i,typ){return [dy.weather_code[i],Math.round(dy.temperature_2m_min[i]),Math.round(dy.temperature_2m_max[i]),dy.precipitation_probability_max?dy.precipitation_probability_max[i]:null,typ?1:0];}
 function wxFetch(p){var k=wxKey(p);if(wxCache[k]||wxBusy[k])return;wxBusy[k]=1;
   var ll=k.split(',');
-  fetch('https://api.open-meteo.com/v1/forecast?latitude='+ll[0]+'&longitude='+ll[1]+'&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&past_days=2&forecast_days=16')
+  fetch('https://api.open-meteo.com/v1/forecast?latitude='+ll[0]+'&longitude='+ll[1]+'&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&past_days=92&forecast_days=16')
   .then(function(r){return r.ok?r.json():null;}).then(function(j){
-    var o={at:Date.now(),d:{}},dy=j&&j.daily;
-    if(dy&&dy.time)dy.time.forEach(function(t,i){if(dy.weather_code[i]==null)return;o.d[t]=[dy.weather_code[i],Math.round(dy.temperature_2m_min[i]),Math.round(dy.temperature_2m_max[i]),dy.precipitation_probability_max?dy.precipitation_probability_max[i]:null];});
+    var o={at:Date.now(),d:{},tried:{}},dy=j&&j.daily;
+    if(dy&&dy.time)dy.time.forEach(function(t,i){if(dy.weather_code[i]!=null)o.d[t]=wxRow(dy,i);});
     wxCache[k]=o;wxSave();wxPaint();
-  }).catch(function(){wxCache[k]={at:Date.now()-2.5*3600000,d:{}};}).then(function(){delete wxBusy[k];});
+  }).catch(function(){wxCache[k]={at:Date.now()-2.5*3600000,d:{},tried:{}};}).then(function(){delete wxBusy[k];});
 }
+/* 예보 범위 밖: 지난 날짜는 실제 기록, 16일보다 먼 날짜는 작년 같은 날 날씨 (무료 기록 API) */
+var wxArchQ={};
+function wxShiftY(d,n){return (+d.slice(0,4)+n)+d.slice(4);}
+function wxArch(k,date){var c=wxCache[k];if(!c)return;c.tried=c.tried||{};if(c.tried[date])return;c.tried[date]=1;
+  var td=todayStr(),fut=date>td,q=fut?wxShiftY(date,-1):date;
+  if(q>addDays(td,-6))return;
+  (wxArchQ[k]=wxArchQ[k]||[]).push([date,q,fut]);
+  clearTimeout(wxArch.t);wxArch.t=setTimeout(wxArchRun,60);}
+function wxArchRun(){Object.keys(wxArchQ).forEach(function(k){var L=wxArchQ[k];delete wxArchQ[k];if(!L.length)return;
+  var qs=L.map(function(x){return x[1];}).sort(),ll=k.split(',');
+  fetch('https://archive-api.open-meteo.com/v1/archive?latitude='+ll[0]+'&longitude='+ll[1]+'&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&start_date='+qs[0]+'&end_date='+qs[qs.length-1])
+  .then(function(r){return r.ok?r.json():null;}).then(function(j){var dy=j&&j.daily,c=wxCache[k];if(!dy||!dy.time||!c)return;
+    L.forEach(function(x){var i=dy.time.indexOf(x[1]);if(i>=0&&dy.weather_code[i]!=null)c.d[x[0]]=wxRow(dy,i,x[2]);});
+    wxSave();wxPaint();}).catch(function(){});});}
 function wxGeocode(name){if(!name||wxGeoName[name]!==undefined)return wxGeoName[name]||null;wxGeoName[name]=0;
   fetch('https://geocoding-api.open-meteo.com/v1/search?count=1&language=ko&name='+encodeURIComponent(name)).then(function(r){return r.json();}).then(function(j){var g=j&&j.results&&j.results[0];if(g){wxGeoName[name]={x:g.longitude,y:g.latitude};wxPaint(true);}}).catch(function(){});
   return null;}
@@ -1681,11 +1696,11 @@ var wxSpots={};
 function wxHtml(date,p){
   if(!p)return '<button type="button" class="wx" data-act="wx" data-date="'+date+'" hidden></button>';
   var k=wxKey(p),c=wxCache[k],v=c&&c.d[date];
-  if(!c)wxFetch(p);
+  if(!c)wxFetch(p);else if(!v)wxArch(k,date);
   if(!v)return '<button type="button" class="wx" data-act="wx" data-date="'+date+'" data-k="'+k+'" hidden></button>';
-  var kd=wxKind(v[0]),lab=WX_NAME[kd]+', 최저 '+v[1]+'도 최고 '+v[2]+'도'+(v[3]!=null&&v[3]>=30?', 비 올 확률 '+v[3]+'%':'');
+  var kd=wxKind(v[0]),lab=(v[4]?'작년 이맘때 ':'')+WX_NAME[kd]+', 최저 '+v[1]+'도 최고 '+v[2]+'도'+(v[3]!=null&&v[3]>=30?', 비 올 확률 '+v[3]+'%':'');
   var on=wxOpen[date];
-  return '<button type="button" class="wx" data-act="wx" data-date="'+date+'" data-k="'+k+'" aria-label="'+lab+'" aria-expanded="'+(!!on)+'" title="'+WX_NAME[kd]+'">'+WX_SVG[kd]+(on?'<span class="wt">'+v[1]+'° / '+v[2]+'°'+(v[3]!=null&&v[3]>=30?' · '+v[3]+'%':'')+'</span>':'')+'</button>';
+  return '<button type="button" class="wx" data-act="wx" data-date="'+date+'" data-k="'+k+'" aria-label="'+lab+'" aria-expanded="'+(!!on)+'" title="'+WX_NAME[kd]+'">'+WX_SVG[kd]+(on?'<span class="wt">'+(v[4]?'작년 ':'')+v[1]+'° / '+v[2]+'°'+(v[3]!=null&&v[3]>=30?' · '+v[3]+'%':'')+'</span>':'')+'</button>';
 }
 function wxPaint(){document.querySelectorAll('.wx[data-date]').forEach(function(b){var d=b.dataset.date,p=wxSpots[d];if(!p&&wxSpots._name){p=wxGeocode(wxSpots._name);}var t=document.createElement('div');t.innerHTML=wxHtml(d,p);var n=t.firstChild;if(n.outerHTML!==b.outerHTML)b.replaceWith(n);});}
 function wxDatesOf(t,d){var x=new Date(pd(t.startDate)+(d-1)*86400000);return x.getUTCFullYear()+'-'+('0'+(x.getUTCMonth()+1)).slice(-2)+'-'+('0'+x.getUTCDate()).slice(-2);}
