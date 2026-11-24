@@ -300,7 +300,7 @@ a.it-t:active,.ev-n a:active,.pr-n a:active{opacity:.55}
 .tl-mapw.big .msheet{left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom))}
 .it.flash,.ev.flash{animation:tbflash 1.4s ease}
 @keyframes tbflash{0%,40%{box-shadow:0 0 0 3px var(--accent)}100%{box-shadow:0 0 0 0 transparent}}
-.tl-list.num .ev[data-n]::before{content:attr(data-n);width:18px;height:18px;left:-30px;top:0;font:800 10px/15px sans-serif;text-align:center;color:#0A0A0A;background:var(--dc,var(--accent))}
+.tl-list.num .ev[data-n]::before{content:attr(data-n);box-sizing:border-box;width:18px;height:18px;left:-30px;top:0;display:flex;align-items:center;justify-content:center;font:800 10px/1 var(--font-body),sans-serif;font-variant-numeric:tabular-nums;text-align:center;color:#0A0A0A;background:var(--dc,var(--accent))}
 .tl-list{position:relative;margin:8px 0 14px 5px;padding-left:20px;border-left:1px solid var(--line)}
 .ev{position:relative;padding:0 62px 12px 0}
 .rm{position:absolute;right:30px;top:-4px;width:34px;height:34px;display:grid;place-items:center;border:0;background:none;color:var(--muted);border-radius:8px;padding:0}.rm svg{width:15px;height:15px}.rm:hover{color:var(--ink)}
@@ -557,7 +557,7 @@ button:not(.dh):active,[role=button]:not(.dh):active,[role=tab]:active,[role=che
 .it-hr::before{content:' · '}
 .it.op .it-hr{display:none}
 /* 타임라인 지도: 확정 일정 핀에 타임라인과 같은 순서 번호 */
-.mk.n{width:18px!important;height:18px!important;min-width:18px!important;min-height:18px!important;max-width:18px!important;max-height:18px!important;border:1.5px solid #0A0A0A!important;font:800 10px/15px sans-serif!important;color:#0A0A0A!important;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.3)!important}
+.mk.n{width:18px!important;height:18px!important;min-width:18px!important;min-height:18px!important;max-width:18px!important;max-height:18px!important;border:1.5px solid #0A0A0A!important;display:flex!important;align-items:center;justify-content:center;font:800 10px/1 var(--font-body),sans-serif!important;font-variant-numeric:tabular-nums;color:#0A0A0A!important;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.3)!important}
 /* 지도 점 키움 (후보·확정 구분이 잘 보이게) */
 .mk{width:12px!important;height:12px!important;min-width:12px!important;min-height:12px!important;max-width:12px!important;max-height:12px!important;border-width:1.5px!important}
 .mk.c{width:10px!important;height:10px!important;min-width:10px!important;min-height:10px!important;max-width:10px!important;max-height:10px!important;opacity:.85!important;border-width:1.5px!important}
