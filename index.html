@@ -1713,7 +1713,7 @@ function wxHtml(date,p){
   var on=wxOpen[date];
   return '<button type="button" class="wx" data-act="wx" data-date="'+date+'" data-k="'+k+'" aria-label="'+lab+'" aria-expanded="'+(!!on)+'" title="'+WX_NAME[kd]+'">'+WX_SVG[kd]+(on?'<span class="wt">'+(v[4]?'작년 ':'')+v[1]+'° / '+v[2]+'°'+(v[3]!=null&&v[3]>=30?' · '+v[3]+'%':'')+'</span>':'')+'</button>';
 }
-function wxIcon(date){var p=wxSpots[date],v=p&&wxCache[wxKey(p)];v=v&&v.d[date];return '<i class="wxi" data-date="'+date+'"'+(v?' title="'+WX_NAME[wxKind(v[0])]+'">'+WX_SVG[wxKind(v[0])]:' hidden>')+'</i>';}
+function wxIcon(date){var p=wxSpots[date],c=p&&wxCache[wxKey(p)],v=c&&c.d[date];if(p&&!c)wxFetch(p);else if(c&&!v)wxArch(wxKey(p),date);return '<i class="wxi" data-date="'+date+'"'+(v?' title="'+WX_NAME[wxKind(v[0])]+'">'+WX_SVG[wxKind(v[0])]:' hidden>')+'</i>';}
 function wxPaint(){document.querySelectorAll('.wxi[data-date]').forEach(function(b){var t=document.createElement('div');t.innerHTML=wxIcon(b.dataset.date);var n=t.firstChild;if(n.outerHTML!==b.outerHTML)b.replaceWith(n);});document.querySelectorAll('.wx[data-date]').forEach(function(b){var d=b.dataset.date,p=wxSpots[d];if(!p&&wxSpots._name){p=wxGeocode(wxSpots._name);}var t=document.createElement('div');t.innerHTML=wxHtml(d,p);var n=t.firstChild;if(n.outerHTML!==b.outerHTML)b.replaceWith(n);});}
 function wxDatesOf(t,d){var x=new Date(pd(t.startDate)+(d-1)*86400000);return x.getUTCFullYear()+'-'+('0'+(x.getUTCMonth()+1)).slice(-2)+'-'+('0'+x.getUTCDate()).slice(-2);}
 function wxSpotFor(t,d,dd,stays,its){
@@ -1737,7 +1737,7 @@ function renderTimeline(t,its){
   var tdn=todayDayOf(t),sel=tlMode!=null?tlMode:(tdn?String(tdn):'all'),nDays=t.days||2;
   if(sel!=='all'&&(parseInt(sel,10)<1||parseInt(sel,10)>nDays))sel='all';
   h+='<div class="seg2"><button data-act="tlm" data-v="all" aria-pressed="'+(sel==='all')+'">전체</button>';
-  if(t.startDate)for(var k0=1;k0<=nDays;k0++){var wd0=wxDatesOf(t,k0);wxSpots[wd0]=wxSpotFor(t,k0,sched.filter(function(i){return effDay(i,t)===k0;}),stays,its);}
+  if(t.startDate)for(var k0=1;k0<=nDays;k0++){var wd0=wxDatesOf(t,k0);wxSpots[wd0]=wxSpotFor(t,k0,sortDay(sched.filter(function(i){return effDay(i,t)===k0;})),stays,its);}
   for(var k=1;k<=nDays;k++)h+='<button data-act="tlm" data-v="'+k+'" aria-pressed="'+(sel===String(k))+'">'+esc(dayLabel(t,k))+(t.startDate?wxIcon(wxDatesOf(t,k)):'')+(k===tdn?' <i class="tdot"></i>':'')+'</button>';
   h+='</div>';
   function ev(it,num,col){var dn=num?' data-n="'+num+'"'+(col?' style="--dc:'+col+'"':''):'';
