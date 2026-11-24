@@ -304,7 +304,8 @@ a.it-t:active,.ev-n a:active,.pr-n a:active{opacity:.55}
 .tl-list{position:relative;margin:8px 0 14px 5px;padding-left:20px;border-left:1px solid var(--line)}
 .ev{position:relative;padding:0 62px 12px 0}
 .rm{position:absolute;right:30px;top:-4px;width:34px;height:34px;display:grid;place-items:center;border:0;background:none;color:var(--muted);border-radius:8px;padding:0}.rm svg{width:15px;height:15px}.rm:hover{color:var(--ink)}
-.dh{position:absolute;right:-4px;top:-4px;width:34px;height:34px;display:grid;place-items:center;color:var(--muted);touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none;border-radius:8px}
+.dh{position:absolute;right:-4px;top:-4px;width:34px;height:34px;display:grid;place-items:center;color:var(--muted);touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;border-radius:8px;transition:transform .2s,background .2s}
+.dh.arm{transform:scale(1.15);background:var(--soft);color:var(--ink);transition:transform .35s,background .35s}
 .dh svg{width:16px;height:16px}.dh:active{color:var(--ink)}
 .ev.dragging{position:fixed;z-index:60;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 40px 8px 12px;box-shadow:0 8px 24px rgba(0,0,0,.18);pointer-events:none}
 .ev.dragging::before{display:none}
@@ -2438,10 +2439,23 @@ var commitOrder=guarded(function(){
   return Promise.all(jobs);
 });
 var drag=null;
+/* 손가락은 꾹 눌러야(0.35초) 끌려요. 그냥 밀면 화면이 스크롤돼요. 마우스는 바로 끌어요 */
+var dhWait=null;
+function dhCancel(){if(dhWait){clearTimeout(dhWait.tm);dhWait.h.classList.remove('arm');dhWait=null;}}
 function dragStart(e){
   var h=e.target.closest&&e.target.closest('.dh');if(!h||!canWrite||drag)return;
   var ev=h.closest('.ev');if(!ev)return;
+  if(e.pointerType&&e.pointerType!=='mouse'){
+    dhCancel();h.classList.add('arm');
+    dhWait={h:h,x:e.clientX,y:e.clientY,tm:setTimeout(function(){var w=dhWait;dhWait=null;if(!w||drag)return;w.h.classList.remove('arm');haptic();dragBegin(w.h,w.h.closest('.ev'),w.x,w.y);},350)};
+    return;
+  }
   e.preventDefault();
+  dragBegin(h,ev,e.clientX,e.clientY);
+}
+function dragBegin(h,ev,cx,cy){
+  if(!ev||!ev.isConnected||!ev.parentNode)return;
+  var e={clientY:cy};
   var r=ev.getBoundingClientRect(),ph=document.createElement('div');
   ph.className='ev-ph';ph.style.height=r.height+'px';
   ev.parentNode.insertBefore(ph,ev);
@@ -2449,6 +2463,7 @@ function dragStart(e){
   ev.style.width=r.width+'px';ev.style.left=r.left+'px';ev.style.top=r.top+'px';ev.classList.add('dragging');
 }
 function dragMove(e){
+  if(dhWait){if(Math.abs(e.clientX-dhWait.x)>8||Math.abs(e.clientY-dhWait.y)>8)dhCancel();return;}
   if(!drag)return;
   var y=e.clientY;
   drag.ev.style.top=(y-drag.dy)+'px';
@@ -2460,6 +2475,7 @@ function dragMove(e){
   if(day&&!tgt){var l=day.querySelector('.tl-list');if(l&&!l.contains(ph)){var em=l.querySelector('.tl-empty');if(em)em.style.display='none';l.appendChild(ph);}}
 }
 function dragEnd(){
+  dhCancel();
   if(!drag)return;
   var d=drag;drag=null;
   d.ph.parentNode.insertBefore(d.ev,d.ph);d.ph.remove();
@@ -2584,9 +2600,10 @@ document.addEventListener('touchstart',function(e){
   var c=cdPick(e.target);if(!c)return;
   var p=e.touches[0];
   cd={it:c.it,a:c.a,x:p.clientX,y:p.clientY,x0:p.clientX,y0:p.clientY,touch:true,on:false};
-  cd.tm=setTimeout(function(){if(cd&&cd.touch&&!cd.on)cdBegin();},380);
+  cd.tm=setTimeout(function(){if(cd&&cd.touch&&!cd.on)cdBegin();},350);
 },{passive:true});
 document.addEventListener('touchmove',function(e){
+  if(drag&&e.cancelable){e.preventDefault();return;}
   if(!cd||!cd.touch)return;
   var p=e.touches[0];
   if(!cd.on){if(Math.abs(p.clientX-cd.x0)>10||Math.abs(p.clientY-cd.y0)>10){clearTimeout(cd.tm);cd=null;}return;}
