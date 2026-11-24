@@ -380,6 +380,7 @@ h1.scin{transform-origin:center;will-change:transform,opacity;animation:tbscale 
 .tm{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:4px 12px;min-height:32px;font-size:13px}
 .seg2{display:flex;gap:4px;margin:-4px 0 10px}.seg2 button{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;padding:3px 12px;font-size:12px;font-weight:600}.seg2 button[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .tl-dh{display:flex;align-items:center;justify-content:space-between}
+.tl-dh>span{display:inline-flex;align-items:center;gap:2px}.wx{display:inline-flex;align-items:center;gap:4px;border:0;background:none;color:var(--ink);padding:4px 6px;margin:-4px 0;font:inherit;font-weight:600;font-size:12px;cursor:pointer;border-radius:999px;-webkit-tap-highlight-color:transparent}.wx svg{width:17px;height:17px;display:block}.wx .wt{color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;animation:wxIn .18s ease-out}@keyframes wxIn{from{opacity:0;transform:translateX(-3px)}to{opacity:1;transform:none}}
 .route{list-style:decimal;margin:8px 0 4px 5px;padding:0 0 0 28px;font-size:13px;display:flex;flex-direction:column;gap:6px}.route li{display:flex;align-items:center;gap:8px;justify-content:space-between}
 .route-go{display:inline-block;margin:4px 0 8px 5px;font-size:12px;font-weight:600;color:var(--ink);text-underline-offset:3px}
 .ar{color:var(--ink);font-weight:600}.lb2{font-weight:600;color:var(--ink)}
@@ -1649,6 +1650,52 @@ function mapBig(d){
   var b=w.querySelector('.tl-big');if(b)b.innerHTML=on?'닫기':BIG_SVG;
   if(o)setTimeout(function(){if(o.g)return gFit(o);o.map.relayout();fitMap(o);},50);
 }
+
+/* 날씨: Open-Meteo (무료, 키 없음). 앞으로 16일까지 예보가 있는 날만 아이콘이 보여요. */
+var WX_SVG={
+ sun:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="10" cy="10" r="3.6"/><path d="M10 2.2v1.6M10 16.2v1.6M2.2 10h1.6M16.2 10h1.6M4.5 4.5l1.1 1.1M14.4 14.4l1.1 1.1M4.5 15.5l1.1-1.1M14.4 5.6l1.1-1.1"/></svg>',
+ part:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.6 3v1.2M3.2 7.4h1.2M4.5 4.3l.8.8M11.9 4.3l-.8.8"/><path d="M5.3 9.6a3 3 0 0 1 5.4-2.3"/><path d="M7.5 16.5h7a2.8 2.8 0 0 0 .3-5.6 4 4 0 0 0-7.6.9 2.4 2.4 0 0 0 .3 4.7z"/></svg>',
+ cloud:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M6 15.5h8.2a3.2 3.2 0 0 0 .4-6.4 4.6 4.6 0 0 0-8.8 1A2.7 2.7 0 0 0 6 15.5z"/></svg>',
+ rain:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 12.5h8.2a3.2 3.2 0 0 0 .4-6.4 4.6 4.6 0 0 0-8.8 1A2.7 2.7 0 0 0 6 12.5z"/><path d="M7.5 15l-.8 2M10.5 15l-.8 2M13.5 15l-.8 2"/></svg>',
+ snow:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 12.5h8.2a3.2 3.2 0 0 0 .4-6.4 4.6 4.6 0 0 0-8.8 1A2.7 2.7 0 0 0 6 12.5z"/><path d="M7.5 15.5h.01M10.5 16.8h.01M13.5 15.5h.01" stroke-width="2.2"/></svg>'
+};
+function wxKind(c){c=+c;if(c<=1)return 'sun';if(c===2)return 'part';if(c===3||c===45||c===48)return 'cloud';if((c>=71&&c<=77)||c===85||c===86)return 'snow';return 'rain';}
+var WX_NAME={sun:'맑음',part:'구름 조금',cloud:'흐림',rain:'비',snow:'눈'};
+var wxCache={},wxBusy={},wxOpen={},wxGeoName={};
+try{var _w=JSON.parse(localStorage.getItem('tb_wx')||'{}');Object.keys(_w).forEach(function(k){if(Date.now()-_w[k].at<3*3600000)wxCache[k]=_w[k];});}catch(e){}
+function wxSave(){try{localStorage.setItem('tb_wx',JSON.stringify(wxCache));}catch(e){}}
+function wxKey(p){return (Math.round(p.y*4)/4).toFixed(2)+','+(Math.round(p.x*4)/4).toFixed(2);}
+function wxFetch(p){var k=wxKey(p);if(wxCache[k]||wxBusy[k])return;wxBusy[k]=1;
+  var ll=k.split(',');
+  fetch('https://api.open-meteo.com/v1/forecast?latitude='+ll[0]+'&longitude='+ll[1]+'&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&past_days=2&forecast_days=16')
+  .then(function(r){return r.ok?r.json():null;}).then(function(j){
+    var o={at:Date.now(),d:{}},dy=j&&j.daily;
+    if(dy&&dy.time)dy.time.forEach(function(t,i){if(dy.weather_code[i]==null)return;o.d[t]=[dy.weather_code[i],Math.round(dy.temperature_2m_min[i]),Math.round(dy.temperature_2m_max[i]),dy.precipitation_probability_max?dy.precipitation_probability_max[i]:null];});
+    wxCache[k]=o;wxSave();wxPaint();
+  }).catch(function(){wxCache[k]={at:Date.now()-2.5*3600000,d:{}};}).then(function(){delete wxBusy[k];});
+}
+function wxGeocode(name){if(!name||wxGeoName[name]!==undefined)return wxGeoName[name]||null;wxGeoName[name]=0;
+  fetch('https://geocoding-api.open-meteo.com/v1/search?count=1&language=ko&name='+encodeURIComponent(name)).then(function(r){return r.json();}).then(function(j){var g=j&&j.results&&j.results[0];if(g){wxGeoName[name]={x:g.longitude,y:g.latitude};wxPaint(true);}}).catch(function(){});
+  return null;}
+var wxSpots={};
+function wxHtml(date,p){
+  if(!p)return '<button type="button" class="wx" data-act="wx" data-date="'+date+'" hidden></button>';
+  var k=wxKey(p),c=wxCache[k],v=c&&c.d[date];
+  if(!c)wxFetch(p);
+  if(!v)return '<button type="button" class="wx" data-act="wx" data-date="'+date+'" data-k="'+k+'" hidden></button>';
+  var kd=wxKind(v[0]),lab=WX_NAME[kd]+', 최저 '+v[1]+'도 최고 '+v[2]+'도'+(v[3]!=null&&v[3]>=30?', 비 올 확률 '+v[3]+'%':'');
+  var on=wxOpen[date];
+  return '<button type="button" class="wx" data-act="wx" data-date="'+date+'" data-k="'+k+'" aria-label="'+lab+'" aria-expanded="'+(!!on)+'" title="'+WX_NAME[kd]+'">'+WX_SVG[kd]+(on?'<span class="wt">'+v[1]+'° / '+v[2]+'°'+(v[3]!=null&&v[3]>=30?' · '+v[3]+'%':'')+'</span>':'')+'</button>';
+}
+function wxPaint(){document.querySelectorAll('.wx[data-date]').forEach(function(b){var d=b.dataset.date,p=wxSpots[d];if(!p&&wxSpots._name){p=wxGeocode(wxSpots._name);}var t=document.createElement('div');t.innerHTML=wxHtml(d,p);var n=t.firstChild;if(n.outerHTML!==b.outerHTML)b.replaceWith(n);});}
+function wxDatesOf(t,d){var x=new Date(pd(t.startDate)+(d-1)*86400000);return x.getUTCFullYear()+'-'+('0'+(x.getUTCMonth()+1)).slice(-2)+'-'+('0'+x.getUTCDate()).slice(-2);}
+function wxSpotFor(t,d,dd,stays,its){
+  var date=wxDatesOf(t,d),g=function(i){return i&&i.geo&&i.geo.x&&i.geo.y?{x:+i.geo.x,y:+i.geo.y}:null;},p=null;
+  dd.some(function(i){return p=g(i);});
+  if(!p)stays.some(function(s){if(s.checkin&&s.checkin<=date&&(!s.checkout||date<=s.checkout))return p=g(s);return false;});
+  if(!p)its.some(function(i){return p=g(i);});
+  return p;
+}
 function renderTimeline(t,its){
   var conf=its.filter(function(i){return isConf(i)&&!secOf(i.section).check;});
   var stays=conf.filter(function(i){return i.section==='stay';});
@@ -1674,11 +1721,12 @@ function renderTimeline(t,its){
     var tt=it.mode==='rent'?(it.time||''):it.time?timeStr(it):(it.slot?slotName(it.slot):'');
     return '<div class="ev" data-id="'+esc(it.id)+'" data-key="'+esc(it.id)+'"'+dn+'>'+(sc.key!=='transport'&&canWrite?'<button class="rm" data-act="unconf" aria-label="일정에서 빼기" title="일정에서 빼기">'+X_SVG+'</button><span class="dh" role="button" tabindex="0" aria-label="순서 바꾸기 (끌어서 이동)">'+DRAG_SVG+'</span>':'')+(tt?'<div class="ev-t">'+esc(tt)+(it.time&&it.slot?' · '+esc(slotName(it.slot)):'')+'</div>':'')+'<div class="ev-n"><a data-act="go" href="'+esc(evl)+'" target="_blank" rel="noopener noreferrer">'+esc(it.mode==='rent'?'렌터카 픽업'+(it.name?' · '+it.name:''):it.title)+'</a></div><div class="ev-m">'+m+'</div></div>';
   }
-  var n=t.days||2,tp=[],tleg='';h+='%%TLMAP%%';
+  var n=t.days||2,tp=[],tleg='';h+='%%TLMAP%%';wxSpots._name='';
   for(var d=1;d<=n;d++){
     if(sel!=='all'&&String(d)!==sel)continue;
     var dd=sortDay(sched.filter(function(i){return effDay(i,t)===d;}));
-    h+='<div class="tl-day" data-d="'+d+'"><div class="tl-dh"><span>'+esc(dayLabel(t,d))+(d===tdn?' · 오늘':'')+'</span>'+'</div>';
+    var wxh='';if(t.startDate){var wd=wxDatesOf(t,d);wxSpots[wd]=wxSpotFor(t,d,dd,stays,its);if(!wxSpots[wd]&&!wxSpots._name)wxSpots._name=(its.filter(function(i){return i.area;}).map(function(i){return areaDir(i.area)||i.area;})[0])||'';if(!wxSpots[wd]&&wxSpots._name)wxSpots[wd]=wxGeocode(wxSpots._name);wxh=wxHtml(wd,wxSpots[wd]);}
+    h+='<div class="tl-day" data-d="'+d+'"><div class="tl-dh"><span>'+esc(dayLabel(t,d))+(d===tdn?' · 오늘':'')+wxh+'</span>'+'</div>';
     if(false){
       var names=dd.map(function(i){return i.pseudo?i.place:i.title;});
       h+='<ol class="route">';
@@ -2438,6 +2486,7 @@ document.addEventListener('click',function(e){
   else if(a==='areaf'){areaFilter=el.dataset.v;render();}
   else if(a==='unconf'){it=itemFrom(el);if(it)unconfirm(it);}
   else if(a==='tlm'){tlMode=el.dataset.v;render();}
+  else if(a==='wx'){var wdt=el.dataset.date;wxOpen[wdt]=!wxOpen[wdt];wxPaint();}
   else if(a==='route'){var rd=el.dataset.d;routeOpen[rd]=!routeOpen[rd];render();}
   else if(a==='qadd'){doQuick();}
   else if(a==='addsec'){addSec=el.dataset.sec;if(activeSec!=='all')activeSec=addSec;render();var q=document.querySelector('[data-quick=q]');if(q)q.focus();}
