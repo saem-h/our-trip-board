@@ -387,7 +387,7 @@ h1.scin{transform-origin:center;will-change:transform,opacity;animation:tbscale 
 .tm{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:4px 12px;min-height:32px;font-size:13px}
 .seg2{display:flex;gap:4px;margin:-4px 0 10px}.seg2 button{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;padding:3px 12px;font-size:12px;font-weight:600}.seg2 button[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .tl-dh{display:flex;align-items:center;justify-content:space-between}
-.tl-dh>span{display:inline-flex;align-items:center;gap:2px}.wx{display:inline-flex;align-items:center;gap:4px;border:0;background:none;color:var(--ink);padding:4px 6px;margin:-4px 0;font:inherit;font-weight:600;font-size:12px;cursor:pointer;border-radius:999px;-webkit-tap-highlight-color:transparent}.wx svg{width:17px;height:17px;display:block}.wx .wt{color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;animation:wxIn .18s ease-out}@keyframes wxIn{from{opacity:0;transform:translateX(-3px)}to{opacity:1;transform:none}}
+.tl-dh>span{display:inline-flex;align-items:center;gap:2px}.wx{display:inline-flex;align-items:center;gap:4px;border:0;background:none;color:var(--ink);padding:4px 6px;margin:-4px 0;font:inherit;font-weight:600;font-size:12px;cursor:pointer;border-radius:999px;-webkit-tap-highlight-color:transparent}.wx svg{width:17px;height:17px;display:block}.wxi{display:inline-flex;vertical-align:-3px;margin-left:4px}.wxi svg{width:15px;height:15px}.wx .wt{color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;animation:wxIn .18s ease-out}@keyframes wxIn{from{opacity:0;transform:translateX(-3px)}to{opacity:1;transform:none}}
 .route{list-style:decimal;margin:8px 0 4px 5px;padding:0 0 0 28px;font-size:13px;display:flex;flex-direction:column;gap:6px}.route li{display:flex;align-items:center;gap:8px;justify-content:space-between}
 .route-go{display:inline-block;margin:4px 0 8px 5px;font-size:12px;font-weight:600;color:var(--ink);text-underline-offset:3px}
 .ar{color:var(--ink);font-weight:600}.lb2{font-weight:600;color:var(--ink)}
@@ -1711,7 +1711,8 @@ function wxHtml(date,p){
   var on=wxOpen[date];
   return '<button type="button" class="wx" data-act="wx" data-date="'+date+'" data-k="'+k+'" aria-label="'+lab+'" aria-expanded="'+(!!on)+'" title="'+WX_NAME[kd]+'">'+WX_SVG[kd]+(on?'<span class="wt">'+(v[4]?'작년 ':'')+v[1]+'° / '+v[2]+'°'+(v[3]!=null&&v[3]>=30?' · '+v[3]+'%':'')+'</span>':'')+'</button>';
 }
-function wxPaint(){document.querySelectorAll('.wx[data-date]').forEach(function(b){var d=b.dataset.date,p=wxSpots[d];if(!p&&wxSpots._name){p=wxGeocode(wxSpots._name);}var t=document.createElement('div');t.innerHTML=wxHtml(d,p);var n=t.firstChild;if(n.outerHTML!==b.outerHTML)b.replaceWith(n);});}
+function wxIcon(date){var p=wxSpots[date],v=p&&wxCache[wxKey(p)];v=v&&v.d[date];return '<i class="wxi" data-date="'+date+'"'+(v?' title="'+WX_NAME[wxKind(v[0])]+'">'+WX_SVG[wxKind(v[0])]:' hidden>')+'</i>';}
+function wxPaint(){document.querySelectorAll('.wxi[data-date]').forEach(function(b){var t=document.createElement('div');t.innerHTML=wxIcon(b.dataset.date);var n=t.firstChild;if(n.outerHTML!==b.outerHTML)b.replaceWith(n);});document.querySelectorAll('.wx[data-date]').forEach(function(b){var d=b.dataset.date,p=wxSpots[d];if(!p&&wxSpots._name){p=wxGeocode(wxSpots._name);}var t=document.createElement('div');t.innerHTML=wxHtml(d,p);var n=t.firstChild;if(n.outerHTML!==b.outerHTML)b.replaceWith(n);});}
 function wxDatesOf(t,d){var x=new Date(pd(t.startDate)+(d-1)*86400000);return x.getUTCFullYear()+'-'+('0'+(x.getUTCMonth()+1)).slice(-2)+'-'+('0'+x.getUTCDate()).slice(-2);}
 function wxSpotFor(t,d,dd,stays,its){
   var date=wxDatesOf(t,d),g=function(i){return i&&i.geo&&i.geo.x&&i.geo.y?{x:+i.geo.x,y:+i.geo.y}:null;},p=null;
@@ -1734,7 +1735,8 @@ function renderTimeline(t,its){
   var tdn=todayDayOf(t),sel=tlMode!=null?tlMode:(tdn?String(tdn):'all'),nDays=t.days||2;
   if(sel!=='all'&&(parseInt(sel,10)<1||parseInt(sel,10)>nDays))sel='all';
   h+='<div class="seg2"><button data-act="tlm" data-v="all" aria-pressed="'+(sel==='all')+'">전체</button>';
-  for(var k=1;k<=nDays;k++)h+='<button data-act="tlm" data-v="'+k+'" aria-pressed="'+(sel===String(k))+'">'+esc(dayLabel(t,k))+(k===tdn?' <i class="tdot"></i>':'')+'</button>';
+  if(t.startDate)for(var k0=1;k0<=nDays;k0++){var wd0=wxDatesOf(t,k0);wxSpots[wd0]=wxSpotFor(t,k0,sched.filter(function(i){return effDay(i,t)===k0;}),stays,its);}
+  for(var k=1;k<=nDays;k++)h+='<button data-act="tlm" data-v="'+k+'" aria-pressed="'+(sel===String(k))+'">'+esc(dayLabel(t,k))+(t.startDate?wxIcon(wxDatesOf(t,k)):'')+(k===tdn?' <i class="tdot"></i>':'')+'</button>';
   h+='</div>';
   function ev(it,num,col){var dn=num?' data-n="'+num+'"'+(col?' style="--dc:'+col+'"':''):'';
     if(it.rent)return '<div class="ev" data-key="'+esc(it.id)+'"'+dn+'>'+(it.time?'<div class="ev-t">'+esc(it.time)+'</div>':'')+'<div class="ev-n">'+esc(it.title)+'</div><div class="ev-m"><span class="tag">렌터카</span>'+(it.base?'<span class="ar2">'+esc(it.base)+'</span>':'')+'<a href="'+esc(mapUrl(it.place))+'" target="_blank" rel="noopener noreferrer" class="ib sm" aria-label="지도 열기">'+LINK_SVG+'</a></div></div>';
