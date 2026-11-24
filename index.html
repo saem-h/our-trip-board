@@ -324,7 +324,15 @@ body.cdrag,body.cdrag *{cursor:grabbing!important;-webkit-user-select:none;user-
 .ev-tb{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;min-height:0;cursor:pointer}.ev-tb.empty{text-decoration:underline;text-underline-offset:3px}.ev-tb:disabled{cursor:default}.ev-t .ev-tp{position:absolute;left:0;top:0;pointer-events:none;background:var(--surface);padding-right:8px;text-decoration:underline;text-underline-offset:3px}
 .ev-n{font-weight:700;font-size:14px;overflow-wrap:anywhere}
 .ev-m{display:flex;gap:6px 10px;flex-wrap:wrap;align-items:center;margin-top:3px;font-size:12px}
-.ev-m .tpin{margin-left:-4px}
+.ev-m .ib.sm{margin-left:-4px}
+.ev-go{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;min-height:0;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent}.ev-go:active{opacity:.55}
+.ev{transition:background .2s}
+.ev.on{background:color-mix(in srgb,var(--accent) 28%,transparent);border-radius:10px;margin:0 -8px 12px -8px;padding:6px 70px 6px 8px}
+.ev.on:last-child{margin-bottom:0}
+.ev.on::before{left:-18px;top:10px}
+.tl-list.num .ev.on[data-n]::before{left:-22px;top:6px}
+.ev.on .rm{right:38px;top:2px}.ev.on .dh{right:4px;top:2px}
+
 .ev-m .tag{border:1px solid var(--line);border-radius:999px;padding:0 8px;color:var(--muted)}
 .ev-m a{color:var(--ink);text-underline-offset:3px}
 .ev-m select{background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:1px 8px;min-height:26px;font-size:12px}
@@ -1267,7 +1275,7 @@ function paint(box,note,md,pts){
   map.addControl(new kakao.maps.ZoomControl(),kakao.maps.ControlPosition.RIGHT);
   /* 핀을 누르면 지도 아래쪽 카드에 정보를 보여 줘요 (지도 밖으로 잘리지 않게) */
   var sh=w.querySelector('.msheet');if(!sh){sh=document.createElement('div');sh.className='msheet';w.appendChild(sh);}
-  function closeSheet(){if(sel){sel.classList.remove('sel');sel.parentNode.style.zIndex='';}var had=w.classList.contains('has-sheet');sel=null;sh.innerHTML='';w.classList.remove('has-sheet');if(had&&mapObjs[box.dataset.d])fitMap(mapObjs[box.dataset.d]);}
+  function closeSheet(){if(sel){sel.classList.remove('sel');sel.parentNode.style.zIndex='';}tlMark(box.dataset.d,null);var had=w.classList.contains('has-sheet');sel=null;sh.innerHTML='';w.classList.remove('has-sheet');if(had&&mapObjs[box.dataset.d])fitMap(mapObjs[box.dataset.d]);}
   closeSheet();
   kakao.maps.event.addListener(map,'click',closeSheet);
   function syncLbl(){w.classList.toggle('zl',map.getLevel()<=7||ok.length<=4&&md.line);}
@@ -1279,7 +1287,7 @@ function paint(box,note,md,pts){
   ok.forEach(function(o){var pn=o.pn,i=pn.i;bd.extend(o.p);var nm=i.pseudo?i.place:i.title,el=document.createElement('div');el.className='mkw';
     var dz=pn.c==='h'?10:pn.c==='s'?9:pn.c==='c'?6:8;el.innerHTML='<div class="mk'+(pn.c?' '+pn.c:'')+(o.src==='name'?' ap':'')+'" style="width:'+dz+'px!important;height:'+dz+'px!important;'+(pn.col?'background:'+pn.col+'!important':'')+'">'+esc(pn.t)+'</div><div class="mkl">'+esc(nm)+'</div>';
     function open(fromList){
-      closeSheet();sel=el.querySelector('.mk');sel.classList.add('sel');el.parentNode.style.zIndex='60';
+      closeSheet();tlMark(box.dataset.d,i.id);sel=el.querySelector('.mk');sel.classList.add('sel');el.parentNode.style.zIndex='60';
       var hasRow=pn.j&&i.id&&document.querySelector('article.it[data-id="'+i.id+'"]');
       var fx=canWrite&&(i.sid||i.id),meta=[pn.sub,o.a].filter(Boolean).join(' · ');
       sh.innerHTML='<div class="ms-r"><div class="ms-t"'+(hasRow&&!fromList?' data-m="j" role="button"':'')+'><b>'+esc(nm)+'</b>'+(meta?'<small>'+esc(meta)+'</small>':'')+'</div>'
@@ -1356,7 +1364,7 @@ function gDraw(md){
       var map=new google.maps.Map(box,{center:c0,zoom:12,disableDefaultUI:true,zoomControl:true,clickableIcons:canWrite,gestureHandling:'greedy'});
       var bd=new google.maps.LatLngBounds(),sel=null,byId={},poiR=null;
       var sh=w.querySelector('.msheet');if(!sh){sh=document.createElement('div');sh.className='msheet';w.appendChild(sh);}
-      function closeSheet(){if(sel){sel.classList.remove('sel');sel.parentNode.style.zIndex='';}sel=null;sh.innerHTML='';w.classList.remove('has-sheet');}
+      function closeSheet(){if(sel){sel.classList.remove('sel');sel.parentNode.style.zIndex='';}tlMark(box.dataset.d,null);sel=null;sh.innerHTML='';w.classList.remove('has-sheet');}
       closeSheet();map.addListener('click',function(e){if(e&&e.placeId&&canWrite){e.stop();openPoi(e.placeId);}else closeSheet();});
       /* 지도 위 가게를 누르면: 이름·종류·주소 + 담기 버튼 */
       function openPoi(pid){closeSheet();var my=poiR={};w.classList.add('has-sheet');sh.innerHTML='<div class="ms-r"><div class="ms-t"><b>불러오는 중…</b></div><button class="ms-i" data-m="x" aria-label="닫기">'+X_SVG+'</button></div>';
@@ -1382,7 +1390,7 @@ function gDraw(md){
       ok.forEach(function(o){var pn=o.pn,i=pn.i;bd.extend(o.p);var nm=i.pseudo?i.place:i.title,el=document.createElement('div');el.className='mkw';
         var dz=pn.c==='h'?10:pn.c==='s'?9:pn.c==='c'?6:8;el.innerHTML='<div class="mk'+(pn.c?' '+pn.c:'')+'" style="width:'+dz+'px!important;height:'+dz+'px!important;'+(pn.col?'background:'+pn.col+'!important':'')+'">'+esc(pn.t)+'</div><div class="mkl">'+esc(nm)+'</div>';
         function open(fromList){
-          closeSheet();sel=el.querySelector('.mk');sel.classList.add('sel');el.style.zIndex='60';
+          closeSheet();tlMark(box.dataset.d,i.id);sel=el.querySelector('.mk');sel.classList.add('sel');el.style.zIndex='60';
           var hasRow=pn.j&&i.id&&document.querySelector('article.it[data-id="'+i.id+'"]'),meta=[pn.sub,o.a].filter(Boolean).join(' · ');
           sh.innerHTML='<div class="ms-r"><div class="ms-t"'+(hasRow&&!fromList?' data-m="j" role="button"':'')+'><b>'+esc(nm)+'</b>'+(meta?'<small>'+esc(meta)+'</small>':'')+'</div>'
             +'<button class="ms-i pri g" data-m="n" aria-label="구글 지도" title="구글 지도">G</button><button class="ms-i" data-m="x" aria-label="닫기">'+X_SVG+'</button></div>';
@@ -1461,6 +1469,10 @@ function rcSearch(){
 }
 /* ---------- 지도에서 가게 이름으로 찾아 담기 ---------- */
 var msRes=[],msBusy=false,msLast='';
+/* 타임라인 지도에서 고른 장소: 타임라인 줄도 같이 색으로 표시해요 */
+var tlSel=null;
+function tlMark(d,id){if(d!=='t')return;tlSel=id||null;document.querySelectorAll('.tl .ev.on').forEach(function(e){e.classList.remove('on');});
+  if(tlSel)document.querySelectorAll('.tl .ev[data-key="'+(window.CSS&&CSS.escape?CSS.escape(tlSel):tlSel)+'"]').forEach(function(e){e.classList.add('on');});}
 function msResHTML(){
   if(msBusy)return '<div class="msr"><p class="mut">찾는 중…</p></div>';
   if(!msLast)return '';
@@ -1740,15 +1752,17 @@ function renderTimeline(t,its){
   for(var k=1;k<=nDays;k++)h+='<button data-act="tlm" data-v="'+k+'" aria-pressed="'+(sel===String(k))+'">'+esc(dayLabel(t,k))+(t.startDate?wxIcon(wxDatesOf(t,k)):'')+(k===tdn?' <i class="tdot"></i>':'')+'</button>';
   h+='</div>';
   function ev(it,num,col){var dn=num?' data-n="'+num+'"'+(col?' style="--dc:'+col+'"':''):'';
-    /* 핀 버튼: 위쪽 타임라인 미리보기 지도로 올라가서 이 장소를 바로 보여 줘요 */
-    var pin=num&&useMap()?'<button type="button" class="ib sm tpin" data-act="tlpin" data-key="'+esc(it.id)+'" aria-label="지도에서 보기" title="지도에서 보기">'+PIN_SVG+'</button>':'';
-    if(it.rent)return '<div class="ev" data-key="'+esc(it.id)+'"'+dn+'>'+(it.time?'<div class="ev-t">'+esc(it.time)+'</div>':'')+'<div class="ev-n">'+esc(it.title)+'</div><div class="ev-m"><span class="tag">렌터카</span>'+(it.base?'<span class="ar2">'+esc(it.base)+'</span>':'')+pin+'<a href="'+esc(mapUrl(it.place))+'" target="_blank" rel="noopener noreferrer" class="ib sm" aria-label="지도 열기">'+LINK_SVG+'</a></div></div>';
-    if(it.pseudo)return '<div class="ev" data-key="'+esc(it.id)+'"'+dn+'>'+(canWrite?'<span class="dh" role="button" tabindex="0" aria-label="순서 바꾸기 (끌어서 이동)">'+DRAG_SVG+'</span>':'')+'<div class="ev-t"><button type="button" class="ev-tb'+(it.plan?'':' empty')+'" data-act="pstime" data-key="'+esc(it.id)+'" aria-label="시간 정하기"'+(canWrite?'':' disabled')+'>'+esc(it.plan||'시간 정하기')+'</button></div><div class="ev-n">'+esc(it.title)+'</div><div class="ev-m"><span class="tag">숙소</span>'+(it.base?'<span class="ar2">'+esc(it.base)+'</span>':'')+pin+'<a href="'+esc(mapUrl(it.place))+'" target="_blank" rel="noopener noreferrer" class="ib sm" aria-label="지도 열기">'+LINK_SVG+'</a></div></div>';
+    /* 이름을 누르면 위쪽 타임라인 지도에서 이 장소를 보여 주고, 바깥 지도 링크는 옆 아이콘으로 열어요 */
+    var onMap=!!(num&&useMap());
+    function nm(txt,href){return onMap?'<button type="button" class="ev-go" data-act="tlpin" data-key="'+esc(it.id)+'">'+esc(txt)+'</button>':href?'<a data-act="go" href="'+esc(href)+'" target="_blank" rel="noopener noreferrer">'+esc(txt)+'</a>':esc(txt);}
+    function lk(href){return '<a href="'+esc(href)+'" target="_blank" rel="noopener noreferrer" class="ib sm" aria-label="지도 열기" title="지도 열기">'+LINK_SVG+'</a>';}
+    if(it.rent)return '<div class="ev'+(tlSel&&it.id===tlSel?' on':'')+'" data-key="'+esc(it.id)+'"'+dn+'>'+(it.time?'<div class="ev-t">'+esc(it.time)+'</div>':'')+'<div class="ev-n">'+nm(it.title)+'</div><div class="ev-m"><span class="tag">렌터카</span>'+(it.base?'<span class="ar2">'+esc(it.base)+'</span>':'')+lk(mapUrl(it.place))+'</div></div>';
+    if(it.pseudo)return '<div class="ev'+(tlSel&&it.id===tlSel?' on':'')+'" data-key="'+esc(it.id)+'"'+dn+'>'+(canWrite?'<span class="dh" role="button" tabindex="0" aria-label="순서 바꾸기 (끌어서 이동)">'+DRAG_SVG+'</span>':'')+'<div class="ev-t"><button type="button" class="ev-tb'+(it.plan?'':' empty')+'" data-act="pstime" data-key="'+esc(it.id)+'" aria-label="시간 정하기"'+(canWrite?'':' disabled')+'>'+esc(it.plan||'시간 정하기')+'</button></div><div class="ev-n">'+nm(it.title)+'</div><div class="ev-m"><span class="tag">숙소</span>'+(it.base?'<span class="ar2">'+esc(it.base)+'</span>':'')+lk(mapUrl(it.place))+'</div></div>';
     var sc=secOf(it.section);
     var m='<span class="tag">'+esc(sc.key==='transport'&&it.mode?modeName(it.mode)+(it.name&&it.mode!=='rent'?' '+it.name:''):sc.name)+'</span>'+(closedOn(it,t,effDay(it,t))?'<span class="tag w">휴무일</span>':'')+(it.area?'<span class="ar2">'+esc(areaLabel(it.area))+'</span>':'');
     var evl=(sc.key!=='transport'&&safeUrl(it.link))||mapUrl(routePlace(it));
     var tt=it.mode==='rent'?(it.time||''):it.time?timeStr(it):(it.slot?slotName(it.slot):'');
-    return '<div class="ev" data-id="'+esc(it.id)+'" data-key="'+esc(it.id)+'"'+dn+'>'+(sc.key!=='transport'&&canWrite?'<button class="rm" data-act="unconf" aria-label="일정에서 빼기" title="일정에서 빼기">'+X_SVG+'</button><span class="dh" role="button" tabindex="0" aria-label="순서 바꾸기 (끌어서 이동)">'+DRAG_SVG+'</span>':'')+(tt?'<div class="ev-t">'+esc(tt)+(it.time&&it.slot?' · '+esc(slotName(it.slot)):'')+'</div>':'')+'<div class="ev-n"><a data-act="go" href="'+esc(evl)+'" target="_blank" rel="noopener noreferrer">'+esc(it.mode==='rent'?'렌터카 픽업'+(it.name?' · '+it.name:''):it.title)+'</a></div><div class="ev-m">'+m+pin+'</div></div>';
+    return '<div class="ev'+(tlSel&&it.id===tlSel?' on':'')+'" data-id="'+esc(it.id)+'" data-key="'+esc(it.id)+'"'+dn+'>'+(sc.key!=='transport'&&canWrite?'<button class="rm" data-act="unconf" aria-label="일정에서 빼기" title="일정에서 빼기">'+X_SVG+'</button><span class="dh" role="button" tabindex="0" aria-label="순서 바꾸기 (끌어서 이동)">'+DRAG_SVG+'</span>':'')+(tt?'<div class="ev-t">'+esc(tt)+(it.time&&it.slot?' · '+esc(slotName(it.slot)):'')+'</div>':'')+'<div class="ev-n">'+nm(it.mode==='rent'?'렌터카 픽업'+(it.name?' · '+it.name:''):it.title,evl)+'</div><div class="ev-m">'+m+(onMap?lk(evl):'')+'</div></div>';
   }
   var n=t.days||2,tp=[],tleg='';h+='%%TLMAP%%';wxSpots._name='';
   for(var d=1;d<=n;d++){
