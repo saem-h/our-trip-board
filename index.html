@@ -216,7 +216,8 @@ a.it-t:active,.ev-n a:active,.pr-n a:active{opacity:.55}
 .tl-mapw{position:relative}
 .tl-map{height:min(62vw,320px);border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--soft)}
 @media (min-width:900px){.tl-map{height:320px}}
-@media (max-width:640px){.tl-map{height:min(40vw,200px)}.mapc .tl-map{margin-top:8px!important;margin-bottom:0!important}.mapc-h{margin-bottom:0}.mapc{margin-bottom:6px}.bd .rows .grp:first-child{padding-top:8px}}
+/* 폰: 후보지 목록을 먼저 보여 주고, 지도는 목록 아래에 */
+@media (max-width:640px){.bd{display:flex;flex-direction:column}.bd>*{order:0}.bd>.mapc{order:5;margin-top:22px}.bd>.msr{order:6}.tl-map{height:min(40vw,200px)}.mapc .tl-map{margin-top:8px!important;margin-bottom:0!important}.mapc-h{margin-bottom:0}.mapc{margin-bottom:6px}.bd .rows .grp:first-child{padding-top:8px}}
 .tl-big{position:absolute;left:8px;bottom:8px;z-index:3;width:30px;height:30px;min-height:0;padding:0;border-radius:8px;background:#fff;color:#0A0A0A;border:1px solid rgba(0,0,0,.25);box-shadow:0 1px 4px rgba(0,0,0,.2);display:flex;align-items:center;justify-content:center;cursor:pointer}
 .tl-big svg{width:16px;height:16px}
 .tl-home{position:absolute;left:44px;bottom:8px;z-index:3;width:30px;height:30px;min-height:0;padding:0;border-radius:8px;background:#fff;color:#0A0A0A;border:1px solid rgba(0,0,0,.25);box-shadow:0 1px 4px rgba(0,0,0,.2);display:flex;align-items:center;justify-content:center;cursor:pointer}.tl-home svg,.tl-big svg{width:16px;height:16px}
