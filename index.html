@@ -742,13 +742,40 @@ var KBTN='<button id="kl" style="width:100%;display:flex;align-items:center;just
 function loginScreen(msg){
   var o=ov('<p style="font-size:14px;color:#b8b8b8;line-height:1.6;margin:0 0 22px">'+hx(msg||'가고 싶은 곳 공유부터 일정 확정까지 한 번에')+'</p>'+KBTN);
   o.querySelector('#kl').onclick=function(){
-    location.href='https://kauth.kakao.com/oauth/authorize?response_type=code&client_id='+KREST+'&redirect_uri='+encodeURIComponent(ru())+'&state='+encodeURIComponent(location.search||'');};
+    var au='https://kauth.kakao.com/oauth/authorize?response_type=code&client_id='+KREST+'&redirect_uri='+encodeURIComponent(ru())+'&state=';
+    /* 아이패드 홈 화면 앱에서는 카카오 로그인 화면이 막혀요(키패드 안 뜸, '올바르지 않은 접근'). 사파리에서 로그인하고 앱이 받아 와요 */
+    if(PAD_APP){var n='';for(var i=0;i<32;i++)n+='abcdefghijklmnopqrstuvwxyz0123456789'.charAt(Math.floor(Math.random()*36));
+      try{localStorage.setItem('tb_hn',n);}catch(e){}
+      if(window.open(au+encodeURIComponent('h:'+n),'_blank')){handWait(n);return;}}
+    location.href=au+encodeURIComponent(location.search||'');};
+}
+var PAD_APP=(function(){var sa=navigator.standalone===true||(window.matchMedia&&matchMedia('(display-mode: standalone)').matches);
+  var pad=/iPad/.test(navigator.userAgent)||(/Macintosh/.test(navigator.userAgent)&&navigator.maxTouchPoints>1);return sa&&pad;})();
+function handWait(n){
+  var o=ov('<p style="font-size:15px;color:#fff;line-height:1.6;margin:0 0 8px;font-weight:600">사파리에서 카카오 로그인을 해 주세요</p><p style="font-size:13px;color:#9a9a9a;line-height:1.6;margin:0 0 22px">로그인이 끝나면 이 앱으로 돌아오세요. 자동으로 들어가요.</p>'+DOTS+'<button id="hr" style="margin-top:22px;background:none;border:0;color:#8a8a8a;font-size:13px;cursor:pointer;text-decoration:underline;font-family:inherit">처음으로</button>');
+  o.querySelector('#hr').onclick=function(){location.replace('/'+location.search);};
+  var t0=Date.now(),busy=false,done=false;
+  function tick(){if(done||busy)return;if(Date.now()-t0>600000){done=true;loginScreen('시간이 지났어요. 다시 눌러 주세요.');return;}
+    busy=true;fetch(AUTH_API+'?action=take&h='+n).then(function(r){return r.json();}).then(function(j){busy=false;
+      if(!j.ok||!j.token)return;done=true;try{localStorage.setItem('tb_kname',j.name||'');localStorage.removeItem('tb_hn');}catch(e){}
+      return firebase.auth().signInWithCustomToken(j.token).then(function(){location.replace('/'+location.search);});
+    }).catch(function(){busy=false;});}
+  var iv=setInterval(function(){if(done)clearInterval(iv);else tick();},2500);
+  document.addEventListener('visibilitychange',function(){if(!document.hidden)tick();});
 }
 function errScreen(msg){var o=ov('<p style="font-size:14px;color:#b8b8b8;line-height:1.6;margin:0 0 22px">'+hx(msg)+'</p><button id="hb" style="background:#C8FF2E;border:0;color:#0a0a0a;border-radius:10px;padding:13px 18px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit">내 보드로</button>');
   o.querySelector('#hb').onclick=function(){location.href='/?list=1';};}
 /* 카카오에서 돌아왔을 때: code → 로그인 */
 function finishKakao(fs){
-  var code=QS.get('code'),st=QS.get('state')||'';
+  var code=QS.get('code'),st=QS.get('state')||'',hn=/^h:([a-z0-9]{24,64})$/.test(st)?st.slice(2):'';
+  if(hn&&code){ov(DOTS);
+    return fetch(AUTH_API+'?code='+encodeURIComponent(code)+'&ru='+encodeURIComponent(ru())+'&h='+hn).then(function(r){return r.json();}).then(function(j){
+      if(!j.ok)throw new Error(j.error||'login');
+      try{localStorage.setItem('tb_kname',j.name||'');}catch(e){}
+      return firebase.auth().signInWithCustomToken(j.token);
+    }).then(function(){var o=ov('<p style="font-size:16px;color:#fff;line-height:1.6;margin:0 0 8px;font-weight:700">로그인됐어요</p><p style="font-size:14px;color:#9a9a9a;line-height:1.6;margin:0 0 22px">홈 화면의 trip board 키위 앱으로 돌아가세요. 앱이 자동으로 들어가요.</p><button id="hs" style="background:none;border:0;color:#8a8a8a;font-size:13px;cursor:pointer;text-decoration:underline;font-family:inherit">사파리에서 계속 보기</button>');
+      o.querySelector('#hs').onclick=function(){location.replace('/');};return new Promise(function(){});},
+      function(e){errScreen('로그인하지 못했어요. 앱으로 돌아가 다시 시도해 주세요. ('+(e&&e.message||e)+')');return new Promise(function(){});});}
   if(!code){location.replace('/'+(st.charAt(0)==='?'?st:''));return new Promise(function(){});}
   ov(DOTS);
   return fetch(AUTH_API+'?code='+encodeURIComponent(code)+'&ru='+encodeURIComponent(ru())).then(function(r){return r.json();}).then(function(j){
