@@ -9,6 +9,14 @@ const ALLOWED = ['https://our-trip-board.web.app/', 'https://our-trip-board.fire
 function doGet(e) {
   const p = (e && e.parameter) || {};
   if (p.action === 'diag') return out_(diag_());
+  // 아이패드 홈 화면 앱: 사파리에서 끝낸 로그인을 앱이 받아 가요 (한 번만, 10분 안에)
+  if (p.action === 'take') {
+    if (!/^[A-Za-z0-9]{24,64}$/.test(p.h || '')) return out_({ ok: false, error: 'h' });
+    const c = CacheService.getScriptCache(), v = c.get('h_' + p.h);
+    if (!v) return out_({ ok: false, wait: true });
+    c.remove('h_' + p.h);
+    return out_(JSON.parse(v));
+  }
   try {
     if (ALLOWED.indexOf(p.ru) < 0) return out_({ ok: false, error: 'redirect' });
     if (!p.code) return out_({ ok: false, error: 'no code' });
@@ -26,7 +34,9 @@ function doGet(e) {
     const prof = (u.kakao_account && u.kakao_account.profile) || {};
     const name = prof.nickname || (u.properties && u.properties.nickname) || '';
     const uid = 'k' + u.id;
-    return out_({ ok: true, uid: uid, name: name, token: mint_(uid) });
+    const res = { ok: true, uid: uid, name: name, token: mint_(uid) };
+    if (/^[A-Za-z0-9]{24,64}$/.test(p.h || '')) CacheService.getScriptCache().put('h_' + p.h, JSON.stringify({ ok: true, name: name, token: res.token }), 600);
+    return out_(res);
   } catch (err) {
     return out_({ ok: false, error: String(err) });
   }
