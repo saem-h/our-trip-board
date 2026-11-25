@@ -2020,7 +2020,7 @@ function haptic(){
 }
 /* 로고를 누르면 내 보드 목록: 보드를 바로 바꾸거나 새 보드를 만들어요 */
 function openBoards(){
-  modal.innerHTML='<div class="card"><h3>내 보드</h3><div class="bl"><div class="mut">불러오는 중…</div></div><p class="bl-n">새 보드는 지금 보드와 따로예요. 나만의 다른 여행을 짜거나 다른 친구를 초대할 때 써요.</p>'+(canWrite?'<p class="bl-n">예전 주소에서 쓰던 여행이 있다면 <button class="linkbtn" data-act="oldimp">예전 보드 가져오기</button></p>':'')+'<div class="foot"><button class="btn" data-act="close">닫기</button><div class="r"><button class="btn pri" data-act="newboard">+ 새 보드 만들기</button></div></div></div>';
+  modal.innerHTML='<div class="card"><h3>내 보드</h3><div class="bl"><div class="mut">불러오는 중…</div></div><p class="bl-n">새 보드는 지금 보드와 따로예요. 나만의 다른 여행을 짜거나 다른 친구를 초대할 때 써요.</p>'+(canWrite?'<p class="bl-n">예전 주소에서 쓰던 여행이 있다면 <button class="linkbtn" data-act="oldimp">예전 보드 가져오기</button></p>':'')+'<div class="foot"><button class="btn" data-act="close">닫기</button><div class="r"><button class="btn pri" data-act="newboard">+ 새 보드 만들기</button></div></div><p class="bl-n" style="text-align:center;margin-top:14px"><button class="linkbtn" data-act="logout">로그아웃</button></p></div>';
   modal.className='on';
   firebase.firestore().collection('users').doc((firebase.auth().currentUser||{}).uid||'-').collection('boards').orderBy('at','desc').get().then(function(q){
     var el=modal.querySelector('.bl');if(!el)return;var h='';
@@ -2768,6 +2768,7 @@ document.addEventListener('click',function(e){
   else if(a==='add'){if(canWrite)openItemForm({section:el.dataset.sec});}
   else if(a==='newtrip'){if(canWrite)openTripForm(true);}
   else if(a==='newboard'){openNewBoard();}
+  else if(a==='logout'){try{localStorage.removeItem('tb_lastb');}catch(e){}firebase.auth().signOut().then(function(){location.href='/';});}
   else if(a==='oldimp'){openImport();}
   else if(a==='oldimpgo'){runImport();}
   else if(a==='mknewboard'){location.href='https://our-trip-board.web.app/?new=1';}
