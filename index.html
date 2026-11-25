@@ -2925,6 +2925,11 @@ async function init(){
     gotI=true;offline=false;maybe();render();loadProfiles();
   },function(){offline=true;ready=true;render();});
 }
+/* 서비스 워커를 늘 등록해요: 안드로이드에서 '앱'으로 설치되게(아이콘 밑 브라우저 표시 없이), 알림도 같은 걸로 받아요 */
+if(window.TB_FB&&'serviceWorker' in navigator&&location.protocol==='https:'&&!/github\.io$/.test(location.hostname)){
+  window.addEventListener('load',function(){setTimeout(function(){navigator.serviceWorker.register('/firebase-messaging-sw.js').catch(function(){});},1500);});
+  navigator.serviceWorker.addEventListener('message',function(e){var p=e.data&&e.data.tbPush;if(!p)return;toast((p.title?p.title+' · ':'')+(p.body||'새 알림'));try{refreshBellDot();}catch(x){}});
+}
 init();
 })();
 </script>
