@@ -746,14 +746,18 @@ function loginScreen(msg){
     /* 아이패드 홈 화면 앱에서는 카카오 로그인 화면이 막혀요(키패드 안 뜸, '올바르지 않은 접근'). 사파리에서 로그인하고 앱이 받아 와요 */
     if(PAD_APP){var n='';for(var i=0;i<32;i++)n+='abcdefghijklmnopqrstuvwxyz0123456789'.charAt(Math.floor(Math.random()*36));
       try{localStorage.setItem('tb_hn',n);}catch(e){}
-      if(window.open(au+encodeURIComponent('h:'+n),'_blank')){handWait(n);return;}}
+      /* window.open은 앱 안 창으로 열려서 똑같이 막혀요. x-safari- 주소로 진짜 사파리를 열어요 */
+      var hu=au+encodeURIComponent('h:'+n);handWait(n,hu);location.href='x-safari-'+hu;return;}
     location.href=au+encodeURIComponent(location.search||'');};
 }
 var PAD_APP=(function(){var sa=navigator.standalone===true||(window.matchMedia&&matchMedia('(display-mode: standalone)').matches);
   var pad=/iPad/.test(navigator.userAgent)||(/Macintosh/.test(navigator.userAgent)&&navigator.maxTouchPoints>1);return sa&&pad;})();
-function handWait(n){
-  var o=ov('<p style="font-size:15px;color:#fff;line-height:1.6;margin:0 0 8px;font-weight:600">사파리에서 카카오 로그인을 해 주세요</p><p style="font-size:13px;color:#9a9a9a;line-height:1.6;margin:0 0 22px">로그인이 끝나면 이 앱으로 돌아오세요. 자동으로 들어가요.</p>'+DOTS+'<button id="hr" style="margin-top:22px;background:none;border:0;color:#8a8a8a;font-size:13px;cursor:pointer;text-decoration:underline;font-family:inherit">처음으로</button>');
+function handWait(n,hu){
+  var o=ov('<p style="font-size:15px;color:#fff;line-height:1.6;margin:0 0 8px;font-weight:600">사파리에서 카카오 로그인을 해 주세요</p><p style="font-size:13px;color:#9a9a9a;line-height:1.6;margin:0 0 22px">로그인이 끝나면 이 앱으로 돌아오세요. 자동으로 들어가요.</p>'+DOTS+'<button id="hc" style="display:block;margin:22px auto 0;background:#1c1c1e;border:0;border-radius:10px;color:#fff;font-size:14px;padding:11px 16px;cursor:pointer;font-family:inherit">사파리가 안 열리면: 링크 복사</button><p id="hm" style="font-size:12px;color:#9a9a9a;margin:8px 0 0;min-height:1em"></p><button id="hr" style="margin-top:14px;background:none;border:0;color:#8a8a8a;font-size:13px;cursor:pointer;text-decoration:underline;font-family:inherit">처음으로</button>');
   o.querySelector('#hr').onclick=function(){location.replace('/'+location.search);};
+  o.querySelector('#hc').onclick=function(){var m=o.querySelector('#hm');
+    function ok(){m.textContent='복사했어요. 사파리 주소창에 붙여 넣어 주세요.';}
+    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(hu).then(ok,function(){m.textContent=hu;});else m.textContent=hu;};
   var t0=Date.now(),busy=false,done=false;
   function tick(){if(done||busy)return;if(Date.now()-t0>600000){done=true;loginScreen('시간이 지났어요. 다시 눌러 주세요.');return;}
     busy=true;fetch(AUTH_API+'?action=take&h='+n).then(function(r){return r.json();}).then(function(j){busy=false;
