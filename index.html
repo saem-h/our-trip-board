@@ -406,7 +406,7 @@ h1.scin{transform-origin:center;will-change:transform,opacity;animation:tbscale 
 .both{font-style:normal;font-size:10.5px;font-weight:700;background:var(--accent);color:var(--accent-ink);border-radius:999px;padding:1px 7px;margin-left:6px;vertical-align:1px}
 .new{font-style:normal;font-size:10px;font-weight:700;color:var(--accent-ink);background:var(--accent);border-radius:4px;padding:0 4px;margin-left:6px;vertical-align:1px;text-transform:uppercase}
 .tm{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:4px 12px;min-height:32px;font-size:13px}
-.seg2{display:flex;gap:4px;margin:-4px 0 10px}.seg2 button{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:12px;padding:5px 2px;font-size:12px;font-weight:600;flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.2;gap:1px}.seg2 button b{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}.seg2 button small{font-size:10.5px;font-weight:600;display:inline-flex;align-items:center;white-space:nowrap}.seg2 button small .wxi{margin-left:2px;vertical-align:0}.seg2 button small .wxi svg{width:12px;height:12px}.seg2.many{flex-wrap:wrap}.seg2.many button{flex:0 0 calc((100% - 28px)/8)}.seg2 button[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.seg2{display:flex;gap:4px;margin:-4px 0 10px}.seg2 button{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;padding:3px 12px;font-size:12px;font-weight:600}.seg2 button[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .tl-dh{display:flex;align-items:center;justify-content:space-between}
 .tl-dh>span{display:inline-flex;align-items:center;gap:2px}.wx{display:inline-flex;align-items:center;gap:4px;border:0;background:none;color:var(--ink);padding:4px 6px;margin:-4px 0;font:inherit;font-weight:600;font-size:12px;border-radius:999px}.wx svg{width:17px;height:17px;display:block}.wxi{display:inline-flex;vertical-align:-3px;margin-left:4px}.wxi svg{width:15px;height:15px}.wx .wt{color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
 .route{list-style:decimal;margin:8px 0 4px 5px;padding:0 0 0 28px;font-size:13px;display:flex;flex-direction:column;gap:6px}.route li{display:flex;align-items:center;gap:8px;justify-content:space-between}
@@ -420,7 +420,7 @@ h1.scin{transform-origin:center;will-change:transform,opacity;animation:tbscale 
 .pre{flex:none;font-size:11px;font-weight:500;color:var(--muted)}
 .loc{font-style:normal;font-size:12px;font-weight:500;color:var(--muted);margin-left:8px;white-space:nowrap}
 .grp{padding:14px 14px 8px;font-size:12px;font-weight:600;color:var(--muted);background:none;border-top:0;border-bottom:1.5px solid var(--ink);letter-spacing:.01em}.rows .grp:first-child{border-top:0}
-.seg2{flex-wrap:nowrap}.tdot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);border:1px solid var(--ink);vertical-align:1px}
+.seg2{flex-wrap:wrap}.tdot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);border:1px solid var(--ink);vertical-align:1px}
 /* press feedback */
 button:not(.dh),[role=button]:not(.dh),[role=tab],[role=checkbox],.tab,.chip,.mchip,.btn,.ib,.lb,.cp,.rm,.lk,.chk,.add-b,.linkbtn{
   touch-action:manipulation;-webkit-tap-highlight-color:transparent;
@@ -1800,11 +1800,9 @@ function renderTimeline(t,its){
   var h='<aside class="tl"><div class="tl-h"><span class="en">timeline</span><b>확정 일정</b><em>'+cnt+'개</em></div>';
   var tdn=todayDayOf(t),sel=tlMode!=null?tlMode:(tdn?String(tdn):'all'),nDays=t.days||2;
   if(sel!=='all'&&(parseInt(sel,10)<1||parseInt(sel,10)>nDays))sel='all';
-  h+='<div class="seg2'+(nDays>7?' many':'')+'"><button data-act="tlm" data-v="all" aria-pressed="'+(sel==='all')+'"><b>전체</b></button>';
+  h+='<div class="seg2"><button data-act="tlm" data-v="all" aria-pressed="'+(sel==='all')+'">전체</button>';
   if(t.startDate)for(var k0=1;k0<=nDays;k0++){var wd0=wxDatesOf(t,k0);wxSpots[wd0]=wxSpotFor(t,k0,sortDay(sched.filter(function(i){return effDay(i,t)===k0;})),stays,its);}
-  /* 날짜 버튼은 한 줄에: 위에 날짜(달이 바뀔 때만 월 표시), 아래 작게 요일·날씨 */
-  for(var k=1;k<=nDays;k++){var top,sub;if(t.startDate){var xd=new Date(pd(t.startDate)+(k-1)*86400000);top=(k===1||xd.getUTCDate()===1?(xd.getUTCMonth()+1)+'/':'')+xd.getUTCDate();sub='일월화수목금토'.charAt(xd.getUTCDay());}else{top=k+'일차';sub='';}
-    h+='<button data-act="tlm" data-v="'+k+'" aria-pressed="'+(sel===String(k))+'" aria-label="'+esc(dayLabel(t,k))+'"><b>'+esc(top)+'</b>'+(sub||t.startDate||k===tdn?'<small>'+esc(sub)+(t.startDate?wxIcon(wxDatesOf(t,k)):'')+(k===tdn?' <i class="tdot"></i>':'')+'</small>':'')+'</button>';}
+  for(var k=1;k<=nDays;k++)h+='<button data-act="tlm" data-v="'+k+'" aria-pressed="'+(sel===String(k))+'">'+esc(dayLabel(t,k))+(t.startDate?wxIcon(wxDatesOf(t,k)):'')+(k===tdn?' <i class="tdot"></i>':'')+'</button>';
   h+='</div>';
   function ev(it,num,col){var dn=num?' data-n="'+num+'"'+(col?' style="--dc:'+col+'"':''):'';
     /* 이름을 누르면 위쪽 타임라인 지도에서 이 장소를 보여 주고, 바깥 지도 링크는 옆 아이콘으로 열어요 */
@@ -2924,6 +2922,11 @@ async function init(){
     items=s.docs.map(function(d){var o=Object.assign({},d.data());o.id=d.id;return o;});
     gotI=true;offline=false;maybe();render();loadProfiles();
   },function(){offline=true;ready=true;render();});
+}
+/* 서비스 워커를 늘 등록해요: 안드로이드에서 '앱'으로 설치되게(아이콘 밑 브라우저 표시 없이), 알림도 같은 걸로 받아요 */
+if(window.TB_FB&&'serviceWorker' in navigator&&location.protocol==='https:'&&!/github\.io$/.test(location.hostname)){
+  window.addEventListener('load',function(){setTimeout(function(){navigator.serviceWorker.register('/firebase-messaging-sw.js').catch(function(){});},1500);});
+  navigator.serviceWorker.addEventListener('message',function(e){var p=e.data&&e.data.tbPush;if(!p)return;toast((p.title?p.title+' · ':'')+(p.body||'새 알림'));try{refreshBellDot();}catch(x){}});
 }
 init();
 })();
