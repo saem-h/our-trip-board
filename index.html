@@ -1,9 +1,9 @@
 <!doctype html>
 <html lang="ko"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Our Trip Board</title>
+<title>trip board 키위</title>
 <meta name="description" content="가고 싶은 곳 공유부터 일정 확정까지 한 번에">
-<meta property="og:title" content="Our Trip Board · 우리만의 여행보드">
+<meta property="og:title" content="trip board 키위 · 우리만의 여행보드">
 <meta property="og:description" content="가고 싶은 곳 공유부터 일정 확정까지 한 번에">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://our-trip-board.web.app/">
@@ -17,7 +17,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Trip Board">
+<meta name="apple-mobile-web-app-title" content="trip board 키위">
 <link rel="preload" href="fonts/pretendard-400.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/pretendard-700.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
@@ -69,8 +69,9 @@ h1{font-family:var(--font-en);font-weight:400;font-size:30px;margin:0;letter-spa
 .invite{position:relative}
 .invite.bell{margin-left:0;order:1;padding:0;width:34px;justify-content:center}
 .invite.bell.on::after{content:'';position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;background:#C8FF2E;border:1.5px solid var(--bg)}
+.km{display:inline-block;width:1.45em;height:1.45em;margin:-.2em 0 -.2em .28em;position:relative;top:-.16em;flex:none}.km svg{display:block;width:100%;height:100%}
 .brd{border:0;background:none;padding:0;margin:0;font:inherit;color:inherit;letter-spacing:inherit;text-transform:inherit;display:inline-flex;align-items:center;gap:6px;cursor:pointer}
-.brd svg{width:14px;height:14px;flex:none;color:var(--muted);margin-top:4px}
+.brd>svg{width:14px;height:14px;flex:none;color:var(--muted);margin-top:4px}
 .bl{display:flex;flex-direction:column;margin:4px 0 2px}
 .bl-w{display:flex;align-items:center;gap:4px;border-bottom:1px solid var(--line)}
 .bl-w:last-child{border-bottom:0}
@@ -486,7 +487,7 @@ button:not(.dh):active,[role=button]:not(.dh):active,[role=tab]:active,[role=che
   header.top .inv-t{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
   header.top h1{min-width:0;font-size:21px}
   header.top{column-gap:8px}
-  .brd svg{margin-top:2px}
+  .brd>svg{margin-top:2px}
 }
 .tmw{display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:13px;font-weight:500}
 .tmw .tm{min-width:104px}
@@ -730,7 +731,8 @@ var fbUser=null,MYNAME='';
 function ov(html){var o=document.getElementById('tb-ov');if(!o){o=document.createElement('div');o.id='tb-ov';
   o.style.cssText='position:fixed;inset:0;z-index:99;background:#0a0a0a;color:#fff;display:flex;align-items:center;justify-content:center;font-family:Pretendard,system-ui,sans-serif;padding:24px;overflow:auto';document.body.appendChild(o);}
   o.innerHTML='<div style="width:100%;max-width:340px;margin:auto">'+LOGO+html+'</div>';return o;}
-var LOGO='<div style="font-family:\'BBB Event\',Pretendard,sans-serif;font-size:40px;font-weight:400;line-height:1.1;text-transform:lowercase;margin-bottom:26px">our trip<br>board</div>';
+var KIWI='<svg viewBox="34 34 182 182"><g transform="rotate(-25 125 125)"><ellipse cx="125" cy="125" rx="83" ry="88.5" fill="#C8FF2E"/><ellipse cx="125" cy="125" rx="22.41" ry="23.90" fill="#F4FFD4"/><g fill="#0a0a0a"><path d="M0 -7 C3.6 -3.5 3.6 4 0 6.5 C-3.6 4 -3.6 -3.5 0 -7Z" transform="translate(125.0 79.0) rotate(0.0) scale(1.45)"/><path d="M0 -7 C3.6 -3.5 3.6 4 0 6.5 C-3.6 4 -3.6 -3.5 0 -7Z" transform="translate(150.4 87.8) rotate(36.0) scale(1.45)"/><path d="M0 -7 C3.6 -3.5 3.6 4 0 6.5 C-3.6 4 -3.6 -3.5 0 -7Z" transform="translate(166.0 110.8) rotate(72.0) scale(1.45)"/><path d="M0 -7 C3.6 -3.5 3.6 4 0 6.5 C-3.6 4 -3.6 -3.5 0 -7Z" transform="translate(166.0 139.2) rotate(108.0) scale(1.45)"/><path d="M0 -7 C3.6 -3.5 3.6 4 0 6.5 C-3.6 4 -3.6 -3.5 0 -7Z" transform="translate(150.4 162.2) rotate(144.0) scale(1.45)"/><path d="M0 -7 C3.6 -3.5 3.6 4 0 6.5 C-3.6 4 -3.6 -3.5 0 -7Z" transform="translate(125.0 171.0) rotate(180.0) scale(1.45)"/><path d="M0 -7 C3.6 -3.5 3.6 4 0 6.5 C-3.6 4 -3.6 -3.5 0 -7Z" transform="translate(99.6 162.2) rotate(216.0) scale(1.45)"/><path d="M0 -7 C3.6 -3.5 3.6 4 0 6.5 C-3.6 4 -3.6 -3.5 0 -7Z" transform="translate(84.0 139.2) rotate(252.0) scale(1.45)"/><path d="M0 -7 C3.6 -3.5 3.6 4 0 6.5 C-3.6 4 -3.6 -3.5 0 -7Z" transform="translate(84.0 110.8) rotate(288.0) scale(1.45)"/><path d="M0 -7 C3.6 -3.5 3.6 4 0 6.5 C-3.6 4 -3.6 -3.5 0 -7Z" transform="translate(99.6 87.8) rotate(324.0) scale(1.45)"/></g></g></svg>';window.TB_KIWI=KIWI;
+var LOGO='<div style="font-family:\'BBB Event\',Pretendard,sans-serif;font-size:40px;font-weight:400;line-height:1.1;text-transform:lowercase;margin-bottom:26px">trip<br>board<span style="font-family:Pretendard,sans-serif;font-weight:800;font-size:1.2em;letter-spacing:-0.02em;color:#C8FF2E;margin-left:.25em;text-transform:none">kiwi</span></div>';
 function ovOff(){var o=document.getElementById('tb-ov');if(o)o.remove();}
 function hx(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 var DOTS='<div class="ld" role="status" aria-label="불러오는 중" style="margin:0"><i style="--i:0"></i><i style="--i:1"></i><i style="--i:2"></i></div>';
@@ -1963,7 +1965,7 @@ function render(){
   if(act&&act.matches&&act.matches('[data-quick]'))keep={sec:act.dataset.quick,pos:act.selectionStart};
   var t=trip();
   if(scaleT==null)scaleT=Date.now();var sEl=Date.now()-scaleT;
-  var h='<header class="top"><h1'+(sEl<800?' class="scin" style="--d:-'+sEl+'ms"':'')+'>'+(window.TB_BOARD?'<button class="brd" data-act="boards" aria-label="내 보드 바꾸기" title="내 보드 바꾸기">our trip board<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4.5l3 3 3-3"/></svg></button>':'our trip board')+'</h1><div class="tabs" role="tablist">';
+  var h='<header class="top"><h1'+(sEl<800?' class="scin" style="--d:-'+sEl+'ms"':'')+'>'+(window.TB_BOARD?'<button class="brd" data-act="boards" aria-label="내 보드 바꾸기" title="내 보드 바꾸기">trip board<span class="km" aria-hidden="true">'+(window.TB_KIWI||'')+'</span><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4.5l3 3 3-3"/></svg></button>':'trip board<span class="km" aria-hidden="true">'+(window.TB_KIWI||'')+'</span>')+'</h1><div class="tabs" role="tablist">';
   var nArc=trips.filter(isArchived).length;
   trips.filter(function(x){return isArchived(x)===showArc;}).forEach(function(x){h+='<button class="tab'+(tOn('t:'+x.id)?' tabpop':'')+'"'+tOn('t:'+x.id,1)+' role="tab" data-act="tab" data-id="'+esc(x.id)+'" aria-selected="'+(x.id===tripId)+'">'+esc(x.name)+'</button>';});
   if(showArc)h+='<button class="tab-x" data-act="arcview">← 진행 중 여행</button>';
@@ -2070,7 +2072,7 @@ function openPush(){
   if(!window.TB_BOARD){h+='<p class="mut">알림은 로그인해서 쓰는 보드에서만 쓸 수 있어요.</p><div class="foot"><button class="btn" data-act="close">닫기</button></div></div>';}
   else if(!pushOK()){h+=isIOS()&&!standalone()?'<p class="pass-note" style="font-size:14px;color:var(--ink)">아이폰은 홈 화면에 추가한 앱에서 알림을 켤 수 있어요.</p><p class="pass-note">사파리 아래 공유 버튼 → <b>홈 화면에 추가</b> → 홈 화면의 앱으로 열고 여기서 다시 켜 주세요.</p>':'<p class="pass-note" style="font-size:14px">이 브라우저는 알림을 지원하지 않아요. 크롬이나 홈 화면 앱에서 켜 주세요.</p>';h+='<div class="foot"><button class="btn" data-act="close">닫기</button></div></div>';}
   else{
-    if(Notification.permission==='denied')h+='<p class="pass-note" style="color:var(--danger)">이 기기에서 알림이 막혀 있어요. 설정 → 알림에서 Our Trip Board(또는 브라우저)를 허용해 주세요.</p>';
+    if(Notification.permission==='denied')h+='<p class="pass-note" style="color:var(--danger)">이 기기에서 알림이 막혀 있어요. 설정 → 알림에서 trip board 키위(또는 브라우저)를 허용해 주세요.</p>';
     h+='<p class="pass-note">'+(on?'이 기기에서 알림이 켜져 있어요.':'이 기기에서는 아직 꺼져 있어요. 폰과 PC는 각각 켜야 해요.')+'</p>';
     h+='<div id="phHist" class="phh"></div><div class="foot"><button class="btn" data-act="close">닫기</button><div class="r">'+(on?'<button class="btn warn" data-act="pushoff">끄기</button>':'<button class="btn pri" data-act="pushon"'+(Notification.permission==='denied'?' disabled':'')+'>켜기</button>')+'</div></div></div>';
   }
@@ -2327,7 +2329,7 @@ function openNewBoard(){
 }
 function shareBoard(){
   if(!window.TB_INV){toast('초대 링크를 준비하고 있어요. 잠시 뒤 다시 눌러 주세요.');return;}
-  var u=location.origin+'/?b='+window.TB_BOARD+'&i='+window.TB_INV,t=trip(),title=(t&&t.name?t.name+' · ':'')+'Our Trip Board';
+  var u=location.origin+'/?b='+window.TB_BOARD+'&i='+window.TB_INV,t=trip(),title=(t&&t.name?t.name+' · ':'')+'trip board 키위';
   if(navigator.share){navigator.share({title:title,text:'같이 여행 계획 짜자',url:u}).catch(function(){});return;}
   (navigator.clipboard?navigator.clipboard.writeText(u):Promise.reject()).then(function(){toast('링크를 복사했어요. 친구들에게 보내 주세요.');},function(){prompt('이 링크를 복사해서 보내 주세요',u);});
 }
