@@ -1,7 +1,7 @@
 {
   "id": "./",
-  "name": "trip board 키위",
-  "short_name": "trip board 키위",
+  "name": "Our Trip Board",
+  "short_name": "Trip Board",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
