@@ -13,6 +13,9 @@ self.addEventListener('fetch',function(e){
 
 /* 알림은 직접 보여 줘요: 상태 표시줄 아이콘(badge)은 흰 점, 누르면 그 보드를 열어요.
    (Firebase 기본 처리보다 먼저 받아서 두 번 뜨지 않게 해요) */
+/* 애플 사파리(웹킷) 여부: 크롬·엣지·파이어폭스·안드로이드가 아닌 Safari */
+var UA=(self.navigator&&self.navigator.userAgent)||'';
+var APPLE=/Safari/.test(UA)&&!/Chrome|Chromium|CriOS|Edg|FxiOS|Firefox|Android/.test(UA);
 self.addEventListener('push',function(e){
   var j={};try{j=e.data?e.data.json():{};}catch(x){}
   var n=j.notification||{},d=j.data||{};
@@ -20,10 +23,11 @@ self.addEventListener('push',function(e){
   e.stopImmediatePropagation();
   var link=(j.fcmOptions&&j.fcmOptions.link)||d.link||'/';
   var title=n.title||d.title||'Our Trip Board',body=n.body||d.body||'';
-  /* 앱을 보고 있는 중이면 알림 대신 화면 안 토스트로 알려요 */
+  /* 앱을 보고 있는 중이면 알림 대신 화면 안 토스트로 알려요.
+     단, 아이폰·아이패드·맥 사파리는 알림을 안 띄우면 알림 권한을 꺼 버릴 수 있어서 항상 띄워요. */
   e.waitUntil(self.clients.matchAll({type:'window',includeUncontrolled:true}).then(function(cs){
     var vis=cs.filter(function(c){return c.visibilityState==='visible';});
-    if(vis.length){vis.forEach(function(c){c.postMessage({tbPush:{title:title,body:body}});});return;}
+    if(vis.length&&!APPLE){vis.forEach(function(c){c.postMessage({tbPush:{title:title,body:body}});});return;}
     return self.registration.showNotification(title,{body:body,icon:'/icon-192.png',badge:'/badge-96.png',tag:j.messageId||j.fcmMessageId||undefined,data:{link:link}});
   }));
 });
