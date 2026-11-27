@@ -923,7 +923,7 @@ var SECTIONS=[
   {key:'must',en:'to do',name:'해야 할 일',hint:'예약, 챙길 것, 놓치면 안 되는 것',check:true,doneWord:'완료',ph:'예) 체험 프로그램 예약하기'}
 ];
 var db=null,user=null,uid=null,canWrite=true;
-var groupedNow=false,dragActive=false,renderPending=false,members={},nameAsked=false,areaFilter='',seenAt=0,seenFor=null,viewInit=false,tlMode=null,routeOpen={},pickTime='',pickId=null,pickDay=0,pickSlot='',addSec='food',trips=[],items=[],tripId=null,view='board',activeSec='food',openId=null,infoOpen=false,transMode='',profs={},armed=null,ready=false,offline=false,quickVals={},flashId=null;
+var groupedNow=false,dragActive=false,renderPending=false,members={},nameAsked=false,areaFilter='',seenAt=0,seenFor=null,viewInit=false,tlMode=null,routeOpen={},pickTime='',pickId=null,pickDay=0,pickSlot='',addSec='food',trips=[],items=[],tripId=null,view='board',activeSec=(function(){try{var v=localStorage.getItem(window.TB_LSP+'sec');return (v&&v!=='all')?v:'food';}catch(e){return 'food';}})(),openId=null,infoOpen=false,transMode='',profs={},armed=null,ready=false,offline=false,quickVals={},flashId=null;
 try{Object.defineProperty(window,'dragActive',{configurable:true,get:function(){return dragActive;}});}catch(e){}
 var scaleT=null,fadedIn=false,API_URL=window.TB_API||'',app=document.getElementById('app'),modal=document.getElementById('modal'),toastEl=document.getElementById('toast');
 
