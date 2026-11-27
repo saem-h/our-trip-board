@@ -642,12 +642,13 @@ button:not(.dh):active,[role=button]:not(.dh):active,[role=tab]:active,[role=che
   .it-a{min-height:36px}
 }
 .todo-memo{font-size:13px;color:var(--muted);padding:0 0 8px 2px;margin-top:-4px;overflow-wrap:anywhere}
-.vjw{display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding:10px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);color:var(--ink);text-decoration:none;font-weight:600;font-size:14px}
-.vjw::after{content:'\2192';color:var(--muted)}
-.pass-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px 12px;padding:4px 0 10px}
-.pass-row .pr-f{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:2px;margin:0;min-height:0;padding:0;border:0}
-.pass-row .pr-fl{grid-column:1/-1;width:auto;margin:0;font-size:11px}
-.pass-row .pr-fv{font-size:14px;min-width:0}
+.vjw{display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding:8px 14px;border-radius:10px;background:#111;color:#fff;text-decoration:none;font-weight:700;font-size:14px}
+.vjw::after{content:'\2192'}
+.pass-row{display:block;padding:2px 0 8px}
+.pass-row .pr-f{display:flex;align-items:center;gap:8px;min-height:32px;margin:0;border-bottom:1px solid var(--line)}
+.pass-row .pr-f:last-child{border-bottom:0}
+.pass-row .pr-fl{width:44px;flex:none;margin:0;font-size:12px;color:var(--muted)}
+.pass-row .pr-fv{flex:1;min-width:0;font-size:14px;font-weight:600}
 .pass-row .cpy{width:26px;height:26px;margin:0}
 </style>
 </head><body>
