@@ -926,7 +926,7 @@ var SECTIONS=[
   {key:'play',en:'play',name:'전시·체험',hint:'전시, 체험 프로그램',sched:true,ph:'예) 전시, 체험 이름'},
   {key:'spot',en:'spot',name:'가볼만한 곳',hint:'관광지, 산책 코스, 풍경 좋은 곳',sched:true,ph:'예) 가볼 만한 곳 이름'},
   {key:'shop',en:'shop',name:'편집샵/쇼핑',hint:'편집샵, 시장, 쇼핑하고 싶은 곳',sched:true,ph:'예) 편집샵, 시장 이름'},
-  {key:'must',en:'to do',name:'해야 할 일',hint:'예약, 챙길 것, 놓치면 안 되는 것',check:true,doneWord:'완료',ph:'예) 체험 프로그램 예약하기'}
+  {key:'must',en:'memo',name:'메모',hint:'쇼핑 리스트, 준비물, 챙길 것',check:true,doneWord:'완료',ph:'예) 면세점 선크림'}
 ];
 var db=null,user=null,uid=null,canWrite=true;
 var groupedNow=false,dragActive=false,renderPending=false,members={},nameAsked=false,areaFilter='',seenAt=0,seenFor=null,viewInit=false,tlMode=null,routeOpen={},pickTime='',pickId=null,pickDay=0,pickSlot='',addSec='food',trips=[],items=[],tripId=null,view='board',activeSec=(function(){try{var v=localStorage.getItem(window.TB_LSP+'sec');return (v&&v!=='all')?v:'food';}catch(e){return 'food';}})(),openId=null,infoOpen=false,transMode='',profs={},armed=null,ready=false,offline=false,quickVals={},flashId=null;
@@ -1206,6 +1206,7 @@ function renderSection(key,its,t){
   var h='<div class="addbar qa">'+(canWrite&&!all?'<input class="quick" data-quick="q" enterkeyhint="done" autocomplete="off" placeholder="'+esc(qph)+'" aria-label="빠르게 등록" value="'+esc(quickVals.q||'')+'">':'')+'<button class="add-b" data-act="add" data-sec="'+(all?'':key)+'"'+dis+'>+ 등록하기</button></div>';
   if(false&&areas.length&&!all){h+='<div class="areaf"><button data-act="areaf" data-v="" aria-pressed="'+(areaFilter==='')+'">전체 위치</button>';areas.forEach(function(x){h+='<button data-act="areaf" data-v="'+esc(x)+'" aria-pressed="'+(areaFilter===x)+'">'+esc(x)+'</button>';});h+='</div>';}
   if(false)list=list.filter(function(i){return i.area===areaFilter;});
+  if(key==='must'&&!all)h+=noteHTML(t);
   if(key==='food'&&canWrite&&useKakao())h+='<button class="rc-open" data-act="rcopen">맛집 추천 보기 <span aria-hidden="true">›</span></button>';
   if(key==='must'){h+='<div class="areaf"><button data-act="mustf" data-v="" aria-pressed="'+(!mustMine)+'">전체</button><button data-act="mustf" data-v="1" aria-pressed="'+mustMine+'">내 할 일</button></div>';if(mustMine)list=list.filter(function(i){return i.who?i.who===uid:!(i.doneBy&&i.doneBy[uid]);});}
   if(!list.length)return h+'<div class="empty">'+esc(EMPTY[all?'all':key]||EMPTY.all)+'</div>';
@@ -1927,7 +1928,6 @@ function renderFixed(t,its){
     h+='</div>';
     if(sc.key==='transport'&&abroad())h+=passHTML()+vjwHTML();
   });
-  h+=noteHTML(t);
   return h+'</div></section>';
 }
 /* 여행 메모: 쇼핑 리스트, 준비물 등 자유롭게. 칸을 떠나면 저장돼요 */
