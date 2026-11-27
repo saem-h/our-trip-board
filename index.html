@@ -641,6 +641,14 @@ button:not(.dh):active,[role=button]:not(.dh):active,[role=tab]:active,[role=che
   .it-d .it-memo{font-size:13px;line-height:1.6}
   .it-a{min-height:36px}
 }
+.memo .mrow{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(0,0,0,.06)}
+.memo .mk{width:22px;height:22px;border-radius:50%;border:1.5px solid #bbb;background:#fff;flex:none;padding:0;cursor:pointer}
+.memo .mk.on{background:#111;border-color:#111;box-shadow:inset 0 0 0 4px #fff}
+.memo .mtx{flex:1;min-width:0;word-break:keep-all;overflow-wrap:anywhere}
+.memo .mtx.dn{text-decoration:line-through;opacity:.45}
+.memo .madd{display:flex;gap:8px;align-items:center;margin-top:10px}
+.memo .madd input{flex:1;min-width:0;font:inherit;padding:8px 10px;border:1px solid #ddd;border-radius:10px;background:transparent;color:inherit}
+.vjw{display:block;padding:10px 12px;border-radius:12px;background:#111;color:#fff;text-decoration:none;text-align:center;font-weight:600}
 </style>
 </head><body>
 
@@ -1905,13 +1913,35 @@ function renderFixed(t,its){
       h+='<article class="pr" data-id="'+esc(it.id)+'"><div class="pr-main"><div class="pr-n">'+(tags?'<span class="pr-tag">'+esc(tags)+'</span>':'')+(ml?'<a data-act="go" href="'+esc(ml)+'" target="_blank" rel="noopener noreferrer">'+esc(it.title)+'</a>':esc(it.title))+(it.name&&sc.key!=='transport'?' <span class="pr-s">'+esc(it.name)+'</span>':'')+'</div>';
       var fno=sc.key==='transport'&&it.name&&it.mode!=='rent'?'<span class="pr-fno">'+esc(it.name)+cpBtn(it.name,'편명')+'</span>':'';
       if(when||fno)h+='<div class="pr-w">'+esc(when)+fno+'</div>';
+      if(sc.key==='transport'&&it.bookNo)h+=cpRow('예약번호',it.bookNo,'예약번호');
       if(it.memo)h+='<div class="pr-m">'+esc(it.memo)+'</div>';
       h+='</div><div class="pr-act"><button class="lb" data-act="edit">수정</button><button class="lb'+(armed===it.id?' warn':'')+'" data-act="del">'+(armed===it.id?'정말 삭제':'삭제')+'</button></div></article>';
     });
     h+='</div>';
-    if(sc.key==='transport'&&abroad())h+=passHTML();
+    if(sc.key==='transport'&&abroad())h+=passHTML()+vjwHTML();
   });
+  h+=memoHTML(t);
   return h+'</div></section>';
+}
+/* 메모·쇼핑 리스트: 보드 멤버가 함께 보고 체크해요 (여행 문서에 저장) */
+function memoHTML(t){
+  var ls=(t&&Array.isArray(t.checks))?t.checks:[];
+  var h='<div class="pg memo"><div class="pg-h"><span>메모</span></div>';
+  if(!ls.length)h+='<div class="pin-empty">쇼핑 리스트나 메모를 적어 두세요</div>';
+  ls.forEach(function(c,k){
+    h+='<div class="mrow"><button type="button" class="mk'+(c.done?' on':'')+'" data-act="memotog" data-i="'+k+'" aria-pressed="'+(!!c.done)+'" aria-label="체크"><span></span></button>';
+    h+='<span class="mtx'+(c.done?' dn':'')+'">'+esc(c.text)+'</span>';
+    h+='<button type="button" class="lb" data-act="memodel" data-i="'+k+'"'+(canWrite?'':' disabled')+'>삭제</button></div>';
+  });
+  h+='<div class="madd"><input id="memo-in" maxlength="120" placeholder="예) 면세점 선크림" autocomplete="off"><button type="button" class="lb add" data-act="memoadd"'+(canWrite?'':' disabled')+'>+ 추가</button></div>';
+  return h+'</div>';
+}
+function vjwHTML(){
+  return '<div class="pg"><div class="pg-h"><span>출입국</span></div><a class="vjw" href="https://www.vjw.digital.go.jp/" target="_blank" rel="noopener noreferrer">Visit Japan Web 열기</a></div>';
+}
+function saveChecks(list){
+  var t=trip();if(!t)return;t.checks=list;
+  return db.doc('trips/'+t.id).update({checks:list});
 }
 /* 여권: 여행이 아니라 보드에 저장돼서, 같은 보드 사람들끼리 다음 여행에도 같이 봐요 */
 function passItems(){return items.filter(function(i){return i.section==='passport';}).sort(function(a,b){return (a.createdAt||0)-(b.createdAt||0);});}
@@ -1922,6 +1952,7 @@ function passHTML(){
     h+='<article class="pr" data-id="'+esc(it.id)+'"><div class="pr-main"><div class="pr-n">'+esc(it.title||'이름 없음')+'</div>';
     if(it.en)h+=cpRow('',it.en,'영문 이름');
     if(it.no)h+=cpRow('',it.no,'여권번호');
+    if(it.exp)h+=cpRow('만료기간',it.exp.replace(/-/g,'.'),'여권 만료기간');
     var ew=passWarn(it.exp);if(ew)h+='<div class="pr-ew">'+esc(ew)+'</div>';
     h+='</div><div class="pr-act"><button class="lb" data-act="edit">수정</button><button class="lb'+(armed===it.id?' warn':'')+'" data-act="del">'+(armed===it.id?'정말 삭제':'삭제')+'</button></div></article>';
   });
@@ -2170,6 +2201,7 @@ function openTransportForm(it){
   DIRS.forEach(function(d){h+='<option value="'+d[0]+'"'+(d[0]===dir?' selected':'')+'>'+d[1]+'</option>';});
   h+='</select></label><div class="row"><label><span id="lb-from">출발지</span><input id="f-from" maxlength="40" value="'+esc(it?it.from:'')+'"></label><label><span id="lb-to">도착지</span><input id="f-to" maxlength="40" value="'+esc(it?it.to:'')+'"></label></div>';
   h+='<label><span id="lb-name"></span><input id="f-name" maxlength="60" value="'+esc(it?it.name:'')+'"></label>';
+  h+='<label id="w-book">예약번호<input id="f-bookno" maxlength="20" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="예) ABC123" value="'+esc(it?(it.bookNo||''):'')+'"></label>';
   var dv=it?(it.date||(effDay(it,t)>0&&t&&t.startDate?addDays(t.startDate,effDay(it,t)-1):'')):((t&&t.startDate)||'');
   var mn=t&&t.startDate?' min="'+esc(t.startDate)+'"':'',mx=t&&t.endDate?' max="'+esc(t.endDate)+'"':'',rv=it?(it.rdate||''):((t&&t.endDate)||'');
   h+='<div class="row" id="w-norm"><label>날짜<input id="f-date" type="date" value="'+esc(dv)+'"'+mn+mx+'></label></div><div class="row"><label><span id="lb-time">출발 시간</span><input id="f-time" type="time" value="'+esc(it?it.time:'')+'"></label><label id="w-arr"><span id="lb-arr">도착 시간</span><input id="f-arrive" type="time" value="'+esc(it?it.arrive:'')+'"></label></div>';
@@ -2185,6 +2217,7 @@ function openTransportForm(it){
     document.getElementById('f-from').placeholder=hh.from;
     document.getElementById('f-to').placeholder=hh.to;
     var rent=k==='rent';
+    document.getElementById('w-book').style.display=k==='plane'?'':'none';
     document.getElementById('w-dir').style.display=rent?'none':'';document.getElementById('w-arr').style.display=rent?'none':'';document.getElementById('w-ret').style.display=rent?'':'none';
     document.getElementById('lb-from').textContent=rent?'픽업 장소':'출발지';document.getElementById('lb-to').textContent=rent?'반납 장소':'도착지';
     document.getElementById('lb-time').textContent=rent?'픽업 시간':'출발 시간';
@@ -2394,7 +2427,7 @@ var saveItem=guarded(function(btn){
     var route=(from&&to)?from+' → '+to:(from||to||'');
     var title=route||name;
     if(!title&&modal.dataset.mode!=='rent'){toast('출발지, 도착지 또는 이름을 입력해 주세요.');return;}
-    data={title:title,mode:modal.dataset.mode||'etc',dir:v('f-dir')||'out',from:from,to:to,name:name,date:v('f-date'),day:0,time:v('f-time'),arrive:v('f-arrive'),memo:v('f-memo'),link:v('f-link')};
+    data={title:title,mode:modal.dataset.mode||'etc',dir:v('f-dir')||'out',from:from,to:to,name:name,date:v('f-date'),day:0,time:v('f-time'),arrive:v('f-arrive'),memo:v('f-memo'),link:v('f-link'),bookNo:modal.dataset.mode==='plane'?v('f-bookno').toUpperCase().replace(/\s+/g,''):''};
     if(data.mode==='rent'){data.title='렌터카';data.dir='local';data.rdate=v('f-rdate');data.arrive=v('f-rtime');if(data.date&&data.rdate&&data.rdate<data.date){toast('반납 날짜가 픽업보다 빨라요.');return;}}else data.rdate='';
   }else if(s.key==='stay'){
     var nm=v('f-title'),ci=v('f-cin'),co=v('f-cout');
@@ -2840,6 +2873,8 @@ document.addEventListener('click',function(e){
   else if(a==='saveitem'){saveItem(el);}
   else if(a==='fdel'){if(el.dataset.armed){var di=items.filter(function(x){return x.id===el.dataset.id;})[0];closeModal();if(di)delItem(di);}else{el.dataset.armed='1';el.textContent='정말 삭제';}}
   else if(a==='copy'){haptic();copyText(el.dataset.v||'');}
+  else if(a==='memoadd'){if(!canWrite){toast('보기 전용이에요.');return;}var mi=document.getElementById('memo-in'),mt=mi?mi.value.trim():'';if(!mt){toast('내용을 입력해 주세요.');return;}var ml=(trip()&&trip().checks||[]).slice();ml.push({text:mt,done:false});saveChecks(ml);}
+  else if(a==='memotog'||a==='memodel'){if(!canWrite){toast('보기 전용이에요.');return;}var mk=(trip()&&trip().checks||[]).slice(),mn=+el.dataset.i;if(!mk[mn])return;if(a==='memodel')mk.splice(mn,1);else mk[mn]=Object.assign({},mk[mn],{done:!mk[mn].done});saveChecks(mk);}
   else if(a==='addpass'){if(!canWrite){toast('보기 전용이에요.');return;}openPassForm(null);}
   else if(a==='savepass'){savePass(el);}
   else if(a==='savetrip'){saveTrip(el);}
