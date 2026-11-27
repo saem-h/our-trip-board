@@ -641,6 +641,7 @@ button:not(.dh):active,[role=button]:not(.dh):active,[role=tab]:active,[role=che
   .it-d .it-memo{font-size:13px;line-height:1.6}
   .it-a{min-height:36px}
 }
+.todo-memo{font-size:13px;color:var(--muted);padding:0 0 8px 2px;margin-top:-4px;overflow-wrap:anywhere}
 .vjw{display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding:10px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);color:var(--ink);text-decoration:none;font-weight:600;font-size:14px}
 .vjw::after{content:'\2192';color:var(--muted)}
 .pass-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px 12px;padding:4px 0 10px}
@@ -922,7 +923,7 @@ var SECTIONS=[
   {key:'must',en:'to do',name:'해야 할 일',hint:'예약, 챙길 것, 놓치면 안 되는 것',check:true,doneWord:'완료',ph:'예) 체험 프로그램 예약하기'}
 ];
 var db=null,user=null,uid=null,canWrite=true;
-var groupedNow=false,dragActive=false,renderPending=false,members={},nameAsked=false,areaFilter='',seenAt=0,seenFor=null,viewInit=false,tlMode=null,routeOpen={},pickTime='',pickId=null,pickDay=0,pickSlot='',addSec='food',trips=[],items=[],tripId=null,view='board',activeSec=(function(){try{var v=localStorage.getItem(window.TB_LSP+'sec');return (v&&v!=='all')?v:'food';}catch(e){return 'food';}})(),openId=null,infoOpen=false,transMode='',profs={},armed=null,ready=false,offline=false,quickVals={},flashId=null;
+var groupedNow=false,dragActive=false,renderPending=false,members={},nameAsked=false,areaFilter='',seenAt=0,seenFor=null,viewInit=false,tlMode=null,routeOpen={},pickTime='',pickId=null,pickDay=0,pickSlot='',addSec='food',trips=[],items=[],tripId=null,view='board',activeSec='food',openId=null,infoOpen=false,transMode='',profs={},armed=null,ready=false,offline=false,quickVals={},flashId=null;
 try{Object.defineProperty(window,'dragActive',{configurable:true,get:function(){return dragActive;}});}catch(e){}
 var scaleT=null,fadedIn=false,API_URL=window.TB_API||'',app=document.getElementById('app'),modal=document.getElementById('modal'),toastEl=document.getElementById('toast');
 
@@ -1156,6 +1157,7 @@ function itemHTML(it,s,t,tag){
   if(!s.check)h+='<button class="ib cf'+(conf?' on':'')+'" data-act="confirm" aria-pressed="'+conf+'" aria-label="'+(conf?'확정 취소':'일정에 넣기')+'" title="'+(conf?'일정에 넣음 (누르면 취소)':'일정에 넣기')+'">'+(conf?CALOK_SVG:CALADD_SVG)+'</button>';
   h+='<button class="ib more'+(open?' on':'')+'" data-act="row" aria-expanded="'+open+'" aria-label="'+(open?'접기':'메모·상세 보기')+'" title="'+(open?'접기':'메모·상세 보기')+'"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4.5l3 3 3-3"/></svg></button>';
   h+='</div>';
+  if(s.check&&it.memo&&!open)h+='<div class="todo-memo">'+esc(String(it.memo).split('\n')[0])+'</div>';
   if(pickId===it.id&&!s.check){
     var n=(t&&t.days)||2;
     h+='<div class="pick"><div class="pk-c">';
