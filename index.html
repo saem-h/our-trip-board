@@ -656,7 +656,8 @@ button:not(.dh):active,[role=button]:not(.dh):active,[role=tab]:active,[role=che
 .bk-l{flex:none;font-size:12px;color:var(--muted);white-space:nowrap}
 .bk-v{flex:1;min-width:0;font-size:14px;font-weight:600;overflow-wrap:anywhere}
 .bk-e{flex:1;font-size:13px;color:var(--muted)}
-.vjw{align-self:start;justify-self:stretch;height:auto;display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding:8px 14px;border-radius:10px;background:#111;color:#fff;text-decoration:none;font-weight:700;font-size:14px}
+.vjw{display:flex;justify-content:space-between;align-items:center;margin:6px 0 0;padding:9px 0;border-top:1px solid var(--line);color:var(--ink);text-decoration:none;font-weight:700;font-size:13px}
+.vjw::after{content:'\2192';color:var(--muted)}
 .vjw::after{content:'\2192'}
 .pass-row{display:block;padding:2px 0 8px}
 .pass-row .pr-f{display:flex;align-items:center;gap:8px;min-height:32px;margin:0;border-bottom:1px solid var(--line)}
@@ -1910,7 +1911,7 @@ function renderFixed(t,its){
   h+='<div class="pin-grid">';
   SECTIONS.filter(function(x){return x.fixed;}).forEach(function(sc){
     var mine=its.filter(function(i){return i.section===sc.key;}).sort(sc.key==='transport'?function(a,b){var x=transKey(a,t),y=transKey(b,t);return x!==y?(x<y?-1:1):byTime(a,b);}:function(a,b){return (a.createdAt||0)-(b.createdAt||0);});
-    h+='<div class="pg"><div class="pg-h"><span>'+esc(sc.name)+'</span><button class="lb add" data-act="add" data-sec="'+sc.key+'"'+(canWrite?'':' disabled')+'>+ 추가</button></div>';
+    h+='<div class="pg"'+(sc.key==='stay'?' style="margin-top:22px"':'')+'><div class="pg-h"><span>'+esc(sc.name)+'</span><button class="lb add" data-act="add" data-sec="'+sc.key+'"'+(canWrite?'':' disabled')+'>+ 추가</button></div>';
     if(sc.key==='transport')h+=bookHTML(t);
     if(!mine.length)h+='<div class="pin-empty">'+esc(sc.emptyHint)+'</div>';
     if(sc.key==='transport'){
@@ -1940,7 +1941,7 @@ function renderFixed(t,its){
       h+='</div><div class="pr-act"><button class="lb" data-act="edit">수정</button><button class="lb'+(armed===it.id?' warn':'')+'" data-act="del">'+(armed===it.id?'정말 삭제':'삭제')+'</button></div></article>';
     });
     h+='</div>';
-    if(sc.key==='transport'&&abroad())h+=passHTML()+vjwHTML();
+    if(sc.key==='transport'&&abroad())h+=passHTML();
   });
   return h+'</div></section>';
 }
@@ -1991,7 +1992,7 @@ function passHTML(){
     var ew=passWarn(it.exp);if(ew)h+='<div class="pr-ew">'+esc(ew)+'</div>';
     h+='</div><div class="pr-act"><button class="lb" data-act="edit">수정</button><button class="lb'+(armed===it.id?' warn':'')+'" data-act="del">'+(armed===it.id?'정말 삭제':'삭제')+'</button></div></article>';
   });
-  return h+'</div>';
+  return h+vjwHTML()+'</div>';
 }
 /* 만료일은 평소엔 숨기고, 여행 시작 기준 6개월이 안 남았을 때만 알려요 */
 function passWarn(exp){
