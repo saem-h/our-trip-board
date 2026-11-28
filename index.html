@@ -102,6 +102,11 @@ h1{font-family:var(--font-en);font-weight:400;font-size:30px;margin:0;letter-spa
 .pin-empty{color:var(--muted);font-size:13px;padding:8px 0}
 .tf{display:flex;flex-wrap:wrap;gap:6px;padding:8px 0 2px}
 .tf .chip{min-height:28px!important;padding:2px 10px!important;font-size:12.5px!important}
+.tf{gap:14px;padding:10px 0 4px;border-bottom:0}
+.tf .chip{border:0!important;background:none!important;box-shadow:none;min-height:0!important;padding:2px 0!important;font-size:13px!important;color:var(--muted)}
+.tf .chip[aria-selected=true]{color:var(--ink);font-weight:800}
+.tf .chip i{display:none}
+.pr-tag{border:0;padding:0;margin-right:6px;font-size:12px;color:var(--muted)}
 .tf .chip i{margin-left:5px;font-size:11px!important}
 .pr{display:flex;gap:10px;justify-content:space-between;align-items:flex-start;padding:7px 0;border-bottom:1px solid var(--line)}
 .pr:last-child{border-bottom:0}
@@ -656,7 +661,7 @@ button:not(.dh):active,[role=button]:not(.dh):active,[role=tab]:active,[role=che
 .bk-l{width:52px;flex:none;font-size:12px;color:var(--muted)}
 .bk-v{flex:1;min-width:0;font-size:14px;font-weight:600;overflow-wrap:anywhere}
 .bk-e{flex:1;font-size:13px;color:var(--muted)}
-.vjw{display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding:8px 14px;border-radius:10px;background:#111;color:#fff;text-decoration:none;font-weight:700;font-size:14px}
+.vjw{align-self:start;justify-self:stretch;height:auto;display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding:8px 14px;border-radius:10px;background:#111;color:#fff;text-decoration:none;font-weight:700;font-size:14px}
 .vjw::after{content:'\2192'}
 .pass-row{display:block;padding:2px 0 8px}
 .pass-row .pr-f{display:flex;align-items:center;gap:8px;min-height:32px;margin:0;border-bottom:1px solid var(--line)}
