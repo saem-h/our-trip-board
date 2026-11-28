@@ -642,6 +642,10 @@ button:not(.dh):active,[role=button]:not(.dh):active,[role=tab]:active,[role=che
   .it-a{min-height:36px}
 }
 .todo-memo{font-size:13px;color:var(--muted);padding:0 0 8px 2px;margin-top:-4px;overflow-wrap:anywhere}
+.kseg{display:flex;gap:8px;margin:0 0 10px}
+.kseg button{flex:1;padding:8px 0;border-radius:999px;border:1px solid var(--line);background:transparent;color:inherit;font:inherit;font-size:14px;font-weight:600}
+.kseg button[aria-pressed=true]{background:#111;border-color:#111;color:#fff}
+.nsave{display:flex;justify-content:flex-end;margin-top:4px}
 .tlabel{font-size:12px;font-weight:700;color:var(--muted);padding:14px 0 2px;letter-spacing:-.01em}
 .tnote{padding:0 0 14px;border-bottom:1px solid var(--line);margin-bottom:6px}
 .tnote textarea{display:block;width:100%;box-sizing:border-box;min-height:64px;font:inherit;font-size:15px;line-height:1.6;padding:8px 0;border:0;outline:0;background:transparent;color:inherit;resize:none}
@@ -1205,13 +1209,14 @@ function renderSection(key,its,t){
   if(areaFilter&&areas.indexOf(areaFilter)<0)areaFilter='';
   var a=secOf(addSec);
   var dis=canWrite?'':' disabled';
-  var qph=key==='must'?'체크할 항목 쓰고 엔터':'지도 링크 붙여넣기 · 이름만 써도 돼요';
+  var qph=key==='must'?(window.mustKind==='shop'?'살 물건 쓰고 엔터':'체크할 항목 쓰고 엔터'):'지도 링크 붙여넣기 · 이름만 써도 돼요';
   var h='<div class="addbar qa">'+(canWrite&&!all?'<input class="quick" data-quick="q" enterkeyhint="done" autocomplete="off" placeholder="'+esc(qph)+'" aria-label="빠르게 등록" value="'+esc(quickVals.q||'')+'">':'')+'<button class="add-b" data-act="add" data-sec="'+(all?'':key)+'"'+dis+'>'+(key==='must'?'+ 추가':'+ 등록하기')+'</button></div>';
   if(false&&areas.length&&!all){h+='<div class="areaf"><button data-act="areaf" data-v="" aria-pressed="'+(areaFilter==='')+'">전체 위치</button>';areas.forEach(function(x){h+='<button data-act="areaf" data-v="'+esc(x)+'" aria-pressed="'+(areaFilter===x)+'">'+esc(x)+'</button>';});h+='</div>';}
   if(false)list=list.filter(function(i){return i.area===areaFilter;});
-  if(key==='must'&&!all)h=noteHTML(t)+'<div class="tlabel">체크리스트</div>'+h;
+  if(key==='must'&&!all)h=noteHTML(t)+mustKindHTML()+h;
   if(key==='food'&&canWrite&&useKakao())h+='<button class="rc-open" data-act="rcopen">맛집 추천 보기 <span aria-hidden="true">›</span></button>';
   if(key==='must'){h+='<div class="areaf"><button data-act="mustf" data-v="" aria-pressed="'+(!mustMine)+'">전체</button><button data-act="mustf" data-v="1" aria-pressed="'+mustMine+'">내 할 일</button></div>';if(mustMine)list=list.filter(function(i){return i.who?i.who===uid:!(i.doneBy&&i.doneBy[uid]);});}
+  if(key==='must')list=list.filter(function(i){return (i.kind==='shop'?'shop':'todo')===(window.mustKind==='shop'?'shop':'todo');});
   if(!list.length)return h+'<div class="empty">'+esc(EMPTY[all?'all':key]||EMPTY.all)+'</div>';
   list.sort(function(x,y){var cx=isConf(x)&&!secOf(x.section).check?1:0,cy=isConf(y)&&!secOf(y.section).check?1:0;var mx=x.section==='must'?1:0,my=y.section==='must'?1:0;return mx-my||((x.done?1:0)-(y.done?1:0))||(areaRank(x)-areaRank(y))||String(x.area||'').localeCompare(String(y.area||''))||cy-cx||(x.createdAt||0)-(y.createdAt||0);});
   if(useMap()&&key!=='must'&&list.length){
@@ -1934,9 +1939,13 @@ function renderFixed(t,its){
   return h+'</div></section>';
 }
 /* 여행 메모: 쇼핑 리스트, 준비물 등 자유롭게. 칸을 떠나면 저장돼요 */
+function mustKindHTML(){
+  var sh=window.mustKind==='shop';
+  return '<div class="kseg" role="tablist"><button type="button" role="tab" data-act="kind" data-v="todo" aria-pressed="'+(!sh)+'">체크리스트</button><button type="button" role="tab" data-act="kind" data-v="shop" aria-pressed="'+sh+'">쇼핑 리스트</button></div>';
+}
 function noteHTML(t){
   var n=(t&&t.note)||'';
-  return '<div class="tlabel">메모</div><div class="tnote"><textarea id="trip-note" maxlength="2000" rows="3" placeholder="여행 메모 (쇼핑 리스트, 준비물)" '+(canWrite?'':'readonly')+'>'+esc(n)+'</textarea></div>';
+  return '<div class="tlabel">메모</div><div class="tnote"><textarea id="trip-note" maxlength="2000" rows="3" placeholder="여행 메모 (쇼핑 리스트, 준비물)" '+(canWrite?'':'readonly')+'>'+esc(n)+'</textarea><div class="nsave"><button type="button" class="lb" data-act="savenote"'+(canWrite?'':' disabled')+'>저장</button></div></div>';
 }
 function saveNote(v){
   var t=trip();if(!t||!canWrite||(t.note||'')===v)return;
@@ -2509,6 +2518,7 @@ var quickSave=guarded(function(sec,txt,sh,gp){
   if(sh&&!sh.name){openItemForm({section:s.key,pre:{link:sh.url}});return;}
   if(sh){link=sh.url;addr=sh.addr||(gp&&gp.addr)||'';area=sh.area||(gp&&gp.addr?areaFromAddr(gp.addr):'');title=sh.name;}
   var data={tripId:tripId,section:s.key,title:title.slice(0,80),memo:'',desc:'',link:link,status:'idea',done:false,likes:{},createdBy:uid,createdAt:Date.now()};
+  if(s.key==='must')data.kind=window.mustKind==='shop'?'shop':'todo';
   if(DESC[s.key]){data.area=area;if(addr)data.addr=addr;if(gp&&gp.t)data.desc=gp.t;if(gp&&gp.h)data.memo=gp.h;if(gp&&gp.y!=null&&gp.x!=null){data.geo={x:+gp.x,y:+gp.y,g:1};addr=addr||'-';}}
   if(dupStop(data))return;
   if(s.sched){data.day=0;data.time='';}
@@ -2893,6 +2903,8 @@ document.addEventListener('click',function(e){
   else if(a==='copy'){haptic();copyText(el.dataset.v||'');}
   else if(a==='editbook'){if(!canWrite){toast('보기 전용이에요.');return;}openBookForm();}
   else if(a==='savebook'){saveBook();}
+  else if(a==='kind'){window.mustKind=el.dataset.v==='shop'?'shop':'todo';render();}
+  else if(a==='savenote'){if(!canWrite){toast('보기 전용이에요.');return;}var nt=document.getElementById('trip-note');saveNote(nt?nt.value:'');toast('메모를 저장했어요');}
   else if(a==='addpass'){if(!canWrite){toast('보기 전용이에요.');return;}openPassForm(null);}
   else if(a==='savepass'){savePass(el);}
   else if(a==='savetrip'){saveTrip(el);}
