@@ -201,6 +201,7 @@ a.it-t:active,.ev-n a:active,.pr-n a:active{opacity:.55}
 .tl-h .en{font-size:20px}
 .tl-h b{font-size:13px;font-weight:600;color:var(--muted)}
 .tl-h em{font-style:normal;color:var(--muted);font-size:12px;margin-left:auto}
+.tl-night{font-size:12px;color:var(--muted);font-weight:600;margin:-2px 0 6px}
 .tl-stay{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding-bottom:10px;border-bottom:1px solid var(--line);margin-bottom:12px}
 .tl-stay .lab{font-size:12px;color:var(--muted);font-weight:600}
 .tl-stay .c{background:var(--accent);color:var(--accent-ink);border:1px solid var(--ink);border-radius:999px;padding:1px 10px;font-size:12px;font-weight:700}
@@ -1873,11 +1874,14 @@ function renderTimeline(t,its){
     return '<div class="ev'+(tlSel&&it.id===tlSel?' on':'')+'" data-id="'+esc(it.id)+'" data-key="'+esc(it.id)+'"'+dn+'>'+(sc.key!=='transport'&&canWrite?'<button class="rm" data-act="unconf" aria-label="일정에서 빼기" title="일정에서 빼기">'+X_SVG+'</button><span class="dh" role="button" tabindex="0" aria-label="순서 바꾸기 (끌어서 이동)">'+DRAG_SVG+'</span>':'')+(tt?'<div class="ev-t">'+esc(tt)+(it.time&&it.slot?' · '+esc(slotName(it.slot)):'')+'</div>':'')+'<div class="ev-n">'+nm(it.mode==='rent'?'렌터카 픽업'+(it.name?' · '+it.name:''):it.title,evl)+'</div><div class="ev-m">'+m+(onMap?lk(evl):'')+'</div></div>';
   }
   var n=t.days||2,tp=[],tleg='';h+='%%TLMAP%%';wxSpots._name='';
+  var nightStay={};
+  if(t.startDate)for(var nd=1;nd<=n;nd++){var nDate=addDays(t.startDate,nd-1);stays.forEach(function(st){if(st.checkin&&st.checkin<=nDate&&(st.checkout?nDate<st.checkout:nDate===st.checkin))nightStay[nd]=st;});}
   for(var d=1;d<=n;d++){
     if(sel!=='all'&&String(d)!==sel)continue;
     var dd=sortDay(sched.filter(function(i){return effDay(i,t)===d;}));
     var wxh='';if(t.startDate){var wd=wxDatesOf(t,d);wxSpots[wd]=wxSpotFor(t,d,dd,stays,its);if(!wxSpots[wd]&&!wxSpots._name)wxSpots._name=(its.filter(function(i){return i.area;}).map(function(i){return areaDir(i.area)||i.area;})[0])||'';if(!wxSpots[wd]&&wxSpots._name)wxSpots[wd]=wxGeocode(wxSpots._name);wxh=wxHtml(wd,wxSpots[wd]);}
     h+='<div class="tl-day" data-d="'+d+'"><div class="tl-dh"><span>'+esc(dayLabel(t,d))+(d===tdn?' · 오늘':'')+wxh+'</span>'+'</div>';
+    if(nightStay[d])h+='<div class="tl-night">숙소 · '+esc(nightStay[d].title)+'</div>';
     if(false){
       var names=dd.map(function(i){return i.pseudo?i.place:i.title;});
       h+='<ol class="route">';
@@ -1893,6 +1897,7 @@ function renderTimeline(t,its){
   var un=(sel!=='all')?[]:sortDay(sched.filter(function(i){var e=effDay(i,t);return !e||e>n||e<1;}));
   if(un.length){h+='<div class="tl-day" data-d="0"><div class="tl-dh">날짜 미정</div><div class="tl-list">';un.forEach(function(i){h+=ev(i);});h+='</div></div>';}
   var mb='';if(useMap()){
+    stays.forEach(function(st){if(!sched.some(function(x){return x.sid===st.id;})&&(st.geo&&st.geo.x||st.addr))tp.push({i:{pseudo:true,place:st.title,title:st.title,sid:st.id,addr:st.addr,geo:st.geo},t:'숙',c:'h',sub:'숙소 · '+st.title});});
     if(candOn('t'))its.forEach(function(i){var sc=secOf(i.section);if(sc&&!sc.fixed&&!sc.check&&i.section!=='must'&&!isConf(i))tp.push({i:i,t:'',c:'c',j:1,sub:sc.name+' 후보'+(i.area?' · '+areaLabel(i.area):'')});});
     if(tp.length||canWrite){mapDays.push({d:'t',line:true,pins:tp});mb=mapBlock('t','t',(sel==='all'?tleg:'<span>번호 = 타임라인 순서</span>')+(candOn('t')?'<span><i style="background:#fff"></i>후보</span>':''));}}
   h=h.replace('%%TLMAP%%',mb);
