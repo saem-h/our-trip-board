@@ -1209,7 +1209,7 @@ function renderSection(key,its,t){
   if(areaFilter&&areas.indexOf(areaFilter)<0)areaFilter='';
   var a=secOf(addSec);
   var dis=canWrite?'':' disabled';
-  var qph=key==='must'?(window.mustKind==='shop'?'살 물건 쓰고 엔터':'체크할 항목 쓰고 엔터'):'지도 링크 붙여넣기 · 이름만 써도 돼요';
+  var qph=key==='must'?(window.mustKind==='shop'?'살 물건 적기':'할 일 적기'):'지도 링크 붙여넣기 · 이름만 써도 돼요';
   var h='<div class="addbar qa">'+(canWrite&&!all?'<input class="quick" data-quick="q" enterkeyhint="done" autocomplete="off" placeholder="'+esc(qph)+'" aria-label="빠르게 등록" value="'+esc(quickVals.q||'')+'">':'')+'<button class="add-b" data-act="add" data-sec="'+(all?'':key)+'"'+dis+'>'+(key==='must'?'+ 추가':'+ 등록하기')+'</button></div>';
   if(false&&areas.length&&!all){h+='<div class="areaf"><button data-act="areaf" data-v="" aria-pressed="'+(areaFilter==='')+'">전체 위치</button>';areas.forEach(function(x){h+='<button data-act="areaf" data-v="'+esc(x)+'" aria-pressed="'+(areaFilter===x)+'">'+esc(x)+'</button>';});h+='</div>';}
   if(false)list=list.filter(function(i){return i.area===areaFilter;});
