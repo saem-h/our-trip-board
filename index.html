@@ -653,7 +653,7 @@ button:not(.dh):active,[role=button]:not(.dh):active,[role=tab]:active,[role=che
 .tnote textarea{display:block;width:100%;box-sizing:border-box;min-height:64px;font:inherit;font-size:15px;line-height:1.6;padding:8px 0;border:0;outline:0;background:transparent;color:inherit;resize:none}
 .tnote textarea::placeholder{color:var(--ph)}
 .bk{display:flex;align-items:center;gap:8px;min-height:36px;margin-bottom:4px;border-bottom:1px solid var(--line)}
-.bk-l{width:52px;flex:none;font-size:12px;color:var(--muted)}
+.bk-l{flex:none;font-size:12px;color:var(--muted);white-space:nowrap}
 .bk-v{flex:1;min-width:0;font-size:14px;font-weight:600;overflow-wrap:anywhere}
 .bk-e{flex:1;font-size:13px;color:var(--muted)}
 .vjw{align-self:start;justify-self:stretch;height:auto;display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding:8px 14px;border-radius:10px;background:#111;color:#fff;text-decoration:none;font-weight:700;font-size:14px}
@@ -1961,11 +1961,11 @@ document.addEventListener('focusout',function(e){if(e.target&&e.target.id==='tri
 /* 항공 예약번호: 오고 가는 편이 같은 예약이라 여행 하나에 한 번만 적어요 */
 function bookHTML(t){
   if(!t)return '';var b=t.bookNo||'';
-  return '<div class="bk"><span class="bk-l">예약번호</span>'+(b?'<span class="bk-v">'+esc(b)+'</span>'+cpBtn(b,'예약번호')+'<button class="lb" data-act="editbook"'+(canWrite?'':' disabled')+'>수정</button>':'<span class="bk-e">아직 없어요</span><button class="lb add" data-act="editbook"'+(canWrite?'':' disabled')+'>+ 입력</button>')+'</div>';
+  return '<div class="bk"><span class="bk-l">항공 예약번호</span>'+(b?'<span class="bk-v">'+esc(b)+'</span>'+cpBtn(b,'예약번호')+'<button class="lb" data-act="editbook"'+(canWrite?'':' disabled')+'>수정</button>':'<span class="bk-e">아직 없어요</span><button class="lb add" data-act="editbook"'+(canWrite?'':' disabled')+'>+ 입력</button>')+'</div>';
 }
 function openBookForm(){
   var t=trip()||{};
-  modal.innerHTML='<div class="card"><h3>항공 예약번호</h3><label>예약번호<input id="f-bk" maxlength="20" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="예) ABC123" value="'+esc(t.bookNo||'')+'"></label><div class="foot"><button class="btn" data-act="close">취소</button><div class="r"><button class="btn pri" data-act="savebook">저장</button></div></div></div>';
+  modal.innerHTML='<div class="card"><h3>항공 예약번호</h3><label>항공 예약번호<input id="f-bk" maxlength="20" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="예) ABC123" value="'+esc(t.bookNo||'')+'"></label><div class="foot"><button class="btn" data-act="close">취소</button><div class="r"><button class="btn pri" data-act="savebook">저장</button></div></div></div>';
   modal.className='on';
   setTimeout(function(){var f=document.getElementById('f-bk');if(f)f.focus();},30);
 }
