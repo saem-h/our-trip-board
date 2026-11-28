@@ -642,7 +642,8 @@ button:not(.dh):active,[role=button]:not(.dh):active,[role=tab]:active,[role=che
   .it-a{min-height:36px}
 }
 .todo-memo{font-size:13px;color:var(--muted);padding:0 0 8px 2px;margin-top:-4px;overflow-wrap:anywhere}
-.tnote{padding:4px 0 14px;border-bottom:1px solid var(--line);margin-bottom:6px}
+.tlabel{font-size:12px;font-weight:700;color:var(--muted);padding:14px 0 2px;letter-spacing:-.01em}
+.tnote{padding:0 0 14px;border-bottom:1px solid var(--line);margin-bottom:6px}
 .tnote textarea{display:block;width:100%;box-sizing:border-box;min-height:64px;font:inherit;font-size:15px;line-height:1.6;padding:8px 0;border:0;outline:0;background:transparent;color:inherit;resize:none}
 .tnote textarea::placeholder{color:var(--ph)}
 .bk{display:flex;align-items:center;gap:8px;min-height:36px;margin-bottom:4px;border-bottom:1px solid var(--line)}
@@ -1204,11 +1205,11 @@ function renderSection(key,its,t){
   if(areaFilter&&areas.indexOf(areaFilter)<0)areaFilter='';
   var a=secOf(addSec);
   var dis=canWrite?'':' disabled';
-  var qph=key==='must'?'할 일 쓰고 완료':'지도 링크 붙여넣기 · 이름만 써도 돼요';
-  var h='<div class="addbar qa">'+(canWrite&&!all?'<input class="quick" data-quick="q" enterkeyhint="done" autocomplete="off" placeholder="'+esc(qph)+'" aria-label="빠르게 등록" value="'+esc(quickVals.q||'')+'">':'')+'<button class="add-b" data-act="add" data-sec="'+(all?'':key)+'"'+dis+'>+ 등록하기</button></div>';
+  var qph=key==='must'?'체크할 항목 쓰고 엔터':'지도 링크 붙여넣기 · 이름만 써도 돼요';
+  var h='<div class="addbar qa">'+(canWrite&&!all?'<input class="quick" data-quick="q" enterkeyhint="done" autocomplete="off" placeholder="'+esc(qph)+'" aria-label="빠르게 등록" value="'+esc(quickVals.q||'')+'">':'')+'<button class="add-b" data-act="add" data-sec="'+(all?'':key)+'"'+dis+'>'+(key==='must'?'+ 추가':'+ 등록하기')+'</button></div>';
   if(false&&areas.length&&!all){h+='<div class="areaf"><button data-act="areaf" data-v="" aria-pressed="'+(areaFilter==='')+'">전체 위치</button>';areas.forEach(function(x){h+='<button data-act="areaf" data-v="'+esc(x)+'" aria-pressed="'+(areaFilter===x)+'">'+esc(x)+'</button>';});h+='</div>';}
   if(false)list=list.filter(function(i){return i.area===areaFilter;});
-  if(key==='must'&&!all)h+=noteHTML(t);
+  if(key==='must'&&!all)h=noteHTML(t)+'<div class="tlabel">체크리스트</div>'+h;
   if(key==='food'&&canWrite&&useKakao())h+='<button class="rc-open" data-act="rcopen">맛집 추천 보기 <span aria-hidden="true">›</span></button>';
   if(key==='must'){h+='<div class="areaf"><button data-act="mustf" data-v="" aria-pressed="'+(!mustMine)+'">전체</button><button data-act="mustf" data-v="1" aria-pressed="'+mustMine+'">내 할 일</button></div>';if(mustMine)list=list.filter(function(i){return i.who?i.who===uid:!(i.doneBy&&i.doneBy[uid]);});}
   if(!list.length)return h+'<div class="empty">'+esc(EMPTY[all?'all':key]||EMPTY.all)+'</div>';
@@ -1935,7 +1936,7 @@ function renderFixed(t,its){
 /* 여행 메모: 쇼핑 리스트, 준비물 등 자유롭게. 칸을 떠나면 저장돼요 */
 function noteHTML(t){
   var n=(t&&t.note)||'';
-  return '<div class="tnote"><textarea id="trip-note" maxlength="2000" rows="3" placeholder="여행 메모 (쇼핑 리스트, 준비물)" '+(canWrite?'':'readonly')+'>'+esc(n)+'</textarea></div>';
+  return '<div class="tlabel">메모</div><div class="tnote"><textarea id="trip-note" maxlength="2000" rows="3" placeholder="여행 메모 (쇼핑 리스트, 준비물)" '+(canWrite?'':'readonly')+'>'+esc(n)+'</textarea></div>';
 }
 function saveNote(v){
   var t=trip();if(!t||!canWrite||(t.note||'')===v)return;
