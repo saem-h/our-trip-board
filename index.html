@@ -1889,6 +1889,7 @@ function renderTimeline(t,its){
         h+='<li><span>'+esc(names[k])+(!i.pseudo&&i.area?' <small>'+esc(areaLabel(i.area))+'</small>':'')+'</span><a class="route-leg" href="'+esc(lk)+'" target="_blank" rel="noopener noreferrer">네이버 지도</a></li>';});
       h+='</ol><div class="route-go">네이버 지도에서 장소가 열리면 \'도착\'을 눌러 지금 위치에서 길찾기 하세요</div>';
     }
+    var ns=nightStay[d];if(ns&&(sel!=='all'||ns!==nightStay[d-1])&&!dd.some(function(x){return x.sid===ns.id;}))tp.push({i:{pseudo:true,place:ns.title,title:ns.title,sid:ns.id,addr:ns.addr,geo:ns.geo},t:'숙',c:'h',sub:dayLabel(t,d)+' 묵는 숙소 · '+ns.title});
     if(dd.length){var dc=sel==='all'?DAYC[(d-1)%DAYC.length]:'';dd.forEach(function(i,k){tp.push({i:i,t:String(k+1),c:'',g:d,col:dc,sub:dayLabel(t,d)+' · '+(k+1)+'번째'+(i.time?' · '+i.time:'')});});if(dc)tleg+='<span><i style="background:'+dc+'"></i>'+esc(dayLabel(t,d))+'</span>';}
     if(dd.length){h+='<div class="tl-list'+(window.TB_KAKAO?' num':'')+'">';dd.forEach(function(i,k){h+=ev(i,k+1,sel==='all'?DAYC[(d-1)%DAYC.length]:'');});h+='</div>';}
     else h+='<div class="tl-list"><div class="tl-empty">'+(canWrite?(fineMouse()?'아직 비어 있어요. 후보지를 여기로 끌어 오세요.':'아직 비어 있어요. 후보지를 꾹 눌러 여기로 끌어 오세요.'):'아직 비어 있어요.')+'</div></div>';
@@ -1897,7 +1898,6 @@ function renderTimeline(t,its){
   var un=(sel!=='all')?[]:sortDay(sched.filter(function(i){var e=effDay(i,t);return !e||e>n||e<1;}));
   if(un.length){h+='<div class="tl-day" data-d="0"><div class="tl-dh">날짜 미정</div><div class="tl-list">';un.forEach(function(i){h+=ev(i);});h+='</div></div>';}
   var mb='';if(useMap()){
-    stays.forEach(function(st){if(!sched.some(function(x){return x.sid===st.id;})&&(st.geo&&st.geo.x||st.addr))tp.push({i:{pseudo:true,place:st.title,title:st.title,sid:st.id,addr:st.addr,geo:st.geo},t:'숙',c:'h',sub:'숙소 · '+st.title});});
     if(candOn('t'))its.forEach(function(i){var sc=secOf(i.section);if(sc&&!sc.fixed&&!sc.check&&i.section!=='must'&&!isConf(i))tp.push({i:i,t:'',c:'c',j:1,sub:sc.name+' 후보'+(i.area?' · '+areaLabel(i.area):'')});});
     if(tp.length||canWrite){mapDays.push({d:'t',line:true,pins:tp});mb=mapBlock('t','t',(sel==='all'?tleg:'<span>번호 = 타임라인 순서</span>')+(candOn('t')?'<span><i style="background:#fff"></i>후보</span>':''));}}
   h=h.replace('%%TLMAP%%',mb);
