@@ -345,6 +345,7 @@ body.cdrag,body.cdrag *{cursor:grabbing!important;-webkit-user-select:none;user-
 .ev.on .rm{right:52px;top:2px}.ev.on .dh{right:4px;top:2px}
 
 .ev-m .tag{border:1px solid var(--line);border-radius:999px;padding:0 8px;color:var(--muted)}
+.ev-leg{margin-top:8px;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;letter-spacing:.01em}
 .ev-m a{color:var(--ink);text-underline-offset:3px}
 .ev-m select{background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:1px 8px;min-height:26px;font-size:12px}
 .tl-empty{color:var(--muted);font-size:12px}
@@ -1030,6 +1031,45 @@ function abroad(){var t=trip();return !!(t&&ABROAD.test(t.name||''));}
 function useKakao(){return !!window.TB_KAKAO&&!abroad();}
 function useGmap(){return !!window.TB_GMAP&&abroad();}
 function useMap(){return useKakao()||useGmap();}
+/* 타임라인: 이어지는 두 장소 사이 실제 길 거리 (해외 여행, 구글 Routes API).
+   가까우면(직선 1.5km 이하) 걸어서, 멀면 렌터카가 있으면 차로, 없으면 대중교통으로 재요.
+   한 번 잰 구간은 여행에 저장해서 같은 두 곳은 다시 묻지 않아요(요금 아끼기). */
+var RT_WALK=1500,rtMem={},rtBusy={},rtQ=[],rtRun=0,rtOff=false,rtPend={},rtT=0;
+function rtLL(i){var g=i&&i.geo;if(!g||!g.x||!g.y)return null;if(abroad()&&!g.g)return null;return {x:+g.x,y:+g.y};}
+function rtCrow(a,b){var r=Math.PI/180,dy=(b.y-a.y)*r,dx=(b.x-a.x)*r,s=Math.sin(dy/2)*Math.sin(dy/2)+Math.cos(a.y*r)*Math.cos(b.y*r)*Math.sin(dx/2)*Math.sin(dx/2);return 12742000*Math.asin(Math.min(1,Math.sqrt(s)));}
+function rtKey(a,b,m){function q(v){return Math.round(v*1e4);}return [q(a.y),q(a.x),q(b.y),q(b.x),m].join('_');}
+function rtDist(m){return m<1000?(Math.round(m/10)*10)+'m':(m<10000?(Math.round(m/100)/10):Math.round(m/1000))+'km';}
+function rtDur(s){var n=Math.max(1,Math.round(s/60));return n<60?n+'분':Math.floor(n/60)+'시간'+(n%60?' '+n%60+'분':'');}
+var RT_NAME={w:'도보',d:'차',t:'대중교통'};
+function rtHtml(t,its,a,b){
+  if(!b||!useGmap())return '';
+  var pa=rtLL(a),pb=rtLL(b);if(!pa||!pb)return '';
+  var c=rtCrow(pa,pb);if(c<40)return '';
+  var car=its.some(function(i){return i.section==='transport'&&i.mode==='rent';});
+  var m=c<=RT_WALK?'w':car?'d':'t',k=rtKey(pa,pb,m),v=(t.rt&&t.rt[k])||rtMem[k];
+  if(!v){rtAsk(t.id,pa,pb,m,k);return '';}
+  if(!(v[0]>0))return '';
+  return '<div class="ev-leg"><span aria-hidden="true">↓ </span>'+RT_NAME[v[2]||m]+' '+rtDist(v[0])+' · '+rtDur(v[1])+'</div>';
+}
+function rtAsk(tid,a,b,m,k){if(rtOff||rtBusy[k])return;rtBusy[k]=1;rtQ.push([tid,a,b,m,k]);rtPump();}
+function rtPump(){while(rtRun<2&&rtQ.length&&!rtOff){rtRun++;rtOne(rtQ.shift());}}
+function rtCall(a,b,m){
+  return fetch('https://routes.googleapis.com/directions/v2:computeRoutes',{method:'POST',headers:{'Content-Type':'application/json','X-Goog-Api-Key':window.TB_GMAP,'X-Goog-FieldMask':'routes.distanceMeters,routes.duration'},
+    body:JSON.stringify({origin:{location:{latLng:{latitude:a.y,longitude:a.x}}},destination:{location:{latLng:{latitude:b.y,longitude:b.x}}},travelMode:{w:'WALK',d:'DRIVE',t:'TRANSIT'}[m],languageCode:'ko'})})
+  .then(function(r){return r.json().catch(function(){return {};}).then(function(j){if(!r.ok){var e=new Error((j&&j.error&&j.error.message)||('HTTP '+r.status));e.st=r.status;throw e;}var x=j&&j.routes&&j.routes[0];return x&&x.distanceMeters?[x.distanceMeters,parseInt(x.duration,10)||0,m]:null;});});
+}
+function rtOne(q){var tid=q[0],a=q[1],b=q[2],m=q[3],k=q[4];
+  /* 대중교통 길이 없으면(밤늦게, 노선 없음) 차로 한 번 더 재요 */
+  rtCall(a,b,m).then(function(v){return v||(m==='t'?rtCall(a,b,'d'):null);}).then(function(v){
+    v=v||[-1,0,m];rtMem[k]=v;
+    if(db&&canWrite){rtPend[k]=v;clearTimeout(rtT);rtT=setTimeout(function(){var o=rtPend;rtPend={};if(trip()&&trip().id===tid)db.doc('trips/'+tid).update({rt:o}).catch(function(){});},800);}
+    else{clearTimeout(rtT);rtT=setTimeout(render,300);}
+  },function(e){/* 키에 Routes API가 아직 안 켜졌거나 막혔으면 이번엔 더 묻지 않아요 */
+    if(e&&(e.st===403||e.st===401||e.st===429)){rtOff=true;try{console.warn('[route] Routes API 사용 불가:',e.message);}catch(x){}}
+    else if(e&&e.st===400)rtMem[k]=[-1,0,m];
+    else delete rtBusy[k];
+  }).then(function(){rtRun--;rtPump();});
+}
 function mapUrl(q){return abroad()?'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q):'https://map.naver.com/p/search/'+encodeURIComponent(q);}
 function todayStr(){var n=new Date();return n.getFullYear()+'-'+('0'+(n.getMonth()+1)).slice(-2)+'-'+('0'+n.getDate()).slice(-2);}
 function todayDayOf(t){if(!t||!t.startDate||!t.endDate)return 0;var td=todayStr();if(td<t.startDate||td>t.endDate)return 0;return diffDays(t.startDate,td)+1;}
@@ -1892,7 +1932,7 @@ function renderTimeline(t,its){
     }
     var ns=nightStay[d];if(ns&&(sel!=='all'||ns!==nightStay[d-1])&&!dd.some(function(x){return x.sid===ns.id;}))tp.push({i:{pseudo:true,place:ns.title,title:ns.title,sid:ns.id,addr:ns.addr,geo:ns.geo},t:'숙',c:'h',sub:dayLabel(t,d)+' 묵는 숙소 · '+ns.title});
     if(dd.length){var dc=sel==='all'?DAYC[(d-1)%DAYC.length]:'';dd.forEach(function(i,k){tp.push({i:i,t:String(k+1),c:'',g:d,col:dc,sub:dayLabel(t,d)+' · '+(k+1)+'번째'+(i.time?' · '+i.time:'')});});if(dc)tleg+='<span><i style="background:'+dc+'"></i>'+esc(dayLabel(t,d))+'</span>';}
-    if(dd.length){h+='<div class="tl-list'+(window.TB_KAKAO?' num':'')+'">';dd.forEach(function(i,k){h+=ev(i,k+1,sel==='all'?DAYC[(d-1)%DAYC.length]:'');});h+='</div>';}
+    if(dd.length){h+='<div class="tl-list'+(window.TB_KAKAO?' num':'')+'">';dd.forEach(function(i,k){var lg=rtHtml(t,its,i,dd[k+1]);h+=ev(i,k+1,sel==='all'?DAYC[(d-1)%DAYC.length]:'').replace(/<\/div>$/,lg+'</div>');});h+='</div>';}
     else h+='<div class="tl-list"><div class="tl-empty">'+(canWrite?(fineMouse()?'아직 비어 있어요. 후보지를 여기로 끌어 오세요.':'아직 비어 있어요. 후보지를 꾹 눌러 여기로 끌어 오세요.'):'아직 비어 있어요.')+'</div></div>';
     h+='</div>';
   }
